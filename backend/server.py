@@ -1,0 +1,144 @@
+"""FastAPI server: SSE streaming, /chat, /answers endpoints."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
+
+from backend.agent import run_agent
+from backend.db import get_session as db_get_session
+from backend.db import get_sessions as db_get_sessions
+from backend.db import init_db, save_message, save_session
+from backend.session import SessionManager
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+
+app = FastAPI(title="Positioning Workshop", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+sessions = SessionManager()
+
+
+@app.post("/chat")
+async def chat(request: Request) -> dict:
+    """Start or continue a workshop session."""
+    body = await request.json()
+    message = body.get("message", "")
+    session_id = body.get("session_id")
+
+    if session_id:
+        session = sessions.get(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+    else:
+        session = sessions.create()
+
+    session.add_to_history("user", {"text": message})
+
+    # Run agent in background task
+    asyncio.create_task(run_agent(session, message))
+
+    return {"session_id": session.session_id}
+
+
+@app.get("/stream")
+async def stream(session_id: str) -> StreamingResponse:
+    """SSE event stream for a session."""
+    session = sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    async def event_generator():
+        while True:
+            try:
+                event = await asyncio.wait_for(
+                    session.sse_queue.get(), timeout=30.0
+                )
+                yield f"event: {event['event']}\ndata: {json.dumps(event['data'])}\n\n"
+                if event["event"] in ("done", "error"):
+                    break
+            except asyncio.TimeoutError:
+                # Send keepalive
+                yield ": ping\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.post("/answers")
+async def answers(request: Request) -> dict:
+    """User submits form answers, unblocking the ask tool."""
+    body = await request.json()
+    session_id = body.get("session_id")
+    ask_id = body.get("ask_id")
+    user_answers = body.get("answers", {})
+
+    if not session_id or not ask_id:
+        raise HTTPException(status_code=400, detail="session_id and ask_id required")
+
+    session = sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if session.pending_ask_id != ask_id:
+        raise HTTPException(status_code=409, detail="No matching pending ask")
+
+    session.resolve_ask(user_answers)
+    return {"status": "ok"}
+
+
+@app.get("/sessions")
+async def list_sessions() -> list:
+    """List all saved sessions."""
+    return await db_get_sessions()
+
+
+@app.get("/sessions/{session_id}")
+async def get_session_history(session_id: str) -> list:
+    """Get messages for a specific session."""
+    messages = await db_get_session(session_id)
+    return messages
+
+
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    import argparse
+
+    import uvicorn
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=8000)
+    args = parser.parse_args()
+    uvicorn.run(app, host="0.0.0.0", port=args.port)

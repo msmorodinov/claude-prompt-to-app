@@ -1,0 +1,28 @@
+{
+  "name": "claude-prompt-to-app",
+  "version": "1.0.0",
+  "description": "Turn a prompt into a full interactive web app. Claude agent + two MCP tools → rich UI.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "mcp",
+    "prompt-to-app",
+    "ai-agent",
+    "interactive",
+    "web-app",
+    "react",
+    "fastapi"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.58.2",
+    "wait-on": "^8.0.0"
+  }
+}
