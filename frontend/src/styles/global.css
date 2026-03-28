@@ -232,66 +232,72 @@ body {
   line-height: 1.8;
 }
 
-.widget-competitor-table table {
+.widget-data-table table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.widget-competitor-table th,
-.widget-competitor-table td {
+.widget-data-table th,
+.widget-data-table td {
   padding: 0.5rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
 
-.widget-competitor-table th {
+.widget-data-table th {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--text-muted);
   text-transform: uppercase;
 }
 
-.widget-competitor-table .highlights {
+.widget-data-table .table-caption {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.widget-data-table .highlights {
   margin-top: 0.75rem;
   font-size: 0.85rem;
 }
 
-.widget-competitor-table .label {
+.widget-data-table .label {
   font-family: var(--font-mono);
   color: var(--accent);
 }
 
-.widget-comparison-card .comparison-sides {
+.widget-comparison .comparison-sides {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 
-.widget-comparison-card .side-label {
+.widget-comparison .side-label {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
-.widget-comparison-card .diff-note {
+.widget-comparison .diff-note {
   margin-top: 0.75rem;
   color: var(--accent);
   font-size: 0.9rem;
 }
 
-.widget-strength-meter .metric {
+.widget-metric-bars .metric {
   margin-bottom: 0.75rem;
 }
 
-.widget-strength-meter .metric-header {
+.widget-metric-bars .metric-header {
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
   margin-bottom: 0.25rem;
 }
 
-.widget-strength-meter .metric-label {
+.widget-metric-bars .metric-label {
   font-family: var(--font-mono);
 }
 
@@ -587,21 +593,28 @@ body {
   transform: translate(-50%, 50%);
 }
 
-.widget-alignment-map h4 {
+.widget-category-list h4 {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   color: var(--accent);
   margin-bottom: 0.5rem;
 }
 
-.widget-alignment-map ul {
+.widget-category-list ul {
   padding-left: 1.25rem;
   margin-bottom: 0.75rem;
 }
 
-.resolution-needed {
+.widget-category-list .category-success h4 {
+  color: var(--success);
+}
+
+.widget-category-list .category-warning h4 {
   color: var(--error);
-  font-size: 0.8rem;
+}
+
+.widget-category-list .category-error h4 {
+  color: var(--error);
 }
 
 .answer-item {

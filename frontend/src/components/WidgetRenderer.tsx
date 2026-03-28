@@ -1,11 +1,11 @@
 import type { DisplayWidget } from '../types'
 import TextWidget from './display/TextWidget'
 import SectionHeader from './display/SectionHeader'
-import CompetitorTable from './display/CompetitorTable'
-import ComparisonCard from './display/ComparisonCard'
-import AlignmentMap from './display/AlignmentMap'
+import DataTable from './display/DataTable'
+import Comparison from './display/Comparison'
+import CategoryList from './display/CategoryList'
 import QuoteHighlight from './display/QuoteHighlight'
-import StrengthMeter from './display/StrengthMeter'
+import MetricBars from './display/MetricBars'
 import CopyableBlock from './display/CopyableBlock'
 import ProgressBar from './display/ProgressBar'
 import FinalResult from './display/FinalResult'
@@ -16,29 +16,34 @@ interface Props {
 }
 
 export default function WidgetRenderer({ widget }: Props) {
-  switch (widget.type) {
+  const w = widget as any
+  switch (w.type) {
     case 'text':
-      return <TextWidget {...widget} />
+      return <TextWidget {...w} />
     case 'section_header':
-      return <SectionHeader {...widget} />
+      return <SectionHeader {...w} />
+    case 'data_table':
     case 'competitor_table':
-      return <CompetitorTable {...widget} />
+      return <DataTable {...w} />
+    case 'comparison':
     case 'comparison_card':
-      return <ComparisonCard {...widget} />
+      return <Comparison {...w} />
+    case 'category_list':
     case 'alignment_map':
-      return <AlignmentMap {...widget} />
+      return <CategoryList {...w} />
     case 'quote_highlight':
-      return <QuoteHighlight {...widget} />
+      return <QuoteHighlight {...w} />
+    case 'metric_bars':
     case 'strength_meter':
-      return <StrengthMeter {...widget} />
+      return <MetricBars {...w} />
     case 'copyable':
-      return <CopyableBlock {...widget} />
+      return <CopyableBlock {...w} />
     case 'progress':
-      return <ProgressBar {...widget} />
+      return <ProgressBar {...w} />
     case 'final_result':
-      return <FinalResult {...widget} />
+      return <FinalResult {...w} />
     case 'timer':
-      return <TimerWidget {...widget} />
+      return <TimerWidget {...w} />
     default:
       return <pre className="widget widget-fallback">{JSON.stringify(widget, null, 2)}</pre>
   }

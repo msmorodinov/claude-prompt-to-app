@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import ComparisonCard from '../../components/display/ComparisonCard'
+import Comparison from '../../components/display/Comparison'
 
-describe('ComparisonCard', () => {
+describe('Comparison', () => {
   it('renders left and right sides', () => {
     render(
-      <ComparisonCard
+      <Comparison
         left={{ label: 'Draft', content: 'We make a platform...' }}
         right={{ label: 'Final', content: 'We help FMCG brand...' }}
       />,
@@ -16,21 +16,32 @@ describe('ComparisonCard', () => {
     expect(screen.getByText('We help FMCG brand...')).toBeInTheDocument()
   })
 
-  it('renders diff_note when provided', () => {
+  it('renders note when provided', () => {
     render(
-      <ComparisonCard
+      <Comparison
         left={{ label: 'A', content: 'a' }}
         right={{ label: 'B', content: 'b' }}
-        diff_note="Major improvement"
+        note="Major improvement"
       />,
     )
     expect(screen.getByText('Major improvement')).toBeInTheDocument()
   })
 
+  it('renders diff_note for backward compatibility', () => {
+    render(
+      <Comparison
+        left={{ label: 'A', content: 'a' }}
+        right={{ label: 'B', content: 'b' }}
+        diff_note="Legacy note"
+      />,
+    )
+    expect(screen.getByText('Legacy note')).toBeInTheDocument()
+  })
+
   it('handles undefined left/right without crashing', () => {
     const { container } = render(
-      <ComparisonCard left={undefined as any} right={undefined as any} />,
+      <Comparison left={undefined as any} right={undefined as any} />,
     )
-    expect(container.querySelector('.widget-comparison-card')).toBeInTheDocument()
+    expect(container.querySelector('.widget-comparison')).toBeInTheDocument()
   })
 })

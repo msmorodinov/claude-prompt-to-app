@@ -9,33 +9,29 @@ export interface SectionHeaderWidget {
   subtitle?: string
 }
 
-export interface CompetitorTableWidget {
-  type: 'competitor_table'
+export interface DataTableWidget {
+  type: 'data_table'
   columns?: string[]
   rows?: string[][]
-  competitors?: Array<Record<string, string>>
-  highlights?: {
-    table_stakes?: string[]
-    white_space?: string[]
-  }
+  caption?: string
+  highlights?: Record<string, string[]>
 }
 
-export interface ComparisonCardWidget {
-  type: 'comparison_card'
+export interface ComparisonWidget {
+  type: 'comparison'
   left: { label: string; content: string }
   right: { label: string; content: string }
+  note?: string
   diff_note?: string
 }
 
-export interface AlignmentMapWidget {
-  type: 'alignment_map'
-  agreed: string[]
-  contradicted?: Array<{
-    topic: string
-    positions: Record<string, string>
-    resolution_needed?: boolean
+export interface CategoryListWidget {
+  type: 'category_list'
+  categories: Array<{
+    label: string
+    items: string[]
+    style?: 'default' | 'success' | 'warning' | 'error'
   }>
-  surprises?: string[]
 }
 
 export interface QuoteHighlightWidget {
@@ -47,12 +43,13 @@ export interface QuoteHighlightWidget {
   comment?: string
 }
 
-export interface StrengthMeterWidget {
-  type: 'strength_meter'
+export interface MetricBarsWidget {
+  type: 'metric_bars'
   metrics: Array<{
     label: string
     value: number
     max: number
+    unit?: string
   }>
 }
 
@@ -82,11 +79,11 @@ export interface TimerWidget {
 export type DisplayWidget =
   | TextWidget
   | SectionHeaderWidget
-  | CompetitorTableWidget
-  | ComparisonCardWidget
-  | AlignmentMapWidget
+  | DataTableWidget
+  | ComparisonWidget
+  | CategoryListWidget
   | QuoteHighlightWidget
-  | StrengthMeterWidget
+  | MetricBarsWidget
   | CopyableWidget
   | ProgressWidget
   | FinalResultWidget

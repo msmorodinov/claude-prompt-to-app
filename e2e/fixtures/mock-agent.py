@@ -96,7 +96,7 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
         {
             "blocks": [
                 {
-                    "type": "competitor_table",
+                    "type": "data_table",
                     "columns": ["Name", "Position", "Price", "Weakness"],
                     "rows": [
                         ["Acme Corp", "Fast and cheap", "Free", "No API"],
@@ -128,7 +128,7 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
                     "content": "## Positioning Statement\n\nWe help FMCG brand managers launch compliant private label products 3x faster through integrated marketplace automation, unlike generic platforms that ignore local regulations.",
                 },
                 {
-                    "type": "strength_meter",
+                    "type": "metric_bars",
                     "metrics": [
                         {"label": "Specificity", "value": 8, "max": 10},
                         {"label": "Verifiability", "value": 7, "max": 10},

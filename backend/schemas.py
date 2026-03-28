@@ -18,29 +18,30 @@ DISPLAY_WIDGETS = {
         },
         "required": ["type", "title"],
     },
-    "competitor_table": {
+    "data_table": {
         "type": "object",
         "properties": {
-            "type": {"const": "competitor_table"},
+            "type": {"const": "data_table"},
             "columns": {"type": "array", "items": {"type": "string"}},
             "rows": {
                 "type": "array",
                 "items": {"type": "array", "items": {"type": "string"}},
             },
+            "caption": {"type": "string"},
             "highlights": {
                 "type": "object",
-                "properties": {
-                    "table_stakes": {"type": "array", "items": {"type": "string"}},
-                    "white_space": {"type": "array", "items": {"type": "string"}},
+                "additionalProperties": {
+                    "type": "array",
+                    "items": {"type": "string"},
                 },
             },
         },
         "required": ["type", "columns", "rows"],
     },
-    "comparison_card": {
+    "comparison": {
         "type": "object",
         "properties": {
-            "type": {"const": "comparison_card"},
+            "type": {"const": "comparison"},
             "left": {
                 "type": "object",
                 "properties": {
@@ -57,33 +58,34 @@ DISPLAY_WIDGETS = {
                 },
                 "required": ["label", "content"],
             },
-            "diff_note": {"type": "string"},
+            "note": {"type": "string"},
         },
         "required": ["type", "left", "right"],
     },
-    "alignment_map": {
+    "category_list": {
         "type": "object",
         "properties": {
-            "type": {"const": "alignment_map"},
-            "agreed": {"type": "array", "items": {"type": "string"}},
-            "contradicted": {
+            "type": {"const": "category_list"},
+            "categories": {
                 "type": "array",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "topic": {"type": "string"},
-                        "positions": {
-                            "type": "object",
-                            "additionalProperties": {"type": "string"},
+                        "label": {"type": "string"},
+                        "items": {
+                            "type": "array",
+                            "items": {"type": "string"},
                         },
-                        "resolution_needed": {"type": "boolean"},
+                        "style": {
+                            "type": "string",
+                            "enum": ["default", "success", "warning", "error"],
+                        },
                     },
-                    "required": ["topic", "positions"],
+                    "required": ["label", "items"],
                 },
             },
-            "surprises": {"type": "array", "items": {"type": "string"}},
         },
-        "required": ["type", "agreed"],
+        "required": ["type", "categories"],
     },
     "quote_highlight": {
         "type": "object",
@@ -95,10 +97,10 @@ DISPLAY_WIDGETS = {
         },
         "required": ["type", "quote"],
     },
-    "strength_meter": {
+    "metric_bars": {
         "type": "object",
         "properties": {
-            "type": {"const": "strength_meter"},
+            "type": {"const": "metric_bars"},
             "metrics": {
                 "type": "array",
                 "items": {
@@ -107,6 +109,7 @@ DISPLAY_WIDGETS = {
                         "label": {"type": "string"},
                         "value": {"type": "number"},
                         "max": {"type": "number"},
+                        "unit": {"type": "string"},
                     },
                     "required": ["label", "value", "max"],
                 },

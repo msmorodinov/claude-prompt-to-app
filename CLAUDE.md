@@ -76,11 +76,11 @@ forge-simple/
 │       │   ├── display/            # show widgets (11 types)
 │       │   │   ├── TextWidget.tsx
 │       │   │   ├── SectionHeader.tsx
-│       │   │   ├── CompetitorTable.tsx
-│       │   │   ├── ComparisonCard.tsx
-│       │   │   ├── AlignmentMap.tsx
+│       │   │   ├── DataTable.tsx
+│       │   │   ├── Comparison.tsx
+│       │   │   ├── CategoryList.tsx
 │       │   │   ├── QuoteHighlight.tsx
-│       │   │   ├── StrengthMeter.tsx
+│       │   │   ├── MetricBars.tsx
 │       │   │   ├── CopyableBlock.tsx
 │       │   │   ├── ProgressBar.tsx
 │       │   │   ├── FinalResult.tsx
@@ -102,7 +102,7 @@ forge-simple/
 ### `show` — fire-and-forget display
 - Claude calls when it wants to display content to user
 - Sends blocks to browser via SSE, returns immediately
-- Widget types: text, section_header, competitor_table, comparison_card, alignment_map, quote_highlight, strength_meter, copyable, progress, final_result, timer
+- Widget types: text, section_header, data_table, comparison, category_list, quote_highlight, metric_bars, copyable, progress, final_result, timer
 
 ### `ask` — blocking, waits for user response
 - Claude calls when it wants to ask questions
@@ -130,11 +130,11 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 |------|-----------|----------|
 | `text` | Markdown | Commentary, analysis |
 | `section_header` | Section title | Phase separation |
-| `competitor_table` | Table + highlights | Research results |
-| `comparison_card` | Side-by-side diff | Draft vs final |
-| `alignment_map` | Agreement map | Team synthesis |
+| `data_table` | Table + highlights | Tabular data, research results |
+| `comparison` | Side-by-side diff | Before/after, draft vs final |
+| `category_list` | Categorized lists | Grouped items with optional styles |
 | `quote_highlight` | Highlighted quote | Key insight |
-| `strength_meter` | Metric bars | Positioning score |
+| `metric_bars` | Metric bars | Scored metrics with bars |
 | `copyable` | Copy-to-clipboard | Team exercise, final |
 | `progress` | Progress bar | Workshop progress |
 | `final_result` | Accent result | Positioning statement |
@@ -214,7 +214,7 @@ cd frontend && npm install && npm run dev  # :5173 with proxy to backend
 1. **Backend skeleton** — FastAPI + SSE + /answers + Claude SDK client with show/ask tools
 2. **Frontend skeleton** — React chat layout, SSE hook, message list rendering
 3. **Core widgets** — text, free_text, single_select (minimum for a basic conversation)
-4. **Remaining display widgets** — competitor_table, comparison_card, strength_meter, etc.
+4. **Remaining display widgets** — data_table, comparison, metric_bars, etc.
 5. **Remaining input widgets** — multi_select, rank_priorities, slider_scale, matrix_2x2, tag_input
 6. **SQLite persistence** — save/load sessions
 7. **Polish** — dark theme, fonts, animations, responsive
