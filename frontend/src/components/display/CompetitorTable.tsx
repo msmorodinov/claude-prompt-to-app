@@ -58,6 +58,7 @@ export default function CompetitorTable(props: Props) {
 
   return (
     <div className="widget widget-competitor-table">
+      <div className="table-scroll-wrapper">
       <table>
         <thead>
           <tr>
@@ -76,6 +77,7 @@ export default function CompetitorTable(props: Props) {
           ))}
         </tbody>
       </table>
+      </div>
       {props.highlights && (
         <div className="highlights">
           {props.highlights.table_stakes && props.highlights.table_stakes.length > 0 && (
