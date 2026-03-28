@@ -34,13 +34,22 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Start mock server
-        run: python -m e2e.fixtures.mock_server --port 8000 &
+        run: |
+          nohup python -m e2e.fixtures.mock_server --port 8000 > /tmp/mock-server.log 2>&1 &
+          echo $! > /tmp/mock-server.pid
 
       - name: Start frontend
-        run: cd frontend && npm run dev -- --port 5174 &
+        run: |
+          cd frontend && nohup npm run dev -- --port 5174 > /tmp/frontend.log 2>&1 &
+          echo $! > /tmp/frontend.pid
 
       - name: Wait for servers
-        run: npx wait-on http://localhost:5174 http://localhost:8000/health --timeout 30000
+        run: |
+          npx wait-on http://localhost:8000/health http://localhost:5174 --timeout 30000 || {
+            echo "=== Mock server log ===" && cat /tmp/mock-server.log
+            echo "=== Frontend log ===" && cat /tmp/frontend.log
+            exit 1
+          }
 
       - name: E2E tests
         run: npx playwright test --config=e2e/playwright.config.ts
