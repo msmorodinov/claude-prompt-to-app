@@ -1,5 +1,7 @@
 # Claude Prompt-to-App — Turn a Prompt into an Interactive Web App
 
+[![CI](https://github.com/msmorodinov/claude-prompt-to-app/actions/workflows/ci.yml/badge.svg)](https://github.com/msmorodinov/claude-prompt-to-app/actions/workflows/ci.yml)
+
 > Two MCP tools. One prompt. A full interactive web app — powered by Claude.
 
 Write a prompt, get a working web application. A Claude agent calls `show()` to display
