@@ -25,12 +25,12 @@ export default function AlignmentMap({ agreed, contradicted, surprises }: Props)
           <h4>Contradicted</h4>
           {contradicted.map((item, i) => (
             <div key={i} className="contradiction">
-              <strong>{item.topic || ''}</strong>
+              <strong>{item.topic}</strong>
               {item.resolution_needed && (
                 <span className="resolution-needed"> (needs resolution)</span>
               )}
               <ul>
-                {Object.entries(item.positions || {}).map(([name, pos]) => (
+                {Object.entries(item.positions).map(([name, pos]) => (
                   <li key={name}>
                     {name}: {pos}
                   </li>

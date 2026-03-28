@@ -1,10 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type {
   ChatAssistantMessage,
-  ChatAskMessage,
   ChatMessage,
-  ChatResearchMessage,
-  ChatUserMessage,
   SSEEvent,
 } from '../types'
 
@@ -19,49 +16,40 @@ export function useChat() {
     })
   }, [])
 
+  const appendMessage = useCallback(
+    (msg: ChatMessage, scroll = true) => {
+      setMessages((prev) => [...prev, msg])
+      if (scroll) scrollToBottom()
+    },
+    [scrollToBottom],
+  )
+
   const handleSSEEvent = useCallback(
     (event: SSEEvent) => {
       switch (event.type) {
-        case 'assistant_message': {
-          const msg: ChatAssistantMessage = {
-            role: 'assistant',
-            blocks: event.blocks,
-          }
-          setMessages((prev) => [...prev, msg])
-          scrollToBottom()
+        case 'assistant_message':
+          appendMessage({ role: 'assistant', blocks: event.blocks })
           break
-        }
-        case 'ask_message': {
-          const msg: ChatAskMessage = {
+
+        case 'ask_message':
+          appendMessage({
             role: 'ask',
             id: event.id,
             preamble: event.preamble,
             questions: event.questions,
             answered: false,
-          }
-          setMessages((prev) => [...prev, msg])
-          scrollToBottom()
+          })
           break
-        }
-        case 'user_message': {
-          const msg: ChatUserMessage = {
-            role: 'user',
-            answers: event.answers,
-          }
-          setMessages((prev) => [...prev, msg])
-          scrollToBottom()
+
+        case 'user_message':
+          appendMessage({ role: 'user', answers: event.answers })
           break
-        }
-        case 'research_start': {
-          const msg: ChatResearchMessage = {
-            role: 'research',
-            label: event.label,
-            done: false,
-          }
-          setMessages((prev) => [...prev, msg])
+
+        case 'research_start':
+          appendMessage({ role: 'research', label: event.label, done: false }, false)
           break
-        }
-        case 'research_done': {
+
+        case 'research_done':
           setMessages((prev) => {
             const updated = [...prev]
             for (let i = updated.length - 1; i >= 0; i--) {
@@ -74,8 +62,8 @@ export function useChat() {
             return updated
           })
           break
-        }
-        case 'stream_delta': {
+
+        case 'stream_delta':
           setMessages((prev) => {
             const last = prev[prev.length - 1]
             if (last?.role === 'assistant' && last.streaming) {
@@ -86,43 +74,34 @@ export function useChat() {
               }
               return updated
             }
-            // Create new streaming message
-            const msg: ChatAssistantMessage = {
-              role: 'assistant',
-              blocks: [],
-              streaming: true,
-              streamText: event.text,
-            }
-            return [...prev, msg]
+            return [
+              ...prev,
+              { role: 'assistant', blocks: [], streaming: true, streamText: event.text } as ChatAssistantMessage,
+            ]
           })
           scrollToBottom()
           break
-        }
-        case 'done': {
+
+        case 'done':
           setIsLoading(false)
-          // Finalize any streaming message
           setMessages((prev) => {
             const last = prev[prev.length - 1]
             if (last?.role === 'assistant' && last.streaming) {
               const updated = [...prev]
-              updated[updated.length - 1] = {
-                ...last,
-                streaming: false,
-              }
+              updated[updated.length - 1] = { ...last, streaming: false }
               return updated
             }
             return prev
           })
           break
-        }
-        case 'error': {
+
+        case 'error':
           setIsLoading(false)
           console.error('Agent error:', event.message)
           break
-        }
       }
     },
-    [scrollToBottom],
+    [appendMessage, scrollToBottom],
   )
 
   const markAskAnswered = useCallback(

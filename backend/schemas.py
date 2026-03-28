@@ -1,7 +1,5 @@
 """JSON schemas for show/ask widget types."""
 
-# --- Display widget schemas (for show tool) ---
-
 DISPLAY_WIDGETS = {
     "text": {
         "type": "object",
@@ -153,8 +151,6 @@ DISPLAY_WIDGETS = {
     },
 }
 
-# --- Input widget schemas (for ask tool) ---
-
 INPUT_WIDGETS = {
     "single_select": {
         "type": "object",
@@ -241,7 +237,6 @@ INPUT_WIDGETS = {
     },
 }
 
-# Combined schema for show tool
 SHOW_SCHEMA = {
     "type": "object",
     "properties": {
@@ -263,7 +258,6 @@ SHOW_SCHEMA = {
     "required": ["blocks"],
 }
 
-# Combined schema for ask tool
 ASK_SCHEMA = {
     "type": "object",
     "properties": {

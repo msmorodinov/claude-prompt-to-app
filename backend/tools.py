@@ -11,11 +11,10 @@ from claude_agent_sdk import tool
 from backend.schemas import ASK_SCHEMA, SHOW_SCHEMA
 from backend.session import SessionState
 
-ASK_TIMEOUT_SECONDS = 600  # 10 minutes max wait for user response
+ASK_TIMEOUT_SECONDS = 600
 
 
 def _normalize_option(opt: Any) -> str:
-    """Convert option to plain string. Claude may send {value, label} objects."""
     if isinstance(opt, str):
         return opt
     if isinstance(opt, dict):
@@ -24,10 +23,9 @@ def _normalize_option(opt: Any) -> str:
 
 
 def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Normalize question options from {value,label} objects to plain strings."""
     result = []
     for q in questions:
-        q = dict(q)  # shallow copy
+        q = dict(q)
         if q.get("type") in ("single_select", "multi_select") and "options" in q:
             q["options"] = [_normalize_option(o) for o in q["options"]]
         result.append(q)
@@ -35,14 +33,8 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
 
 
 def create_workshop_tools(session: SessionState) -> list:
-    """Create show/ask tools bound to a specific session.
-
-    Returns a list of tool-decorated async functions.
-    """
-
     @tool("show", "Display content blocks to the user", SHOW_SCHEMA)
     async def show_tool(args: dict[str, Any]) -> dict[str, Any]:
-        """Fire-and-forget: push display blocks to browser via SSE."""
         try:
             blocks = args.get("blocks", [])
             session.push_sse("assistant_message", {"blocks": blocks})
@@ -60,13 +52,11 @@ def create_workshop_tools(session: SessionState) -> list:
 
     @tool("ask", "Ask questions and wait for user response", ASK_SCHEMA)
     async def ask_tool(args: dict[str, Any]) -> dict[str, Any]:
-        """Blocking: push questions to browser, wait for POST /answers."""
         try:
             ask_id = uuid.uuid4().hex[:8]
             preamble = args.get("preamble")
             questions = _normalize_questions(args.get("questions", []))
 
-            # Send ask to browser
             session.push_sse(
                 "ask_message",
                 {"id": ask_id, "preamble": preamble, "questions": questions},
@@ -76,7 +66,6 @@ def create_workshop_tools(session: SessionState) -> list:
                 {"ask_id": ask_id, "preamble": preamble, "questions": questions},
             )
 
-            # Block until user answers
             session.start_ask(ask_id)
             try:
                 await asyncio.wait_for(
@@ -95,11 +84,9 @@ def create_workshop_tools(session: SessionState) -> list:
             answers = session.pending_answers
             session.clear_ask()
 
-            # Record user answers in history
             session.push_sse("user_message", {"answers": answers})
             session.add_to_history("user", {"answers": answers})
 
-            # Format answers for Claude
             answer_lines = [
                 f"- {qid}: {val}" for qid, val in answers.items()
             ]

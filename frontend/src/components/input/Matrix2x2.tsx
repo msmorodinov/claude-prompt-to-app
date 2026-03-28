@@ -34,7 +34,7 @@ export default function Matrix2x2({
 
   return (
     <div className="widget widget-matrix-2x2">
-      <label className="question-label">{label || ''}</label>
+      <label className="question-label">{label}</label>
       <div className="matrix-items">
         {safeItems.map((item) => (
           <button
@@ -48,8 +48,8 @@ export default function Matrix2x2({
         ))}
       </div>
       <div className="matrix-grid" onClick={handleClick}>
-        <div className="axis-label x-axis">{x_axis || ''}</div>
-        <div className="axis-label y-axis">{y_axis || ''}</div>
+        <div className="axis-label x-axis">{x_axis}</div>
+        <div className="axis-label y-axis">{y_axis}</div>
         {Object.entries(safeValue).map(([name, pos]) => (
           <div
             key={name}

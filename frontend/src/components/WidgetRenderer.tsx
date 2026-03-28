@@ -18,54 +18,27 @@ interface Props {
 export default function WidgetRenderer({ widget }: Props) {
   switch (widget.type) {
     case 'text':
-      return <TextWidget content={widget.content} />
+      return <TextWidget {...widget} />
     case 'section_header':
-      return <SectionHeader title={widget.title} subtitle={widget.subtitle} />
+      return <SectionHeader {...widget} />
     case 'competitor_table':
-      return (
-        <CompetitorTable
-          columns={widget.columns}
-          rows={widget.rows}
-          competitors={widget.competitors}
-          highlights={widget.highlights}
-        />
-      )
+      return <CompetitorTable {...widget} />
     case 'comparison_card':
-      return (
-        <ComparisonCard
-          left={widget.left}
-          right={widget.right}
-          diff_note={widget.diff_note}
-        />
-      )
+      return <ComparisonCard {...widget} />
     case 'alignment_map':
-      return (
-        <AlignmentMap
-          agreed={widget.agreed}
-          contradicted={widget.contradicted}
-          surprises={widget.surprises}
-        />
-      )
+      return <AlignmentMap {...widget} />
     case 'quote_highlight':
-      return (
-        <QuoteHighlight
-          quote={widget.quote}
-          attribution={widget.attribution}
-          source={widget.source}
-          note={widget.note}
-          comment={widget.comment}
-        />
-      )
+      return <QuoteHighlight {...widget} />
     case 'strength_meter':
-      return <StrengthMeter metrics={widget.metrics} />
+      return <StrengthMeter {...widget} />
     case 'copyable':
-      return <CopyableBlock content={widget.content} label={widget.label} />
+      return <CopyableBlock {...widget} />
     case 'progress':
-      return <ProgressBar label={widget.label} percent={widget.percent} />
+      return <ProgressBar {...widget} />
     case 'final_result':
-      return <FinalResult content={widget.content} />
+      return <FinalResult {...widget} />
     case 'timer':
-      return <TimerWidget seconds={widget.seconds} label={widget.label} />
+      return <TimerWidget {...widget} />
     default:
       return <pre className="widget widget-fallback">{JSON.stringify(widget, null, 2)}</pre>
   }

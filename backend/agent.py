@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -21,11 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 async def run_agent(session: SessionState, user_message: str) -> None:
-    """Run the Claude agent loop for a workshop session.
-
-    Streams responses and tool calls. The session's SSE queue receives
-    events as they happen.
-    """
     tools = create_workshop_tools(session)
 
     server = create_sdk_mcp_server(
@@ -66,7 +60,6 @@ async def run_agent(session: SessionState, user_message: str) -> None:
 def _process_assistant_message(
     session: SessionState, message: AssistantMessage
 ) -> None:
-    """Extract text blocks from assistant messages and send as stream deltas."""
     for block in message.content:
         if isinstance(block, TextBlock) and block.text.strip():
             session.push_sse("stream_delta", {"text": block.text})

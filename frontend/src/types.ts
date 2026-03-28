@@ -1,5 +1,3 @@
-// --- Display widget types ---
-
 export interface TextWidget {
   type: 'text'
   content: string
@@ -94,9 +92,6 @@ export type DisplayWidget =
   | FinalResultWidget
   | TimerWidget
 
-// --- Input widget types ---
-
-/** Option can be plain string or {value, label} object from Claude */
 export type SelectOption = string | { value: string; label: string }
 
 export interface SingleSelectQuestion {
@@ -116,7 +111,6 @@ export interface MultiSelectQuestion {
   max_select?: number
 }
 
-/** Normalize option to plain string */
 export function normalizeOption(opt: SelectOption): string {
   if (typeof opt === 'string') return opt
   return opt.label || opt.value || String(opt)
@@ -176,8 +170,6 @@ export type InputQuestion =
   | Matrix2x2Question
   | TagInputQuestion
 
-// --- SSE Event types ---
-
 export interface AssistantMessageEvent {
   type: 'assistant_message'
   blocks: DisplayWidget[]
@@ -228,8 +220,6 @@ export type SSEEvent =
   | StreamDeltaEvent
   | DoneEvent
   | ErrorEvent
-
-// --- Chat message types ---
 
 export interface ChatAssistantMessage {
   role: 'assistant'

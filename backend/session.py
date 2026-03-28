@@ -19,15 +19,6 @@ DEDUP_CLEANUP_SECONDS = 60.0
 
 @dataclass
 class SessionState:
-    """Holds state for a single workshop session.
-
-    - sse_queue: asyncio.Queue for SSE events to the browser
-    - pending_ask_id: the current ask awaiting user answer
-    - pending_ask_event: asyncio.Event that blocks the ask tool until answered
-    - pending_answers: answers from the user for the current ask
-    - history: ordered list of all messages/events for persistence
-    """
-
     session_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     sse_queue: asyncio.Queue[dict[str, Any]] = field(default_factory=asyncio.Queue)
     pending_ask_id: str | None = None
@@ -38,11 +29,9 @@ class SessionState:
     _recent_hashes: dict[str, float] = field(default_factory=dict)
 
     def push_sse(self, event_type: str, data: dict[str, Any]) -> None:
-        """Put an SSE event onto the queue for the browser, deduplicating."""
         now = time.monotonic()
 
-        # Hash-based dedup for non-ping events
-        if event_type not in ("ping",):
+        if event_type != "ping":
             event_hash = hashlib.md5(
                 f"{event_type}:{json.dumps(data, sort_keys=True)}".encode()
             ).hexdigest()
@@ -54,7 +43,6 @@ class SessionState:
 
             self._recent_hashes[event_hash] = now
 
-            # Cleanup old hashes
             stale = [
                 h for h, ts in self._recent_hashes.items()
                 if (now - ts) > DEDUP_CLEANUP_SECONDS
@@ -67,23 +55,19 @@ class SessionState:
         self.sse_queue.put_nowait({"event": event_type, "data": data})
 
     def start_ask(self, ask_id: str) -> None:
-        """Begin waiting for user answers to an ask."""
         self.pending_ask_id = ask_id
         self.pending_ask_event.clear()
         self.pending_answers = {}
 
     def resolve_ask(self, answers: dict[str, Any]) -> None:
-        """Resolve a pending ask with user answers."""
         self.pending_answers = answers
         self.pending_ask_event.set()
 
     def clear_ask(self) -> None:
-        """Reset ask state after processing."""
         self.pending_ask_id = None
         self.pending_answers = {}
 
     def add_to_history(self, role: str, content: dict[str, Any]) -> None:
-        """Append a message to session history."""
         self.history.append({"role": role, "content": content})
 
 

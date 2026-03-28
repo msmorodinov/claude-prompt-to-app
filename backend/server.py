@@ -14,7 +14,7 @@ from starlette.responses import StreamingResponse
 from backend.agent import run_agent
 from backend.db import get_session as db_get_session
 from backend.db import get_sessions as db_get_sessions
-from backend.db import init_db, save_message, save_session
+from backend.db import init_db
 from backend.session import SessionManager
 
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +42,6 @@ sessions = SessionManager()
 
 @app.post("/chat")
 async def chat(request: Request) -> dict:
-    """Start or continue a workshop session."""
     body = await request.json()
     message = body.get("message", "")
     session_id = body.get("session_id")
@@ -55,8 +54,6 @@ async def chat(request: Request) -> dict:
         session = sessions.create()
 
     session.add_to_history("user", {"text": message})
-
-    # Run agent in background task
     asyncio.create_task(run_agent(session, message))
 
     return {"session_id": session.session_id}
@@ -64,7 +61,6 @@ async def chat(request: Request) -> dict:
 
 @app.get("/stream")
 async def stream(session_id: str) -> StreamingResponse:
-    """SSE event stream for a session."""
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -79,7 +75,6 @@ async def stream(session_id: str) -> StreamingResponse:
                 if event["event"] in ("done", "error"):
                     break
             except asyncio.TimeoutError:
-                # Send keepalive
                 yield ": ping\n\n"
 
     return StreamingResponse(
@@ -95,7 +90,6 @@ async def stream(session_id: str) -> StreamingResponse:
 
 @app.post("/answers")
 async def answers(request: Request) -> dict:
-    """User submits form answers, unblocking the ask tool."""
     body = await request.json()
     session_id = body.get("session_id")
     ask_id = body.get("ask_id")
@@ -117,15 +111,12 @@ async def answers(request: Request) -> dict:
 
 @app.get("/sessions")
 async def list_sessions() -> list:
-    """List all saved sessions."""
     return await db_get_sessions()
 
 
 @app.get("/sessions/{session_id}")
 async def get_session_history(session_id: str) -> list:
-    """Get messages for a specific session."""
-    messages = await db_get_session(session_id)
-    return messages
+    return await db_get_session(session_id)
 
 
 @app.get("/health")

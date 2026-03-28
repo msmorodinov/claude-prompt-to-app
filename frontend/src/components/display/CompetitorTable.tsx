@@ -30,7 +30,6 @@ function normalize(props: Props): { columns: string[]; rows: string[][] } {
   }
 
   if (props.competitors && props.competitors.length > 0) {
-    // Auto-detect columns from object keys
     const allKeys = new Set<string>()
     for (const c of props.competitors) {
       for (const key of Object.keys(c)) {
@@ -41,7 +40,6 @@ function normalize(props: Props): { columns: string[]; rows: string[][] } {
     const rows = props.competitors.map((c) =>
       columns.map((col) => c[col] ?? '')
     )
-    // Capitalize column headers
     const headers = columns.map(
       (c) => c.charAt(0).toUpperCase() + c.slice(1).replace(/_/g, ' ')
     )

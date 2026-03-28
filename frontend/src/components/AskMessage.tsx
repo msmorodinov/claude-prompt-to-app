@@ -28,7 +28,7 @@ export default function AskMessage({ message, onSubmit }: Props) {
           initial[q.id] = ''
           break
         case 'rank_priorities':
-          initial[q.id] = [...(Array.isArray(q.items) ? q.items : [])]
+          initial[q.id] = [...q.items]
           break
         case 'slider_scale':
           initial[q.id] = Math.round((q.min + q.max) / 2)

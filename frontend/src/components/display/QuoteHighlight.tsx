@@ -1,9 +1,9 @@
 interface Props {
   quote: string
   attribution?: string
-  source?: string   // Claude may use "source" instead of "attribution"
+  source?: string
   note?: string
-  comment?: string  // Claude may use "comment" instead of "note"
+  comment?: string
 }
 
 export default function QuoteHighlight({ quote, attribution, source, note, comment }: Props) {

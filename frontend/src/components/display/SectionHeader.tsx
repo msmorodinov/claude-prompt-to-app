@@ -4,11 +4,10 @@ interface Props {
 }
 
 export default function SectionHeader({ title, subtitle }: Props) {
-  const t = title || ''
-  if (!t) return null
+  if (!title) return null
   return (
     <div className="widget widget-section-header">
-      <h2>{t}</h2>
+      <h2>{title}</h2>
       {subtitle && <p className="subtitle">{subtitle}</p>}
     </div>
   )

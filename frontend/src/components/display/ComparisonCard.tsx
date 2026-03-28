@@ -9,21 +9,22 @@ interface Props {
   diff_note?: string
 }
 
-const defaultSide: Side = { label: '', content: '' }
+const EMPTY_SIDE: Side = { label: '', content: '' }
 
 export default function ComparisonCard({ left, right, diff_note }: Props) {
-  const l = left && typeof left === 'object' ? left : defaultSide
-  const r = right && typeof right === 'object' ? right : defaultSide
+  const l = left ?? EMPTY_SIDE
+  const r = right ?? EMPTY_SIDE
+
   return (
     <div className="widget widget-comparison-card">
       <div className="comparison-sides">
         <div className="side left">
-          <div className="side-label">{l.label || ''}</div>
-          <div className="side-content">{l.content || ''}</div>
+          <div className="side-label">{l.label}</div>
+          <div className="side-content">{l.content}</div>
         </div>
         <div className="side right">
-          <div className="side-label">{r.label || ''}</div>
-          <div className="side-content">{r.content || ''}</div>
+          <div className="side-label">{r.label}</div>
+          <div className="side-content">{r.content}</div>
         </div>
       </div>
       {diff_note && <div className="diff-note">{diff_note}</div>}

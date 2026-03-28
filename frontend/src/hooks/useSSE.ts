@@ -49,7 +49,6 @@ export function useSSE(
     }
 
     es.onerror = () => {
-      // EventSource auto-reconnects, but if closed, clean up
       if (es.readyState === EventSource.CLOSED) {
         disconnect()
       }

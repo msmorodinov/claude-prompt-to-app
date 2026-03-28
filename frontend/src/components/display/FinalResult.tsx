@@ -3,11 +3,10 @@ interface Props {
 }
 
 export default function FinalResult({ content }: Props) {
-  const text = content || ''
-  if (!text) return null
+  if (!content) return null
   return (
     <div className="widget widget-final-result">
-      <div className="final-result-content">{text}</div>
+      <div className="final-result-content">{content}</div>
     </div>
   )
 }
