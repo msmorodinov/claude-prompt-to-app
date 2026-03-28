@@ -85,7 +85,51 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
 
     await asyncio.sleep(0.2)
 
-    # Step 3: Final result
+    # Step 3: Show all renamed display widgets
+    session.push_sse(
+        "assistant_message",
+        {
+            "blocks": [
+                {
+                    "type": "data_table",
+                    "columns": ["Name", "Position", "Price", "Weakness"],
+                    "rows": [
+                        ["Acme Corp", "Fast and cheap", "Free", "No API"],
+                        ["Globex", "Enterprise-grade", "$$$", "Slow"],
+                        ["Initech", "AI-powered", "$$", "Buggy"],
+                    ],
+                    "highlights": {
+                        "table_stakes": ["Speed", "Easy onboarding"],
+                        "white_space": ["Compliance", "Local integrations"],
+                    },
+                },
+                {
+                    "type": "comparison",
+                    "left": {"label": "Draft", "content": "We make a platform for brands"},
+                    "right": {"label": "Final", "content": "We help FMCG brand managers launch compliant products 3x faster"},
+                    "note": "Much more specific and verifiable",
+                },
+                {
+                    "type": "category_list",
+                    "categories": [
+                        {"label": "Agreed", "items": ["Customer = brand managers", "Gap = compliance"], "style": "success"},
+                        {"label": "Contradicted", "items": ["Core bet: Alice says go deep, Bob says expand"], "style": "warning"},
+                        {"label": "Surprises", "items": ["Nobody mentioned speed"]},
+                    ],
+                },
+                {
+                    "type": "quote_highlight",
+                    "quote": "Nobody is doing compliance properly in this space.",
+                    "attribution": "Founder",
+                    "note": "This is the key insight.",
+                },
+            ]
+        },
+    )
+
+    await asyncio.sleep(0.1)
+
+    # Step 4: Final result with metric bars
     session.push_sse(
         "assistant_message",
         {
@@ -93,6 +137,20 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
                 {
                     "type": "final_result",
                     "content": "We help FMCG brand managers launch products faster.",
+                },
+                {
+                    "type": "metric_bars",
+                    "metrics": [
+                        {"label": "Specificity", "value": 8, "max": 10},
+                        {"label": "Verifiability", "value": 7, "max": 10},
+                        {"label": "Compression", "value": 9, "max": 10},
+                        {"label": "Differentiation", "value": 8, "max": 10},
+                    ],
+                },
+                {
+                    "type": "progress",
+                    "label": "Workshop complete",
+                    "percent": 100,
                 },
             ]
         },
