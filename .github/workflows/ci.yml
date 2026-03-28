@@ -15,6 +15,9 @@ jobs:
       - name: Install backend
         run: pip install -r backend/requirements.txt
 
+      - name: Install root deps (Playwright, wait-on)
+        run: npm ci
+
       - name: Install frontend
         run: cd frontend && npm ci
 
@@ -37,7 +40,7 @@ jobs:
         run: cd frontend && npm run dev -- --port 5174 &
 
       - name: Wait for servers
-        run: npx wait-on http://localhost:5174 http://localhost:8000/health --timeout 15000
+        run: npx wait-on http://localhost:5174 http://localhost:8000/health --timeout 30000
 
       - name: E2E tests
         run: npx playwright test --config=e2e/playwright.config.ts
