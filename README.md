@@ -140,11 +140,11 @@ Claude receives answers     →  continues reasoning...
 |------|----------|
 | `text` | Markdown commentary and analysis |
 | `section_header` | Phase separation headers |
-| `competitor_table` | Research results with highlights |
-| `comparison_card` | Side-by-side draft vs final |
-| `alignment_map` | Team agreement visualization |
+| `data_table` | Tabular data with highlights |
+| `comparison` | Side-by-side before/after |
+| `category_list` | Categorized lists with styles |
 | `quote_highlight` | Key insight callouts |
-| `strength_meter` | Positioning score metrics |
+| `metric_bars` | Scored metrics with bars |
 | `copyable` | Copy-to-clipboard blocks |
 | `progress` | Workshop progress indicator |
 | `final_result` | Accented positioning statement |
@@ -220,9 +220,9 @@ Fork this repo and replace the prompt — everything else is reusable:
 | Prompt idea | show widgets | ask widgets |
 |-------------|-------------|-------------|
 | User interview | quote_highlight, text | free_text, single_select |
-| Code review | competitor_table, comparison_card | single_select, free_text |
-| Business model canvas | alignment_map, copyable | tag_input, matrix_2x2 |
-| Sprint retrospective | strength_meter, text | rank_priorities, free_text |
+| Code review | data_table, comparison | single_select, free_text |
+| Business model canvas | category_list, copyable | tag_input, matrix_2x2 |
+| Sprint retrospective | metric_bars, text | rank_priorities, free_text |
 
 Same two tools. Same widget set. Different prompt → different product.
 
