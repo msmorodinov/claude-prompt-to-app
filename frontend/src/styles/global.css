@@ -650,3 +650,110 @@ body {
     opacity: 0;
   }
 }
+
+/* Responsive: base */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive: tablet */
+@media (max-width: 1023px) {
+  .chat-container {
+    max-width: 100%;
+  }
+}
+
+/* Responsive: mobile */
+@media (max-width: 639px) {
+  .message-list {
+    padding: 0.75rem;
+  }
+
+  .input-area {
+    padding: 0.75rem;
+  }
+
+  .ask-message {
+    padding: 0.75rem;
+  }
+
+  .widget {
+    padding: 0.75rem;
+  }
+
+  .user-message {
+    max-width: 85%;
+  }
+
+  .widget-comparison .comparison-sides {
+    grid-template-columns: 1fr;
+  }
+
+  .widget-progress {
+    flex-wrap: wrap;
+  }
+
+  .widget-progress .progress-label {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .widget-metric-bars .metric-label {
+    word-break: break-word;
+  }
+
+  .widget-timer .timer-display {
+    font-size: 2rem;
+  }
+
+  .matrix-point {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.8rem;
+  }
+
+  .matrix-item {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  .matrix-grid {
+    aspect-ratio: auto;
+    min-height: 250px;
+  }
+
+  .rank-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .option {
+    min-height: 48px;
+  }
+
+  .option input[type='radio'],
+  .option input[type='checkbox'] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .widget-free-text textarea,
+  .widget-free-text input[type='text'],
+  .widget-tag-input input,
+  .input-area input {
+    font-size: 16px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .widget-data-table th,
+  .widget-data-table td {
+    padding: 0.35rem 0.5rem;
+    white-space: nowrap;
+  }
+}

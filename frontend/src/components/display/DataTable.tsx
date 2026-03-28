@@ -24,6 +24,7 @@ export default function DataTable(props: Props) {
 
   return (
     <div className="widget widget-data-table">
+      <div className="table-scroll-wrapper">
       <table>
         <thead>
           <tr>
@@ -42,6 +43,7 @@ export default function DataTable(props: Props) {
           ))}
         </tbody>
       </table>
+      </div>
       {props.caption && <div className="table-caption">{props.caption}</div>}
       {props.highlights && Object.keys(props.highlights).length > 0 && (
         <div className="highlights">
