@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from contextlib import suppress
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -42,6 +44,30 @@ class TestChatEndpoint:
             json={"message": "hi", "session_id": "nonexistent"},
         )
         assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    @patch("backend.server.run_agent", new_callable=AsyncMock)
+    async def test_chat_returns_409_when_agent_running(self, mock_agent, client, session):
+        session.agent_task = asyncio.create_task(asyncio.sleep(10))
+        resp = await client.post(
+            "/chat",
+            json={"message": "second", "session_id": session.session_id},
+        )
+        assert resp.status_code == 409
+        mock_agent.assert_not_called()
+        session.agent_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await session.agent_task
+
+    @pytest.mark.asyncio
+    @patch("backend.server.run_agent", new_callable=AsyncMock)
+    async def test_chat_stores_agent_task(self, mock_agent, client, session):
+        resp = await client.post(
+            "/chat",
+            json={"message": "hello", "session_id": session.session_id},
+        )
+        assert resp.status_code == 200
+        assert session.agent_task is not None
 
 
 class TestStreamEndpoint:

@@ -9,15 +9,21 @@ import type {
 
 export function historyToMessages(history: HistoryEntry[]): ChatMessage[] {
   const messages: ChatMessage[] = []
-  for (const entry of history) {
+  for (let i = 0; i < history.length; i++) {
+    const entry = history[i]
     if (entry.role === 'assistant') {
       if ('ask_id' in entry.content && entry.content.ask_id && entry.content.questions) {
+        const next = history[i + 1]
+        const hasAnswer = next?.role === 'user' && 'answers' in next.content
         messages.push({
           role: 'ask',
           id: String(entry.content.ask_id),
           preamble: entry.content.preamble as string | undefined,
           questions: entry.content.questions as InputQuestion[],
-          answered: true,
+          answered: hasAnswer,
+          answers: hasAnswer
+            ? (next.content.answers as Record<string, unknown>)
+            : undefined,
         })
       } else if ('blocks' in entry.content) {
         messages.push({
@@ -44,6 +50,7 @@ function finalizeResearch(messages: ChatMessage[]): ChatMessage[] {
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [hasPendingAsk, setHasPendingAsk] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = useCallback(() => {
@@ -68,6 +75,8 @@ export function useChat() {
           break
 
         case 'ask_message':
+          setIsLoading(false)
+          setHasPendingAsk(true)
           appendMessage({
             role: 'ask',
             id: event.id,
@@ -120,6 +129,7 @@ export function useChat() {
 
         case 'done':
           setIsLoading(false)
+          setHasPendingAsk(false)
           setMessages((prev) =>
             finalizeResearch(prev).map((m) =>
               m.role === 'assistant' && m.streaming ? { ...m, streaming: false } : m,
@@ -129,6 +139,7 @@ export function useChat() {
 
         case 'error':
           setIsLoading(false)
+          setHasPendingAsk(false)
           setMessages((prev) => [
             ...finalizeResearch(prev),
             {
@@ -144,6 +155,7 @@ export function useChat() {
 
   const markAskAnswered = useCallback(
     (askId: string, answers: Record<string, unknown>) => {
+      setHasPendingAsk(false)
       setMessages((prev) =>
         prev.map((m) =>
           m.role === 'ask' && m.id === askId
@@ -160,6 +172,7 @@ export function useChat() {
     setMessages,
     isLoading,
     setIsLoading,
+    hasPendingAsk,
     handleSSEEvent,
     markAskAnswered,
     scrollRef,

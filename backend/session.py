@@ -25,8 +25,13 @@ class SessionState:
     pending_ask_event: asyncio.Event = field(default_factory=asyncio.Event)
     pending_answers: dict[str, Any] = field(default_factory=dict)
     history: list[dict[str, Any]] = field(default_factory=list)
+    agent_task: asyncio.Task[None] | None = field(default=None, repr=False)
     _event_seq: int = 0
     _recent_hashes: dict[str, float] = field(default_factory=dict)
+
+    @property
+    def agent_running(self) -> bool:
+        return self.agent_task is not None and not self.agent_task.done()
 
     def push_sse(self, event_type: str, data: dict[str, Any]) -> None:
         now = time.monotonic()

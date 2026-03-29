@@ -131,4 +131,63 @@ describe('useChat', () => {
       expect(msg.answers).toEqual({ q1: 'Alice' })
     }
   })
+
+  it('hasPendingAsk=true on ask_message', () => {
+    const { result } = renderHook(() => useChat())
+    expect(result.current.hasPendingAsk).toBe(false)
+    act(() => {
+      result.current.handleSSEEvent({
+        type: 'ask_message',
+        id: 'ask-1',
+        questions: [{ type: 'free_text', id: 'q1', label: 'Name?' }],
+      })
+    })
+    expect(result.current.hasPendingAsk).toBe(true)
+  })
+
+  it('hasPendingAsk=false on markAskAnswered', () => {
+    const { result } = renderHook(() => useChat())
+    act(() => {
+      result.current.handleSSEEvent({
+        type: 'ask_message',
+        id: 'ask-1',
+        questions: [{ type: 'free_text', id: 'q1', label: 'Name?' }],
+      })
+    })
+    expect(result.current.hasPendingAsk).toBe(true)
+    act(() => {
+      result.current.markAskAnswered('ask-1', { q1: 'Alice' })
+    })
+    expect(result.current.hasPendingAsk).toBe(false)
+  })
+
+  it('hasPendingAsk=false on done', () => {
+    const { result } = renderHook(() => useChat())
+    act(() => {
+      result.current.handleSSEEvent({
+        type: 'ask_message',
+        id: 'ask-1',
+        questions: [{ type: 'free_text', id: 'q1', label: 'Name?' }],
+      })
+    })
+    act(() => {
+      result.current.handleSSEEvent({ type: 'done' })
+    })
+    expect(result.current.hasPendingAsk).toBe(false)
+  })
+
+  it('hasPendingAsk=false on error', () => {
+    const { result } = renderHook(() => useChat())
+    act(() => {
+      result.current.handleSSEEvent({
+        type: 'ask_message',
+        id: 'ask-1',
+        questions: [{ type: 'free_text', id: 'q1', label: 'Name?' }],
+      })
+    })
+    act(() => {
+      result.current.handleSSEEvent({ type: 'error', message: 'fail' })
+    })
+    expect(result.current.hasPendingAsk).toBe(false)
+  })
 })
