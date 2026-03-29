@@ -7,7 +7,7 @@ install:           ## Install all dependencies
 
 dev:               ## Start backend + frontend (real Claude mode)
 	@echo "Starting backend on :4910 and frontend on :4920..."
-	.venv/bin/python backend/server.py &
+	.venv/bin/python -m backend.server &
 	cd frontend && npm run dev -- --port 4920
 
 mock:              ## Start mock backend + frontend (no Claude needed)

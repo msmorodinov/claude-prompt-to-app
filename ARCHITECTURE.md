@@ -209,7 +209,7 @@ options = ClaudeAgentOptions(
 
 ```bash
 # Backend
-cd backend && pip install -r requirements.txt && python server.py  # :4910
+pip install -r backend/requirements.txt && python -m backend.server  # :4910
 
 # Frontend
 cd frontend && npm install && npm run dev -- --port 4920  # :4920 with proxy to backend
