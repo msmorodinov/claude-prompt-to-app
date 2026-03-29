@@ -247,6 +247,6 @@ async def health() -> dict:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8001)
+    parser.add_argument("--port", type=int, default=4911)
     args = parser.parse_args()
     uvicorn.run(app, host="0.0.0.0", port=args.port)

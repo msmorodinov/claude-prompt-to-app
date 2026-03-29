@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const backendUrl = `http://localhost:${process.env.BACKEND_PORT || 8000}`
+const backendUrl = `http://localhost:${process.env.BACKEND_PORT || 4910}`
 
 export default defineConfig({
   plugins: [react()],

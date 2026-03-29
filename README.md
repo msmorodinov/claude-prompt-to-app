@@ -35,7 +35,7 @@ make install    # Create venv, install Python + Node dependencies
 make mock       # Start mock backend + frontend (no Claude needed)
 ```
 
-Open http://localhost:5173 — type anything to start.
+Open http://localhost:4920 — type anything to start.
 
 ### Real Claude mode
 
@@ -46,7 +46,7 @@ make install
 make dev
 ```
 
-Open http://localhost:5173 and start your positioning workshop.
+Open http://localhost:4920 and start your positioning workshop.
 
 ## The Pattern: show + ask (two MCP tools)
 

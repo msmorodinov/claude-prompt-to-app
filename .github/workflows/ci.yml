@@ -35,17 +35,17 @@ jobs:
 
       - name: Start mock server
         run: |
-          nohup python -m e2e.fixtures.mock_server --port 8000 > /tmp/mock-server.log 2>&1 &
+          nohup python -m e2e.fixtures.mock_server --port 4910 > /tmp/mock-server.log 2>&1 &
           echo $! > /tmp/mock-server.pid
 
       - name: Start frontend
         run: |
-          cd frontend && nohup npm run dev -- --port 5174 > /tmp/frontend.log 2>&1 &
+          cd frontend && nohup npm run dev -- --port 4921 > /tmp/frontend.log 2>&1 &
           echo $! > /tmp/frontend.pid
 
       - name: Wait for servers
         run: |
-          npx wait-on http-get://localhost:8000/health http://localhost:5174 --timeout 30000 || {
+          npx wait-on http-get://localhost:4910/health http://localhost:4921 --timeout 30000 || {
             echo "=== Mock server log ===" && cat /tmp/mock-server.log
             echo "=== Frontend log ===" && cat /tmp/frontend.log
             exit 1

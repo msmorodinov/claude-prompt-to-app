@@ -2,8 +2,8 @@
  * Capture README screenshots using mock server.
  *
  * Usage:
- *   1. Start mock server:  python -m e2e.fixtures.mock_server --port 8001
- *   2. Start frontend:     cd frontend && VITE_API_URL=http://localhost:8001 npm run dev -- --port 5174
+ *   1. Start mock server:  python -m e2e.fixtures.mock_server --port 4911
+ *   2. Start frontend:     cd frontend && BACKEND_PORT=4911 npm run dev -- --port 4921
  *   3. Run this script:    npx playwright test e2e/take-screenshots.ts --config=e2e/playwright.config.ts
  */
 import { test, expect } from '@playwright/test'

@@ -6,14 +6,14 @@ install:           ## Install all dependencies
 	cd frontend && npm install
 
 dev:               ## Start backend + frontend (real Claude mode)
-	@echo "Starting backend on :8000 and frontend on :5173..."
+	@echo "Starting backend on :4910 and frontend on :4920..."
 	.venv/bin/python backend/server.py &
-	cd frontend && npm run dev
+	cd frontend && npm run dev -- --port 4920
 
 mock:              ## Start mock backend + frontend (no Claude needed)
-	@echo "Starting mock server on :8000 and frontend on :5173..."
-	.venv/bin/python -m e2e.fixtures.mock_server --port 8000 &
-	cd frontend && npm run dev
+	@echo "Starting mock server on :4910 and frontend on :4920..."
+	BACKEND_PORT=4910 .venv/bin/python -m e2e.fixtures.mock_server --port 4910 &
+	cd frontend && npm run dev -- --port 4920
 
 test:              ## Run all tests
 	cd frontend && npx vitest run

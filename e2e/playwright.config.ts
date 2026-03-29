@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 1,
   timeout: 30000,
   use: {
-    baseURL: 'http://localhost:5174',
+    baseURL: 'http://localhost:4921',
     headless: true,
     screenshot: 'only-on-failure',
   },
