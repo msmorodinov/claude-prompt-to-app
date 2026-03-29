@@ -85,20 +85,6 @@ Just write a prompt and call two tools.
 
 ## Architecture
 
-```mermaid
-graph LR
-    Browser["Browser<br/>(React SPA)"]
-    FastAPI["FastAPI<br/>(Python)"]
-    Claude["Claude Code CLI<br/>(agent brain)"]
-    SQLite["SQLite"]
-
-    Browser -- "SSE events" --> FastAPI
-    Browser -- "POST /chat, /answers" --> FastAPI
-    FastAPI -- "subprocess" --> Claude
-    FastAPI -- "MCP tools" --> Claude
-    FastAPI --> SQLite
-```
-
 **The key pattern — async wait:**
 
 1. Claude calls `ask(questions)` MCP tool
