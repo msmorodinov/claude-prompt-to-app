@@ -1,4 +1,4 @@
-"""Claude Agent SDK client for running workshop sessions."""
+"""Claude Agent SDK client for running agent sessions."""
 
 from __future__ import annotations
 
@@ -14,25 +14,25 @@ from claude_agent_sdk import (
 
 from backend.prompt import POSITIONING_SYSTEM_PROMPT
 from backend.session import SessionState
-from backend.tools import create_workshop_tools
+from backend.tools import create_tools
 
 logger = logging.getLogger(__name__)
 
 
 async def run_agent(session: SessionState, user_message: str) -> None:
-    tools = create_workshop_tools(session)
+    tools = create_tools(session)
 
     server = create_sdk_mcp_server(
-        name="workshop",
+        name="app",
         version="1.0.0",
         tools=tools,
     )
 
     options = ClaudeAgentOptions(
-        mcp_servers={"workshop": server},
+        mcp_servers={"app": server},
         allowed_tools=[
-            "mcp__workshop__show",
-            "mcp__workshop__ask",
+            "mcp__app__show",
+            "mcp__app__ask",
             "WebSearch",
             "WebFetch",
         ],
@@ -42,15 +42,12 @@ async def run_agent(session: SessionState, user_message: str) -> None:
     )
 
     try:
-        session.push_sse("research_start", {"label": "Thinking..."})
-
         async with ClaudeSDKClient(options=options) as client:
             await client.query(user_message)
             async for message in client.receive_response():
                 if isinstance(message, AssistantMessage):
                     _process_assistant_message(session, message)
 
-        session.push_sse("research_done", {"label": "Done"})
         session.push_sse("done", {})
     except Exception as e:
         logger.exception("Agent error")

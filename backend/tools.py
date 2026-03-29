@@ -1,4 +1,4 @@
-"""MCP tools for the workshop: show (fire-and-forget) and ask (blocking)."""
+"""MCP tools for the agent app: show (fire-and-forget) and ask (blocking)."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
     return result
 
 
-def create_workshop_tools(session: SessionState) -> list:
+def create_tools(session: SessionState) -> list:
     @tool("show", "Display content blocks to the user", SHOW_SCHEMA)
     async def show_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:

@@ -1,7 +1,7 @@
 """Mock agent that returns canned tool calls for E2E testing.
 
 Instead of calling the real Claude SDK, this sends predefined
-SSE events to simulate a workshop conversation.
+SSE events to simulate an agent conversation.
 """
 
 from __future__ import annotations

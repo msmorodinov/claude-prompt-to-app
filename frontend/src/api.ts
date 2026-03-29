@@ -34,6 +34,17 @@ export async function submitAnswers(
   }
 }
 
+export async function createSession(): Promise<{ session_id: string }> {
+  const res = await fetch(`${BASE_URL}/sessions/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) {
+    throw new Error(`Create session failed: ${res.status}`)
+  }
+  return res.json()
+}
+
 export function createSSEUrl(sessionId: string): string {
   return `${BASE_URL}/stream?session_id=${sessionId}`
 }

@@ -7,7 +7,7 @@ import asyncio
 import pytest
 
 from backend.session import SessionState
-from backend.tools import create_workshop_tools
+from backend.tools import create_tools
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def session():
 
 @pytest.fixture
 def tools(session):
-    return create_workshop_tools(session)
+    return create_tools(session)
 
 
 @pytest.fixture

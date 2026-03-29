@@ -14,7 +14,7 @@ from starlette.responses import StreamingResponse
 from backend.agent import run_agent
 from backend.db import get_session as db_get_session
 from backend.db import get_sessions as db_get_sessions
-from backend.db import init_db
+from backend.db import init_db, save_session
 from backend.session import SessionManager
 
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Positioning Workshop", lifespan=lifespan)
+app = FastAPI(title="Prompt-to-App", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -107,6 +107,13 @@ async def answers(request: Request) -> dict:
 
     session.resolve_ask(user_answers)
     return {"status": "ok"}
+
+
+@app.post("/sessions/create")
+async def create_session() -> dict:
+    session = sessions.create()
+    await save_session(session.session_id)
+    return {"session_id": session.session_id}
 
 
 @app.get("/sessions")
