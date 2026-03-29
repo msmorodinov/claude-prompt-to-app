@@ -18,11 +18,14 @@ from backend.tools import create_tools
 
 logger = logging.getLogger(__name__)
 
+FRAMEWORK_PATH = Path(__file__).parent / "framework.md"
 PROMPT_PATH = Path(__file__).parent / "prompt.md"
 
 
 async def run_agent(session: SessionState, user_message: str) -> None:
-    system_prompt = PROMPT_PATH.read_text()
+    framework = FRAMEWORK_PATH.read_text()
+    app_prompt = PROMPT_PATH.read_text()
+    system_prompt = f"{app_prompt}\n\n{framework}"
     tools = create_tools(session)
 
     server = create_sdk_mcp_server(
