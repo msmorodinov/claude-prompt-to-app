@@ -27,6 +27,7 @@ export default function ChatContainer() {
     return () => { cancelled = true }
   }, [sessionId])
 
+  const [hasHistory, setHasHistory] = useState<boolean | null>(null)
   const historyLoaded = useRef(false)
   useEffect(() => {
     if (!sessionId || historyLoaded.current) return
@@ -34,9 +35,13 @@ export default function ChatContainer() {
     loadSession(sessionId).then(history => {
       if (history.length > 0) {
         setMessages(historyToMessages(history))
+        setHasHistory(true)
+      } else {
+        setHasHistory(false)
       }
     }).catch(err => {
       console.error('Failed to load session history:', err)
+      setHasHistory(false)
     })
   }, [sessionId, setMessages])
 
@@ -69,15 +74,32 @@ export default function ChatContainer() {
     [sessionId, markAskAnswered],
   )
 
+  const showStartScreen = hasHistory === false && messages.length === 0 && !isLoading
+
+  const handleStart = useCallback(() => {
+    handleSend('start')
+  }, [handleSend])
+
   return (
     <div className="chat-container">
-      <MessageList
-        messages={messages}
-        onAskSubmit={handleAskSubmit}
-        scrollRef={scrollRef}
-        isLoading={isLoading}
-      />
-      <InputArea onSend={handleSend} disabled={isLoading} />
+      {showStartScreen ? (
+        <div className="start-screen">
+          <h2>Ready to begin?</h2>
+          <button className="start-btn" onClick={handleStart}>
+            Start
+          </button>
+        </div>
+      ) : (
+        <>
+          <MessageList
+            messages={messages}
+            onAskSubmit={handleAskSubmit}
+            scrollRef={scrollRef}
+            isLoading={isLoading}
+          />
+          <InputArea onSend={handleSend} disabled={isLoading} />
+        </>
+      )}
     </div>
   )
 }
