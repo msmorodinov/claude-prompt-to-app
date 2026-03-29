@@ -47,6 +47,16 @@ export async function loadSession(sessionId: string): Promise<HistoryEntry[]> {
   return res.json()
 }
 
+export interface AppConfig {
+  title: string
+}
+
+export async function loadConfig(): Promise<AppConfig> {
+  const res = await fetch(`${BASE_URL}/config`)
+  if (!res.ok) return { title: 'App' }
+  return res.json()
+}
+
 export function createSSEUrl(sessionId: string): string {
   return `${BASE_URL}/stream?session_id=${sessionId}`
 }

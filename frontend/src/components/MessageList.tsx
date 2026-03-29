@@ -8,13 +8,14 @@ interface Props {
   onAskSubmit: (askId: string, answers: Record<string, unknown>) => void
   scrollRef: React.RefObject<HTMLDivElement | null>
   isLoading: boolean
+  title?: string
 }
 
-export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading }: Props) {
+export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, title }: Props) {
   return (
     <div className="message-list">
       <header className="app-header">
-        <h1>Prompt-to-App</h1>
+        <h1>{title ?? 'App'}</h1>
       </header>
       {messages.map((msg, i) => {
         switch (msg.role) {

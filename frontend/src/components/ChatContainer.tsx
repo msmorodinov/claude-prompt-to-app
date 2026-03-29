@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createSession, loadSession, startChat, submitAnswers } from '../api'
+import { createSession, loadConfig, loadSession, startChat, submitAnswers } from '../api'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
 import MessageList from './MessageList'
@@ -11,8 +11,13 @@ export default function ChatContainer() {
   const [sessionId, setSessionId] = useState<string | null>(
     () => sessionStorage.getItem(SESSION_KEY),
   )
+  const [appTitle, setAppTitle] = useState('App')
   const { messages, setMessages, isLoading, setIsLoading, handleSSEEvent, markAskAnswered, scrollRef } =
     useChat()
+
+  useEffect(() => {
+    loadConfig().then(c => setAppTitle(c.title))
+  }, [])
 
   useEffect(() => {
     if (sessionId) return
@@ -96,6 +101,7 @@ export default function ChatContainer() {
             onAskSubmit={handleAskSubmit}
             scrollRef={scrollRef}
             isLoading={isLoading}
+            title={appTitle}
           />
           <InputArea onSend={handleSend} disabled={isLoading} />
         </>

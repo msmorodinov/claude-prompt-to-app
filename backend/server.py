@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,8 @@ from backend.session import SessionManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+APP_CONFIG_PATH = Path(__file__).parent / "app.json"
 
 
 @asynccontextmanager
@@ -127,6 +130,14 @@ async def list_sessions() -> list:
 @app.get("/sessions/{session_id}")
 async def load_session_history(session_id: str) -> list:
     return await get_session(session_id)
+
+
+@app.get("/config")
+async def config() -> dict:
+    try:
+        return json.loads(APP_CONFIG_PATH.read_text())
+    except FileNotFoundError:
+        return {"title": "App"}
 
 
 @app.get("/health")
