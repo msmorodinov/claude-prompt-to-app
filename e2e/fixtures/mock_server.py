@@ -7,7 +7,6 @@ From project root.
 import asyncio
 import json
 import sys
-from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
@@ -159,12 +158,7 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
     session.push_sse("done", {})
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    yield
-
-
-app = FastAPI(title="Mock Workshop", lifespan=lifespan)
+app = FastAPI(title="Mock Workshop")
 
 app.add_middleware(
     CORSMiddleware,
@@ -175,6 +169,22 @@ app.add_middleware(
 )
 
 sessions = SessionManager()
+
+
+@app.post("/sessions/create")
+async def create_session() -> dict:
+    session = sessions.create()
+    return {"session_id": session.session_id}
+
+
+@app.get("/sessions/{session_id}")
+async def load_session(session_id: str) -> list:
+    return []
+
+
+@app.get("/config")
+async def config() -> dict:
+    return {"title": "Test App"}
 
 
 @app.post("/chat")
@@ -190,7 +200,10 @@ async def chat(request: Request) -> dict:
     else:
         session = sessions.create()
 
-    asyncio.create_task(run_mock_agent(session, message))
+    if session.agent_running:
+        raise HTTPException(status_code=409, detail="Agent is already running")
+
+    session.agent_task = asyncio.create_task(run_mock_agent(session, message))
     return {"session_id": session.session_id}
 
 

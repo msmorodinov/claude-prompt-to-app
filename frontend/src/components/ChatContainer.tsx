@@ -12,7 +12,7 @@ export default function ChatContainer() {
     () => sessionStorage.getItem(SESSION_KEY),
   )
   const [appTitle, setAppTitle] = useState('App')
-  const { messages, setMessages, isLoading, setIsLoading, handleSSEEvent, markAskAnswered, scrollRef } =
+  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, handleSSEEvent, markAskAnswered, scrollRef } =
     useChat()
 
   useEffect(() => {
@@ -54,6 +54,7 @@ export default function ChatContainer() {
 
   const handleSend = useCallback(
     async (message: string) => {
+      if (hasPendingAsk) return
       setIsLoading(true)
       try {
         const { session_id } = await startChat(message, sessionId ?? undefined)
@@ -63,7 +64,7 @@ export default function ChatContainer() {
         setIsLoading(false)
       }
     },
-    [sessionId, setIsLoading],
+    [sessionId, setIsLoading, hasPendingAsk],
   )
 
   const handleAskSubmit = useCallback(
@@ -71,12 +72,13 @@ export default function ChatContainer() {
       if (!sessionId) return
       try {
         await submitAnswers(sessionId, askId, answers)
+        setIsLoading(true)
         markAskAnswered(askId, answers)
       } catch (err) {
         console.error('Failed to submit answers:', err)
       }
     },
-    [sessionId, markAskAnswered],
+    [sessionId, markAskAnswered, setIsLoading],
   )
 
   const showStartScreen = hasHistory === false && messages.length === 0 && !isLoading
@@ -103,7 +105,7 @@ export default function ChatContainer() {
             isLoading={isLoading}
             title={appTitle}
           />
-          <InputArea onSend={handleSend} disabled={isLoading} />
+          {!hasPendingAsk && <InputArea onSend={handleSend} disabled={isLoading} />}
         </>
       )}
     </div>

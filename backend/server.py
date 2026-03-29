@@ -58,9 +58,12 @@ async def chat(request: Request) -> dict:
     else:
         session = sessions.create()
 
+    if session.agent_running:
+        raise HTTPException(status_code=409, detail="Agent is already running")
+
     session.add_to_history("user", {"text": message})
     await save_message(session.session_id, "user", {"text": message})
-    asyncio.create_task(run_agent(session, message))
+    session.agent_task = asyncio.create_task(run_agent(session, message))
 
     return {"session_id": session.session_id}
 

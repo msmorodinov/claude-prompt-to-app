@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 from unittest.mock import patch
 
 import pytest
@@ -117,6 +118,26 @@ class TestSessionState:
         s.push_sse("ping", {})
         s.push_sse("ping", {})
         assert s.sse_queue.qsize() == 2
+
+    def test_agent_running_false_initially(self):
+        s = SessionState()
+        assert s.agent_running is False
+
+    @pytest.mark.asyncio
+    async def test_agent_running_true_when_task_active(self):
+        s = SessionState()
+        s.agent_task = asyncio.create_task(asyncio.sleep(10))
+        assert s.agent_running is True
+        s.agent_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await s.agent_task
+
+    @pytest.mark.asyncio
+    async def test_agent_running_false_when_task_done(self):
+        s = SessionState()
+        s.agent_task = asyncio.create_task(asyncio.sleep(0))
+        await s.agent_task
+        assert s.agent_running is False
 
 
 class TestSessionManager:

@@ -6,10 +6,8 @@ const DESKTOP_VIEWPORT = { width: 1280, height: 800 }
 async function startWorkshopAndSubmit(page: any) {
   await page.goto('/')
 
-  // Start chat
-  const input = page.locator('.input-area input')
-  await input.fill('Test workshop')
-  await page.locator('.input-area button').click()
+  // Click Start button
+  await page.locator('.start-btn').click()
 
   // Wait for ask form
   const askMsg = page.locator('.ask-message').first()
@@ -122,8 +120,7 @@ test.describe('Mobile viewport (375px)', () => {
 
   test('submit button is full-width on mobile', async ({ page }) => {
     await page.goto('/')
-    await page.locator('.input-area input').fill('test')
-    await page.locator('.input-area button').click()
+    await page.locator('.start-btn').click()
 
     const askMsg = page.locator('.ask-message').first()
     await expect(askMsg).toBeVisible({ timeout: 10000 })
@@ -151,8 +148,7 @@ test.describe('Mobile viewport (375px)', () => {
 
   test('touch targets are at least 48px', async ({ page }) => {
     await page.goto('/')
-    await page.locator('.input-area input').fill('test')
-    await page.locator('.input-area button').click()
+    await page.locator('.start-btn').click()
 
     const askMsg = page.locator('.ask-message').first()
     await expect(askMsg).toBeVisible({ timeout: 10000 })
