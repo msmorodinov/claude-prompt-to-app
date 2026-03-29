@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" fill="none">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0.5, 10 3.5, 0 6.5" fill="#6e7681"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0.5, 10 3.5, 0 6.5" fill="#3fb950"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0.5, 10 3.5, 0 6.5" fill="#e8c46c"/>
+    </marker>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#090c10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="360" rx="16" fill="url(#bg)"/>
+
+  <!-- ═══════════ TOP PANEL: show() ═══════════ -->
+  <rect x="24" y="16" width="752" height="148" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="48" y="46" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="15" font-weight="700" fill="#e8c46c">show(blocks)</text>
+
+  <!-- Badge -->
+  <rect x="195" y="30" width="108" height="22" rx="11" fill="#0d2818" stroke="#238636" stroke-width="0.75"/>
+  <text x="249" y="45" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#3fb950" text-anchor="middle" font-weight="500">fire &amp; forget</text>
+
+  <!-- Agent -->
+  <rect x="48" y="72" width="168" height="60" rx="10" fill="#1c1424" stroke="#e8c46c" stroke-width="1.5"/>
+  <text x="132" y="99" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle">Agent</text>
+  <text x="132" y="118" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">Claude</text>
+
+  <!-- Arrow: Agent → Server -->
+  <line x1="216" y1="100" x2="300" y2="100" stroke="#6e7681" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="258" y="93" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="11" fill="#79c0ff" text-anchor="middle">blocks</text>
+
+  <!-- Server -->
+  <rect x="312" y="72" width="168" height="60" rx="10" fill="#151828" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="396" y="99" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle">Server</text>
+  <text x="396" y="118" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">FastAPI</text>
+
+  <!-- Arrow: Server → Browser -->
+  <line x1="480" y1="100" x2="564" y2="100" stroke="#6e7681" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="522" y="93" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="11" fill="#79c0ff" text-anchor="middle">SSE</text>
+
+  <!-- Browser -->
+  <rect x="576" y="72" width="176" height="60" rx="10" fill="#101d2e" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="664" y="99" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle">Browser</text>
+  <text x="664" y="118" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">renders widgets</text>
+
+  <!-- Return note -->
+  <text x="48" y="152" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#3fb950" font-style="italic">&#8629; returns immediately</text>
+
+  <!-- ═══════════ BOTTOM PANEL: ask() ═══════════ -->
+  <rect x="24" y="188" width="752" height="156" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="48" y="218" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="15" font-weight="700" fill="#e8c46c">ask(questions)</text>
+
+  <!-- Badge -->
+  <rect x="205" y="202" width="148" height="22" rx="11" fill="#2d1f00" stroke="#e8c46c" stroke-width="0.75"/>
+  <text x="279" y="217" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#e8c46c" text-anchor="middle" font-weight="500">blocks until answer</text>
+
+  <!-- Agent -->
+  <rect x="48" y="240" width="168" height="72" rx="10" fill="#1c1424" stroke="#e8c46c" stroke-width="1.5"/>
+  <text x="132" y="271" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle">Agent</text>
+  <text x="132" y="290" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">Claude</text>
+
+  <!-- Forward arrows -->
+  <line x1="216" y1="266" x2="300" y2="266" stroke="#6e7681" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="258" y="259" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="10" fill="#79c0ff" text-anchor="middle">questions</text>
+
+  <!-- Server -->
+  <rect x="312" y="240" width="168" height="72" rx="10" fill="#151828" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="396" y="271" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle">Server</text>
+  <text x="396" y="290" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">FastAPI</text>
+
+  <line x1="480" y1="266" x2="564" y2="266" stroke="#6e7681" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="522" y="259" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="10" fill="#79c0ff" text-anchor="middle">SSE</text>
+
+  <!-- Browser -->
+  <rect x="576" y="240" width="176" height="72" rx="10" fill="#101d2e" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="664" y="271" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle">Browser</text>
+  <text x="664" y="290" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">shows form</text>
+
+  <!-- Return arrows -->
+  <line x1="576" y1="292" x2="480" y2="292" stroke="#e8c46c" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arr-amber)"/>
+  <text x="528" y="306" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="10" fill="#e8c46c" text-anchor="middle">POST /answers</text>
+
+  <line x1="312" y1="292" x2="216" y2="292" stroke="#e8c46c" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#arr-amber)"/>
+  <text x="264" y="306" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="10" fill="#e8c46c" text-anchor="middle">answers</text>
+
+  <!-- Blocking indicator -->
+  <text x="48" y="332" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#e8c46c" font-style="italic">&#9202; waits for user response</text>
+</svg>

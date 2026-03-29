@@ -64,23 +64,23 @@ This means you can build interactive programs **from a terminal** — no React k
 Just write a prompt and call two tools.
 
 <p align="center">
-  <img src="docs/diagrams/show-vs-ask.png" width="700" alt="show() vs ask() — the two tools" />
+  <img src="docs/diagrams/show-vs-ask.svg" width="700" alt="show() vs ask() — the two tools" />
 </p>
 
 <p align="center">
-  <img src="docs/diagrams/traditional-vs-agent.png" width="600" alt="Traditional web app vs agent-driven app" />
+  <img src="docs/diagrams/traditional-vs-agent.svg" width="600" alt="Traditional web app vs agent-driven app" />
 </p>
 
 <p align="center">
-  <img src="docs/diagrams/core-loop.png" width="700" alt="Core agent loop: show, ask, receive answers" />
+  <img src="docs/diagrams/core-loop.svg" width="700" alt="Core agent loop: show, ask, receive answers" />
 </p>
 
 <p align="center">
-  <img src="docs/diagrams/architecture.png" width="700" alt="How the agent controls the UI" />
+  <img src="docs/diagrams/architecture.svg" width="700" alt="System architecture: Terminal → Server → Browser" />
 </p>
 
 <p align="center">
-  <img src="docs/diagrams/ask-flow.png" width="700" alt="Key pattern: show + ask + wait" />
+  <img src="docs/diagrams/ask-flow.svg" width="700" alt="Key pattern: async wait flow with show + ask" />
 </p>
 
 ## Architecture

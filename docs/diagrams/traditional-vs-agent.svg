@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 460" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#090c10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="780" height="460" rx="16" fill="url(#bg)"/>
+
+  <!-- ═══════════ LEFT COLUMN: Agent-Driven ═══════════ -->
+  <rect x="24" y="16" width="352" height="428" rx="12" fill="#0d1f0d" stroke="#238636" stroke-width="1" opacity="0.4"/>
+
+  <!-- Column title -->
+  <text x="200" y="50" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#3fb950" text-anchor="middle">Agent-Driven App</text>
+  <text x="200" y="68" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#3fb950" text-anchor="middle" opacity="0.7">simple &amp; thin</text>
+
+  <!-- Frontend box (small) -->
+  <rect x="76" y="92" width="248" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="200" y="116" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#e6edf3" text-anchor="middle">Frontend</text>
+  <text x="200" y="134" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">widget renderer (dumb pipe)</text>
+
+  <!-- Connector line -->
+  <line x1="200" y1="148" x2="200" y2="172" stroke="#30363d" stroke-width="1.5"/>
+
+  <!-- Backend box (small) -->
+  <rect x="76" y="172" width="248" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="200" y="196" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#e6edf3" text-anchor="middle">Backend</text>
+  <text x="200" y="214" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">relay server (thin proxy)</text>
+
+  <!-- Connector line -->
+  <line x1="200" y1="228" x2="200" y2="260" stroke="#30363d" stroke-width="1.5"/>
+
+  <!-- Agent box (emphasized, gold) -->
+  <rect x="56" y="260" width="288" height="120" rx="10" fill="#1c1424" stroke="#e8c46c" stroke-width="2"/>
+  <text x="200" y="296" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#e8c46c" text-anchor="middle">Agent</text>
+  <text x="200" y="320" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="13" fill="#e6edf3" text-anchor="middle" font-weight="600">ALL logic lives here</text>
+  <text x="200" y="342" font-family="SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace" font-size="12" fill="#79c0ff" text-anchor="middle">one prompt file</text>
+  <text x="200" y="362" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">show() + ask() = entire UX</text>
+
+  <!-- ═══════════ RIGHT COLUMN: Traditional ═══════════ -->
+  <rect x="404" y="16" width="352" height="428" rx="12" fill="#1f0d0d" stroke="#da3633" stroke-width="1" opacity="0.4"/>
+
+  <!-- Column title -->
+  <text x="580" y="50" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#f85149" text-anchor="middle">Traditional Web App</text>
+  <text x="580" y="68" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#f85149" text-anchor="middle" opacity="0.7">complex &amp; coupled</text>
+
+  <!-- Frontend box (large, red tones) -->
+  <rect x="436" y="92" width="288" height="168" rx="8" fill="#1a1215" stroke="#f85149" stroke-width="1" opacity="0.85"/>
+  <text x="580" y="118" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#f85149" text-anchor="middle">Frontend</text>
+  <text x="580" y="142" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">React components</text>
+  <text x="580" y="162" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">state management</text>
+  <text x="580" y="182" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">routing logic</text>
+  <text x="580" y="202" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">form validation</text>
+  <text x="580" y="222" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">API integration</text>
+
+  <!-- Connector -->
+  <line x1="580" y1="260" x2="580" y2="284" stroke="#30363d" stroke-width="1.5"/>
+
+  <!-- Backend box (large, red tones) -->
+  <rect x="436" y="284" width="288" height="136" rx="8" fill="#1a1215" stroke="#f85149" stroke-width="1" opacity="0.85"/>
+  <text x="580" y="312" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#f85149" text-anchor="middle">Backend</text>
+  <text x="580" y="338" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">business logic</text>
+  <text x="580" y="358" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">API endpoints</text>
+  <text x="580" y="378" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">data processing</text>
+  <text x="580" y="398" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" text-anchor="middle">database queries</text>
+
+  <!-- VS divider -->
+  <rect x="376" y="210" width="28" height="28" rx="14" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="390" y="229" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#8b949e" text-anchor="middle">vs</text>
+</svg>
