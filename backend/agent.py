@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -12,14 +13,16 @@ from claude_agent_sdk import (
     create_sdk_mcp_server,
 )
 
-from backend.prompt import POSITIONING_SYSTEM_PROMPT
 from backend.session import SessionState
 from backend.tools import create_tools
 
 logger = logging.getLogger(__name__)
 
+PROMPT_PATH = Path(__file__).parent / "prompt.md"
+
 
 async def run_agent(session: SessionState, user_message: str) -> None:
+    system_prompt = PROMPT_PATH.read_text()
     tools = create_tools(session)
 
     server = create_sdk_mcp_server(
@@ -37,7 +40,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
             "WebFetch",
         ],
         disallowed_tools=["AskUserQuestion"],
-        system_prompt=POSITIONING_SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         permission_mode="acceptEdits",
     )
 

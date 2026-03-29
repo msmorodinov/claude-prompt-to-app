@@ -33,7 +33,7 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
 
 
 def create_tools(session: SessionState) -> list:
-    @tool("show", "Display content blocks to the user", SHOW_SCHEMA)
+    @tool("show", "Display content to the user. Blocks can include text, tables, comparisons, metrics, quotes, and more. Returns immediately.", SHOW_SCHEMA)
     async def show_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
             blocks = args.get("blocks", [])
@@ -50,7 +50,7 @@ def create_tools(session: SessionState) -> list:
                 "is_error": True,
             }
 
-    @tool("ask", "Ask questions and wait for user response", ASK_SCHEMA)
+    @tool("ask", "Ask the user questions and wait for their response. Supports select, text input, ranking, sliders, matrix, and tags. Blocks until user submits.", ASK_SCHEMA)
     async def ask_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
             ask_id = uuid.uuid4().hex[:8]

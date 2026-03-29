@@ -69,10 +69,10 @@ class TestShowSchema:
         assert "blocks" in SHOW_SCHEMA["properties"]
         assert "blocks" in SHOW_SCHEMA["required"]
 
-    def test_show_blocks_enum_matches_display_types(self):
+    def test_show_blocks_oneof_matches_display_widgets(self):
         items = SHOW_SCHEMA["properties"]["blocks"]["items"]
-        enum_types = set(items["properties"]["type"]["enum"])
-        assert enum_types == DISPLAY_WIDGET_TYPES
+        oneof_types = {s["properties"]["type"]["const"] for s in items["oneOf"]}
+        assert oneof_types == DISPLAY_WIDGET_TYPES
 
 
 class TestAskSchema:
@@ -84,7 +84,7 @@ class TestAskSchema:
         assert "preamble" in ASK_SCHEMA["properties"]
         assert "preamble" not in ASK_SCHEMA["required"]
 
-    def test_ask_questions_enum_matches_input_types(self):
+    def test_ask_questions_oneof_matches_input_widgets(self):
         items = ASK_SCHEMA["properties"]["questions"]["items"]
-        enum_types = set(items["properties"]["type"]["enum"])
-        assert enum_types == INPUT_WIDGET_TYPES
+        oneof_types = {s["properties"]["type"]["const"] for s in items["oneOf"]}
+        assert oneof_types == INPUT_WIDGET_TYPES
