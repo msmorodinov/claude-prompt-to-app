@@ -15,21 +15,20 @@ Write a system prompt, get a working web application. Claude calls `show()` to d
 
 ## Quick Start
 
+Requires Python 3.11+ and Node.js. One command handles everything (venv, deps, launch):
+
 ```bash
 git clone https://github.com/msmorodinov/claude-prompt-to-app.git
 cd claude-prompt-to-app
-make install    # Create venv, install Python + Node deps
-make mock       # Start mock backend + frontend (no Claude needed)
+python3 run.py           # Requires Claude Max subscription (OAuth, no API key)
 ```
 
-Open http://localhost:4920 — type anything to start.
+Open http://localhost:4920 — that's it.
 
-### With real Claude
-
-Requires [Claude Max subscription](https://claude.ai) (OAuth, no API key needed).
+### Try without Claude
 
 ```bash
-make dev        # Start real backend + frontend
+python3 run.py --mock    # Mock backend, no subscription needed
 ```
 
 ## Build Your Own App
