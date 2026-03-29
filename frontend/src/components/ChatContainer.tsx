@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createSession, startChat, submitAnswers } from '../api'
-import { useChat } from '../hooks/useChat'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createSession, loadSession, startChat, submitAnswers } from '../api'
+import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
 import MessageList from './MessageList'
 import InputArea from './InputArea'
@@ -11,7 +11,7 @@ export default function ChatContainer() {
   const [sessionId, setSessionId] = useState<string | null>(
     () => sessionStorage.getItem(SESSION_KEY),
   )
-  const { messages, isLoading, setIsLoading, handleSSEEvent, markAskAnswered, scrollRef } =
+  const { messages, setMessages, isLoading, setIsLoading, handleSSEEvent, markAskAnswered, scrollRef } =
     useChat()
 
   useEffect(() => {
@@ -26,6 +26,19 @@ export default function ChatContainer() {
     })
     return () => { cancelled = true }
   }, [sessionId])
+
+  const historyLoaded = useRef(false)
+  useEffect(() => {
+    if (!sessionId || historyLoaded.current) return
+    historyLoaded.current = true
+    loadSession(sessionId).then(history => {
+      if (history.length > 0) {
+        setMessages(historyToMessages(history))
+      }
+    }).catch(err => {
+      console.error('Failed to load session history:', err)
+    })
+  }, [sessionId, setMessages])
 
   useSSE(sessionId, handleSSEEvent)
 

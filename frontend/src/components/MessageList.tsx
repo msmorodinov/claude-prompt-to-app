@@ -13,6 +13,9 @@ interface Props {
 export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading }: Props) {
   return (
     <div className="message-list">
+      <header className="app-header">
+        <h1>Prompt-to-App</h1>
+      </header>
       {messages.map((msg, i) => {
         switch (msg.role) {
           case 'assistant':

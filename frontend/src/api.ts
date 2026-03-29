@@ -1,18 +1,24 @@
 const BASE_URL = ''
 
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  })
+  if (!res.ok) {
+    throw new Error(`${options?.method ?? 'GET'} ${path} failed: ${res.status}`)
+  }
+  return res.json()
+}
+
 export async function startChat(
   message: string,
   sessionId?: string,
 ): Promise<{ session_id: string }> {
-  const res = await fetch(`${BASE_URL}/chat`, {
+  return request('/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, session_id: sessionId }),
   })
-  if (!res.ok) {
-    throw new Error(`Chat failed: ${res.status}`)
-  }
-  return res.json()
 }
 
 export async function submitAnswers(
@@ -20,28 +26,24 @@ export async function submitAnswers(
   askId: string,
   answers: Record<string, unknown>,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/answers`, {
+  await request('/answers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      session_id: sessionId,
-      ask_id: askId,
-      answers,
-    }),
+    body: JSON.stringify({ session_id: sessionId, ask_id: askId, answers }),
   })
-  if (!res.ok) {
-    throw new Error(`Submit answers failed: ${res.status}`)
-  }
 }
 
 export async function createSession(): Promise<{ session_id: string }> {
-  const res = await fetch(`${BASE_URL}/sessions/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  })
-  if (!res.ok) {
-    throw new Error(`Create session failed: ${res.status}`)
-  }
+  return request('/sessions/create', { method: 'POST' })
+}
+
+export interface HistoryEntry {
+  role: string
+  content: Record<string, unknown>
+}
+
+export async function loadSession(sessionId: string): Promise<HistoryEntry[]> {
+  const res = await fetch(`${BASE_URL}/sessions/${sessionId}`)
+  if (!res.ok) return []
   return res.json()
 }
 

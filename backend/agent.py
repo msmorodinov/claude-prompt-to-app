@@ -26,7 +26,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
     framework = FRAMEWORK_PATH.read_text()
     app_prompt = PROMPT_PATH.read_text()
     system_prompt = f"{app_prompt}\n\n{framework}"
-    tools = create_tools(session)
+    tools = create_tools(session, session.session_id)
 
     server = create_sdk_mcp_server(
         name="app",
