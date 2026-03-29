@@ -1,9 +1,45 @@
 import { useCallback, useRef, useState } from 'react'
+import type { HistoryEntry } from '../api'
 import type {
   ChatAssistantMessage,
   ChatMessage,
+  InputQuestion,
   SSEEvent,
 } from '../types'
+
+export function historyToMessages(history: HistoryEntry[]): ChatMessage[] {
+  const messages: ChatMessage[] = []
+  for (const entry of history) {
+    if (entry.role === 'assistant') {
+      if ('ask_id' in entry.content && entry.content.ask_id && entry.content.questions) {
+        messages.push({
+          role: 'ask',
+          id: String(entry.content.ask_id),
+          preamble: entry.content.preamble as string | undefined,
+          questions: entry.content.questions as InputQuestion[],
+          answered: true,
+        })
+      } else if ('blocks' in entry.content) {
+        messages.push({
+          role: 'assistant',
+          blocks: entry.content.blocks as ChatAssistantMessage['blocks'],
+        })
+      }
+    } else if (entry.role === 'user' && 'answers' in entry.content) {
+      messages.push({
+        role: 'user',
+        answers: entry.content.answers as Record<string, unknown>,
+      })
+    }
+  }
+  return messages
+}
+
+function finalizeResearch(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((m) =>
+    m.role === 'research' && !m.done ? { ...m, done: true } : m,
+  )
+}
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -85,29 +121,21 @@ export function useChat() {
         case 'done':
           setIsLoading(false)
           setMessages((prev) =>
-            prev.map((m) => {
-              if (m.role === 'assistant' && m.streaming) return { ...m, streaming: false }
-              if (m.role === 'research' && !m.done) return { ...m, done: true }
-              return m
-            }),
+            finalizeResearch(prev).map((m) =>
+              m.role === 'assistant' && m.streaming ? { ...m, streaming: false } : m,
+            ),
           )
           break
 
         case 'error':
           setIsLoading(false)
-          setMessages((prev) => {
-            const cleared = prev.map((m) => {
-              if (m.role === 'research' && !m.done) return { ...m, done: true }
-              return m
-            })
-            return [
-              ...cleared,
-              {
-                role: 'assistant' as const,
-                blocks: [{ type: 'text' as const, content: `Error: ${event.message}` }],
-              },
-            ]
-          })
+          setMessages((prev) => [
+            ...finalizeResearch(prev),
+            {
+              role: 'assistant' as const,
+              blocks: [{ type: 'text' as const, content: `Error: ${event.message}` }],
+            },
+          ])
           break
       }
     },
@@ -129,6 +157,7 @@ export function useChat() {
 
   return {
     messages,
+    setMessages,
     isLoading,
     setIsLoading,
     handleSSEEvent,

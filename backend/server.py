@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
 
 from backend.agent import run_agent
-from backend.db import get_session, get_sessions, init_db, save_session
+from backend.db import get_session, get_sessions, init_db, save_message, save_session
 from backend.session import SessionManager
 
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +29,11 @@ app = FastAPI(title="Prompt-to-App", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4920", "http://localhost:4921"],
+    allow_origins=[
+        "http://localhost:4920",
+        "http://localhost:4921",
+        "http://100.96.19.118:4920",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,6 +56,7 @@ async def chat(request: Request) -> dict:
         session = sessions.create()
 
     session.add_to_history("user", {"text": message})
+    await save_message(session.session_id, "user", {"text": message})
     asyncio.create_task(run_agent(session, message))
 
     return {"session_id": session.session_id}
@@ -87,11 +92,11 @@ async def stream(session_id: str) -> StreamingResponse:
 
 
 @app.post("/answers")
-async def answers(request: Request) -> dict:
+async def submit_answers(request: Request) -> dict:
     body = await request.json()
     session_id = body.get("session_id")
     ask_id = body.get("ask_id")
-    user_answers = body.get("answers", {})
+    answers = body.get("answers", {})
 
     if not session_id or not ask_id:
         raise HTTPException(status_code=400, detail="session_id and ask_id required")
@@ -103,7 +108,7 @@ async def answers(request: Request) -> dict:
     if session.pending_ask_id != ask_id:
         raise HTTPException(status_code=409, detail="No matching pending ask")
 
-    session.resolve_ask(user_answers)
+    session.resolve_ask(answers)
     return {"status": "ok"}
 
 

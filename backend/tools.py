@@ -8,6 +8,7 @@ from typing import Any
 
 from claude_agent_sdk import tool
 
+from backend.db import save_message
 from backend.schemas import ASK_SCHEMA, SHOW_SCHEMA
 from backend.session import SessionState
 
@@ -42,13 +43,14 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
     return result
 
 
-def create_tools(session: SessionState) -> list:
+def create_tools(session: SessionState, session_id: str) -> list:
     @tool("show", "Display content to the user. Blocks can include text, tables, comparisons, metrics, quotes, and more. Returns immediately.", SHOW_SCHEMA)
     async def show_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
             blocks = args.get("blocks", [])
             session.push_sse("assistant_message", {"blocks": blocks})
             session.add_to_history("assistant", {"blocks": blocks})
+            await save_message(session_id, "assistant", {"blocks": blocks})
             return _tool_result(f"Displayed {len(blocks)} block(s).")
         except Exception as e:
             return _tool_error(f"Error in show: {e}")
@@ -64,10 +66,9 @@ def create_tools(session: SessionState) -> list:
                 "ask_message",
                 {"id": ask_id, "preamble": preamble, "questions": questions},
             )
-            session.add_to_history(
-                "assistant",
-                {"ask_id": ask_id, "preamble": preamble, "questions": questions},
-            )
+            ask_content = {"ask_id": ask_id, "preamble": preamble, "questions": questions}
+            session.add_to_history("assistant", ask_content)
+            await save_message(session_id, "assistant", ask_content)
 
             session.start_ask(ask_id)
             try:
@@ -84,6 +85,7 @@ def create_tools(session: SessionState) -> list:
 
             session.push_sse("user_message", {"answers": answers})
             session.add_to_history("user", {"answers": answers})
+            await save_message(session_id, "user", {"answers": answers})
 
             label_by_id = {q["id"]: q.get("label", q["id"]) for q in questions}
             answer_lines = [

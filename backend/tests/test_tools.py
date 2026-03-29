@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 import asyncio
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from backend.tools import create_tools
 
 
+@pytest.fixture(autouse=True)
+def _mock_save_message():
+    with patch("backend.tools.save_message", new_callable=AsyncMock):
+        yield
+
+
 @pytest.fixture
 def tools(mock_session):
-    return create_tools(mock_session)
+    return create_tools(mock_session, mock_session.session_id)
 
 
 @pytest.fixture
@@ -22,6 +29,16 @@ def show_tool(tools):
 @pytest.fixture
 def ask_tool(tools):
     return tools[1]
+
+
+def _answer_later(session, answers, delay=0.05):
+    """Schedule answers to be resolved after a short delay."""
+
+    async def _resolve():
+        await asyncio.sleep(delay)
+        session.resolve_ask(answers)
+
+    asyncio.create_task(_resolve())
 
 
 class TestShowTool:
@@ -61,11 +78,7 @@ class TestShowTool:
 class TestAskTool:
     @pytest.mark.asyncio
     async def test_ask_blocks_until_answered(self, ask_tool, mock_session):
-        async def delayed_answer():
-            await asyncio.sleep(0.05)
-            mock_session.resolve_ask({"q1": "yes"})
-
-        asyncio.create_task(delayed_answer())
+        _answer_later(mock_session, {"q1": "yes"})
         result = await ask_tool.handler(
             {
                 "questions": [
@@ -82,11 +95,7 @@ class TestAskTool:
 
     @pytest.mark.asyncio
     async def test_ask_sends_sse_event(self, ask_tool, mock_session):
-        async def delayed_answer():
-            await asyncio.sleep(0.05)
-            mock_session.resolve_ask({"q1": "A"})
-
-        asyncio.create_task(delayed_answer())
+        _answer_later(mock_session, {"q1": "A"})
         await ask_tool.handler(
             {
                 "questions": [
@@ -100,11 +109,7 @@ class TestAskTool:
 
     @pytest.mark.asyncio
     async def test_ask_with_preamble(self, ask_tool, mock_session):
-        async def delayed_answer():
-            await asyncio.sleep(0.05)
-            mock_session.resolve_ask({"q1": "ok"})
-
-        asyncio.create_task(delayed_answer())
+        _answer_later(mock_session, {"q1": "ok"})
         await ask_tool.handler(
             {
                 "preamble": "Let me ask you something",
@@ -118,11 +123,7 @@ class TestAskTool:
 
     @pytest.mark.asyncio
     async def test_ask_records_in_history(self, ask_tool, mock_session):
-        async def delayed_answer():
-            await asyncio.sleep(0.05)
-            mock_session.resolve_ask({"q1": "val"})
-
-        asyncio.create_task(delayed_answer())
+        _answer_later(mock_session, {"q1": "val"})
         await ask_tool.handler(
             {
                 "questions": [
@@ -136,11 +137,7 @@ class TestAskTool:
 
     @pytest.mark.asyncio
     async def test_ask_clears_pending_state(self, ask_tool, mock_session):
-        async def delayed_answer():
-            await asyncio.sleep(0.05)
-            mock_session.resolve_ask({"q1": "val"})
-
-        asyncio.create_task(delayed_answer())
+        _answer_later(mock_session, {"q1": "val"})
         await ask_tool.handler(
             {
                 "questions": [
