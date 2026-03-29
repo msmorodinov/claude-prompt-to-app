@@ -1,14 +1,31 @@
-import { useCallback, useState } from 'react'
-import { startChat, submitAnswers } from '../api'
+import { useCallback, useEffect, useState } from 'react'
+import { createSession, startChat, submitAnswers } from '../api'
 import { useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
 import MessageList from './MessageList'
 import InputArea from './InputArea'
 
+const SESSION_KEY = 'session_id'
+
 export default function ChatContainer() {
-  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(
+    () => sessionStorage.getItem(SESSION_KEY),
+  )
   const { messages, isLoading, setIsLoading, handleSSEEvent, markAskAnswered, scrollRef } =
     useChat()
+
+  useEffect(() => {
+    if (sessionId) return
+    let cancelled = false
+    createSession().then(({ session_id }) => {
+      if (cancelled) return
+      setSessionId(session_id)
+      sessionStorage.setItem(SESSION_KEY, session_id)
+    }).catch((err) => {
+      console.error('Failed to create session:', err)
+    })
+    return () => { cancelled = true }
+  }, [sessionId])
 
   useSSE(sessionId, handleSSEEvent)
 
@@ -45,6 +62,7 @@ export default function ChatContainer() {
         messages={messages}
         onAskSubmit={handleAskSubmit}
         scrollRef={scrollRef}
+        isLoading={isLoading}
       />
       <InputArea onSend={handleSend} disabled={isLoading} />
     </div>

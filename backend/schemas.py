@@ -22,14 +22,16 @@ DISPLAY_WIDGETS = {
         "type": "object",
         "properties": {
             "type": {"const": "data_table"},
-            "columns": {"type": "array", "items": {"type": "string"}},
+            "columns": {"type": "array", "items": {"type": "string"}, "description": "Column headers"},
             "rows": {
                 "type": "array",
                 "items": {"type": "array", "items": {"type": "string"}},
+                "description": "Row data (each row is an array of cell strings)",
             },
-            "caption": {"type": "string"},
+            "caption": {"type": "string", "description": "Caption below the table"},
             "highlights": {
                 "type": "object",
+                "description": "Column name → array of cell values to highlight",
                 "additionalProperties": {
                     "type": "array",
                     "items": {"type": "string"},
@@ -106,10 +108,10 @@ DISPLAY_WIDGETS = {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "label": {"type": "string"},
-                        "value": {"type": "number"},
-                        "max": {"type": "number"},
-                        "unit": {"type": "string"},
+                        "label": {"type": "string", "description": "Metric name"},
+                        "value": {"type": "number", "description": "Current value"},
+                        "max": {"type": "number", "description": "Maximum value (bar fills value/max)"},
+                        "unit": {"type": "string", "description": "Optional unit label (e.g. '%', 'pts')"},
                     },
                     "required": ["label", "value", "max"],
                 },
@@ -246,16 +248,7 @@ SHOW_SCHEMA = {
         "blocks": {
             "type": "array",
             "description": "Array of display widgets to show",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "type": {
-                        "type": "string",
-                        "enum": list(DISPLAY_WIDGETS.keys()),
-                    },
-                },
-                "required": ["type"],
-            },
+            "items": {"oneOf": list(DISPLAY_WIDGETS.values())},
         },
     },
     "required": ["blocks"],
@@ -271,17 +264,7 @@ ASK_SCHEMA = {
         "questions": {
             "type": "array",
             "description": "Array of input widgets (questions)",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "type": {
-                        "type": "string",
-                        "enum": list(INPUT_WIDGETS.keys()),
-                    },
-                    "id": {"type": "string"},
-                },
-                "required": ["type", "id"],
-            },
+            "items": {"oneOf": list(INPUT_WIDGETS.values())},
         },
     },
     "required": ["questions"],

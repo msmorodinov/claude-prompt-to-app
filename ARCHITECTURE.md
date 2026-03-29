@@ -1,10 +1,10 @@
-# Positioning Workshop — Architecture
+# Prompt-to-App — Architecture
 
 ## Overview
 
-Web-app for startup/product positioning workshops. Claude drives the logic (what to ask, when to research competitors, when to deep-dive, when to deliver results). The UI is a "dumb" chat renderer — it shows whatever Claude requests via MCP tools.
+Generic framework for prompt-driven agentic web apps. Claude drives the logic via MCP tools (`show` and `ask`). The UI is a "dumb" chat renderer — it shows whatever Claude requests.
 
-Based on Gerstep's positioning-plugin methodology, but Claude adapts freely (not a rigid script).
+The example app is a positioning workshop based on Gerstep's methodology, but the framework is app-agnostic.
 
 ## Architecture
 
@@ -48,7 +48,7 @@ forge-simple/
 │   ├── tools.py           # MCP tools: show + ask (with asyncio.Event)
 │   ├── schemas.py         # JSON schemas for all widget types
 │   ├── session.py         # Session state (pending events, answers, SSE queue)
-│   ├── db.py              # SQLite: save/load workshop sessions
+│   ├── db.py              # SQLite: save/load sessions
 │   ├── prompt.py          # System prompt (positioning methodology)
 │   └── requirements.txt
 │
@@ -163,9 +163,10 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/chat` | Start or continue workshop session |
+| `POST` | `/chat` | Start or continue session |
 | `GET` | `/stream` | SSE event stream to browser |
 | `POST` | `/answers` | User submits form -> unblocks `ask` tool |
+| `POST` | `/sessions/create` | Create new session (auto on page load) |
 | `GET` | `/sessions` | List past sessions (SQLite) |
 | `GET` | `/sessions/{id}` | Load specific session history |
 
@@ -185,11 +186,11 @@ from claude_agent_sdk import (
     tool, create_sdk_mcp_server,
 )
 
-server = create_sdk_mcp_server(name="workshop", version="1.0.0", tools=[show_tool, ask_tool])
+server = create_sdk_mcp_server(name="app", version="1.0.0", tools=[show_tool, ask_tool])
 
 options = ClaudeAgentOptions(
-    mcp_servers={"workshop": server},
-    allowed_tools=["mcp__workshop__show", "mcp__workshop__ask"],
+    mcp_servers={"app": server},
+    allowed_tools=["mcp__app__show", "mcp__app__ask"],
     disallowed_tools=["AskUserQuestion"],  # Block built-in (needs TTY)
     system_prompt=POSITIONING_SYSTEM_PROMPT,
     permission_mode="acceptEdits",
@@ -199,11 +200,11 @@ options = ClaudeAgentOptions(
 ## Key Constraints
 
 - Single user, single agent loop at a time
-- All state in-memory during session, persisted to SQLite on completion
+- All state in-memory during session, persisted to SQLite
 - `ANTHROPIC_API_KEY` must NOT be set (overrides Max subscription)
 - `AskUserQuestion` built-in tool must be disabled (requires TTY)
 - Uncaught exceptions in tool handlers kill the agent loop — always try/except
-- Tool names: `mcp__workshop__show`, `mcp__workshop__ask`
+- Tool names: `mcp__app__show`, `mcp__app__ask`
 
 ## Development
 

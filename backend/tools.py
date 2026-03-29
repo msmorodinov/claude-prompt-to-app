@@ -1,4 +1,4 @@
-"""MCP tools for the workshop: show (fire-and-forget) and ask (blocking)."""
+"""MCP tools for the agent app: show (fire-and-forget) and ask (blocking)."""
 
 from __future__ import annotations
 
@@ -32,8 +32,8 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
     return result
 
 
-def create_workshop_tools(session: SessionState) -> list:
-    @tool("show", "Display content blocks to the user", SHOW_SCHEMA)
+def create_tools(session: SessionState) -> list:
+    @tool("show", "Display content to the user. Blocks can include text, tables, comparisons, metrics, quotes, and more. Returns immediately.", SHOW_SCHEMA)
     async def show_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
             blocks = args.get("blocks", [])
@@ -50,7 +50,7 @@ def create_workshop_tools(session: SessionState) -> list:
                 "is_error": True,
             }
 
-    @tool("ask", "Ask questions and wait for user response", ASK_SCHEMA)
+    @tool("ask", "Ask the user questions and wait for their response. Supports select, text input, ranking, sliders, matrix, and tags. Blocks until user submits.", ASK_SCHEMA)
     async def ask_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
             ask_id = uuid.uuid4().hex[:8]
@@ -87,8 +87,10 @@ def create_workshop_tools(session: SessionState) -> list:
             session.push_sse("user_message", {"answers": answers})
             session.add_to_history("user", {"answers": answers})
 
+            label_by_id = {q["id"]: q.get("label", q["id"]) for q in questions}
             answer_lines = [
-                f"- {qid}: {val}" for qid, val in answers.items()
+                f"- {label_by_id.get(qid, qid)}: {val}"
+                for qid, val in answers.items()
             ]
             answer_text = "User answers:\n" + "\n".join(answer_lines)
             return {"content": [{"type": "text", "text": answer_text}]}

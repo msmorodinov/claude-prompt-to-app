@@ -1,4 +1,4 @@
-"""Session state management for workshop sessions."""
+"""Session state management for sessions."""
 
 from __future__ import annotations
 

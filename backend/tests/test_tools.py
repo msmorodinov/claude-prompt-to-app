@@ -7,7 +7,7 @@ import asyncio
 import pytest
 
 from backend.session import SessionState
-from backend.tools import create_workshop_tools
+from backend.tools import create_tools
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def session():
 
 @pytest.fixture
 def tools(session):
-    return create_workshop_tools(session)
+    return create_tools(session)
 
 
 @pytest.fixture
@@ -84,7 +84,7 @@ class TestAskTool:
                 ]
             }
         )
-        assert "q1: yes" in result["content"][0]["text"]
+        assert "Pick one: yes" in result["content"][0]["text"]
 
     @pytest.mark.asyncio
     async def test_ask_sends_sse_event(self, ask_tool, session):

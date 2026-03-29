@@ -1,4 +1,4 @@
-"""SQLite persistence for workshop sessions."""
+"""SQLite persistence for sessions."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 
 import aiosqlite
 
-DB_PATH = Path(__file__).parent / "workshop.db"
+DB_PATH = Path(__file__).parent / "sessions.db"
 
 
 async def init_db(db_path: str | Path = DB_PATH) -> None:

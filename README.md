@@ -35,7 +35,7 @@ python3 run.py --mock    # Mock backend, no subscription needed
 
 Fork this repo and replace one file — everything else is reusable:
 
-1. **Edit the prompt** — [`backend/prompt.py`](backend/prompt.py) defines personality, methodology, and tool usage
+1. **Edit the prompt** — [`backend/prompt.md`](backend/prompt.md) defines personality, methodology, and tool usage
 2. **Optionally add widgets** — or reuse the existing 18 types
 3. **Run it** — `make mock` to test, `make dev` with real Claude
 

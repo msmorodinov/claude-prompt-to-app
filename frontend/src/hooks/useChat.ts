@@ -84,20 +84,30 @@ export function useChat() {
 
         case 'done':
           setIsLoading(false)
-          setMessages((prev) => {
-            const last = prev[prev.length - 1]
-            if (last?.role === 'assistant' && last.streaming) {
-              const updated = [...prev]
-              updated[updated.length - 1] = { ...last, streaming: false }
-              return updated
-            }
-            return prev
-          })
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.role === 'assistant' && m.streaming) return { ...m, streaming: false }
+              if (m.role === 'research' && !m.done) return { ...m, done: true }
+              return m
+            }),
+          )
           break
 
         case 'error':
           setIsLoading(false)
-          console.error('Agent error:', event.message)
+          setMessages((prev) => {
+            const cleared = prev.map((m) => {
+              if (m.role === 'research' && !m.done) return { ...m, done: true }
+              return m
+            })
+            return [
+              ...cleared,
+              {
+                role: 'assistant' as const,
+                blocks: [{ type: 'text' as const, content: `Error: ${event.message}` }],
+              },
+            ]
+          })
           break
       }
     },
