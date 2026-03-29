@@ -84,7 +84,7 @@ class TestAskTool:
                 ]
             }
         )
-        assert "q1: yes" in result["content"][0]["text"]
+        assert "Pick one: yes" in result["content"][0]["text"]
 
     @pytest.mark.asyncio
     async def test_ask_sends_sse_event(self, ask_tool, session):

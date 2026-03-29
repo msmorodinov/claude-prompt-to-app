@@ -87,8 +87,10 @@ def create_tools(session: SessionState) -> list:
             session.push_sse("user_message", {"answers": answers})
             session.add_to_history("user", {"answers": answers})
 
+            label_by_id = {q["id"]: q.get("label", q["id"]) for q in questions}
             answer_lines = [
-                f"- {qid}: {val}" for qid, val in answers.items()
+                f"- {label_by_id.get(qid, qid)}: {val}"
+                for qid, val in answers.items()
             ]
             answer_text = "User answers:\n" + "\n".join(answer_lines)
             return {"content": [{"type": "text", "text": answer_text}]}
