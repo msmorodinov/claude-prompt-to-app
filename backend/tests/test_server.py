@@ -2,29 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 from unittest.mock import AsyncMock, patch
 
 import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-
-from backend.server import app, sessions
-
-
-@pytest_asyncio.fixture
-async def client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
-
-
-@pytest_asyncio.fixture
-async def session():
-    s = sessions.create()
-    yield s
-    sessions.remove(s.session_id)
 
 
 class TestHealthEndpoint:

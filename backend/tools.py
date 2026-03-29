@@ -13,6 +13,16 @@ from backend.session import SessionState
 
 ASK_TIMEOUT_SECONDS = 600
 
+_SELECT_TYPES = frozenset({"single_select", "multi_select"})
+
+
+def _tool_result(text: str) -> dict[str, Any]:
+    return {"content": [{"type": "text", "text": text}]}
+
+
+def _tool_error(text: str) -> dict[str, Any]:
+    return {"content": [{"type": "text", "text": text}], "is_error": True}
+
 
 def _normalize_option(opt: Any) -> str:
     if isinstance(opt, str):
@@ -26,7 +36,7 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
     result = []
     for q in questions:
         q = dict(q)
-        if q.get("type") in ("single_select", "multi_select") and "options" in q:
+        if q.get("type") in _SELECT_TYPES and "options" in q:
             q["options"] = [_normalize_option(o) for o in q["options"]]
         result.append(q)
     return result
@@ -39,16 +49,9 @@ def create_tools(session: SessionState) -> list:
             blocks = args.get("blocks", [])
             session.push_sse("assistant_message", {"blocks": blocks})
             session.add_to_history("assistant", {"blocks": blocks})
-            return {
-                "content": [
-                    {"type": "text", "text": f"Displayed {len(blocks)} block(s)."}
-                ]
-            }
+            return _tool_result(f"Displayed {len(blocks)} block(s).")
         except Exception as e:
-            return {
-                "content": [{"type": "text", "text": f"Error in show: {e}"}],
-                "is_error": True,
-            }
+            return _tool_error(f"Error in show: {e}")
 
     @tool("ask", "Ask the user questions and wait for their response. Supports select, text input, ranking, sliders, matrix, and tags. Blocks until user submits.", ASK_SCHEMA)
     async def ask_tool(args: dict[str, Any]) -> dict[str, Any]:
@@ -74,12 +77,7 @@ def create_tools(session: SessionState) -> list:
                 )
             except asyncio.TimeoutError:
                 session.clear_ask()
-                return {
-                    "content": [
-                        {"type": "text", "text": "User did not respond in time."}
-                    ],
-                    "is_error": True,
-                }
+                return _tool_error("User did not respond in time.")
 
             answers = session.pending_answers
             session.clear_ask()
@@ -93,12 +91,9 @@ def create_tools(session: SessionState) -> list:
                 for qid, val in answers.items()
             ]
             answer_text = "User answers:\n" + "\n".join(answer_lines)
-            return {"content": [{"type": "text", "text": answer_text}]}
+            return _tool_result(answer_text)
         except Exception as e:
             session.clear_ask()
-            return {
-                "content": [{"type": "text", "text": f"Error in ask: {e}"}],
-                "is_error": True,
-            }
+            return _tool_error(f"Error in ask: {e}")
 
     return [show_tool, ask_tool]

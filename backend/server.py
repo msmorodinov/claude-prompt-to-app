@@ -12,9 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
 
 from backend.agent import run_agent
-from backend.db import get_session as db_get_session
-from backend.db import get_sessions as db_get_sessions
-from backend.db import init_db, save_session
+from backend.db import get_session, get_sessions, init_db, save_session
 from backend.session import SessionManager
 
 logging.basicConfig(level=logging.INFO)
@@ -118,12 +116,12 @@ async def create_session() -> dict:
 
 @app.get("/sessions")
 async def list_sessions() -> list:
-    return await db_get_sessions()
+    return await get_sessions()
 
 
 @app.get("/sessions/{session_id}")
-async def get_session_history(session_id: str) -> list:
-    return await db_get_session(session_id)
+async def load_session_history(session_id: str) -> list:
+    return await get_session(session_id)
 
 
 @app.get("/health")

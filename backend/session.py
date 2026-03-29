@@ -1,4 +1,4 @@
-"""Session state management for sessions."""
+"""In-memory session state and SSE event deduplication."""
 
 from __future__ import annotations
 
