@@ -22,6 +22,7 @@ from backend.session import SessionManager, SessionState
 
 async def run_mock_agent(session: SessionState, message: str) -> None:
     """Simulate a Claude agent with canned responses."""
+    meta = _session_meta.get(session.session_id, {})
     await asyncio.sleep(0.1)
 
     # Step 1: Show welcome text
@@ -209,6 +210,8 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
         },
     )
 
+    meta["status"] = "done"
+    meta["message_count"] += 1
     session.push_sse("done", {})
 
 
@@ -224,16 +227,47 @@ app.add_middleware(
 
 sessions = SessionManager()
 
+# In-memory history store for mock server
+_session_meta: dict[str, dict] = {}  # session_id -> {title, message_count, history}
+
+
+def _get_user_id(request: Request) -> str:
+    return request.headers.get("x-user-id", "anonymous")
+
 
 @app.post("/sessions/create")
-async def create_session() -> dict:
-    session = sessions.create()
+async def create_session(request: Request) -> dict:
+    user_id = _get_user_id(request)
+    session = sessions.create(user_id=user_id)
+    _session_meta[session.session_id] = {
+        "title": None,
+        "message_count": 0,
+        "status": "idle",
+        "history": [],
+    }
     return {"session_id": session.session_id}
+
+
+@app.get("/sessions")
+async def list_sessions(request: Request) -> list:
+    user_id = _get_user_id(request)
+    return [
+        {
+            "id": s.session_id,
+            "created_at": "2026-01-01T00:00:00",
+            "title": _session_meta.get(s.session_id, {}).get("title"),
+            "status": _session_meta.get(s.session_id, {}).get("status", "idle"),
+            "message_count": _session_meta.get(s.session_id, {}).get("message_count", 0),
+        }
+        for s in sessions.list_all()
+        if s.user_id == user_id
+    ]
 
 
 @app.get("/sessions/{session_id}")
 async def load_session(session_id: str) -> list:
-    return []
+    meta = _session_meta.get(session_id, {})
+    return meta.get("history", [])
 
 
 @app.get("/config")
@@ -246,16 +280,28 @@ async def chat(request: Request) -> dict:
     body = await request.json()
     message = body.get("message", "")
     session_id = body.get("session_id")
+    user_id = _get_user_id(request)
 
     if session_id:
         session = sessions.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
+        if session.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not your session")
     else:
-        session = sessions.create()
+        session = sessions.create(user_id=user_id)
 
     if session.agent_running:
         raise HTTPException(status_code=409, detail="Agent is already running")
+
+    meta = _session_meta.setdefault(session.session_id, {
+        "title": None, "message_count": 0, "status": "idle", "history": [],
+    })
+    meta["history"].append({"role": "user", "content": {"text": message}})
+    meta["message_count"] += 1
+    if meta["title"] is None:
+        meta["title"] = message[:80]
+    meta["status"] = "active"
 
     session.agent_task = asyncio.create_task(run_mock_agent(session, message))
     return {"session_id": session.session_id}
@@ -291,6 +337,7 @@ async def answers(request: Request) -> dict:
     session_id = body.get("session_id")
     ask_id = body.get("ask_id")
     user_answers = body.get("answers", {})
+    user_id = _get_user_id(request)
 
     if not session_id or not ask_id:
         raise HTTPException(status_code=400, detail="Missing fields")
@@ -299,11 +346,63 @@ async def answers(request: Request) -> dict:
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    if session.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not your session")
+
     if session.pending_ask_id != ask_id:
         raise HTTPException(status_code=409, detail="No matching ask")
 
     session.resolve_ask(user_answers)
     return {"status": "ok"}
+
+
+# --- Admin endpoints ---
+
+@app.get("/admin/sessions")
+async def admin_list_sessions() -> list:
+    return [
+        {
+            "id": s.session_id,
+            "user_id": s.user_id,
+            "status": s.status,
+            "message_count": 0,
+            "created_at": "2026-01-01T00:00:00",
+            "title": None,
+        }
+        for s in sessions.list_all()
+    ]
+
+
+@app.get("/admin/sessions/{session_id}/stream")
+async def admin_session_stream(session_id: str) -> EventSourceResponse:
+    session = sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    admin_queue = session.add_admin_queue()
+
+    async def event_generator():
+        try:
+            while True:
+                try:
+                    event = await asyncio.wait_for(admin_queue.get(), timeout=30.0)
+                    yield {
+                        "event": event["event"],
+                        "data": json.dumps(event["data"]),
+                    }
+                    if event["event"] in ("done", "error"):
+                        break
+                except asyncio.TimeoutError:
+                    yield {"event": "ping", "data": "{}"}
+        finally:
+            session.remove_admin_queue(admin_queue)
+
+    return EventSourceResponse(event_generator())
+
+
+@app.get("/admin/sessions/{session_id}/history")
+async def admin_session_history(session_id: str) -> list:
+    return []
 
 
 @app.get("/health")

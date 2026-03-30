@@ -106,13 +106,25 @@ async def save_message(
         await db.commit()
 
 
+async def update_session_title(
+    session_id: str, title: str, db_path: str | Path = DB_PATH
+) -> None:
+    async with aiosqlite.connect(str(db_path)) as db:
+        await db.execute(
+            "UPDATE sessions SET title = ? WHERE id = ? AND (title IS NULL OR title = '')",
+            (title, session_id),
+        )
+        await db.commit()
+
+
 async def get_sessions_by_user(
     user_id: str, db_path: str | Path = DB_PATH
 ) -> list[dict[str, Any]]:
     async with aiosqlite.connect(str(db_path)) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
-            "SELECT id, created_at, title FROM sessions WHERE user_id = ? ORDER BY created_at DESC",
+            "SELECT id, created_at, title, status, message_count "
+            "FROM sessions WHERE user_id = ? ORDER BY created_at DESC",
             (user_id,),
         )
         rows = await cursor.fetchall()
@@ -130,6 +142,17 @@ async def get_all_sessions_admin(
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]
+
+
+async def get_session_owner(
+    session_id: str, db_path: str | Path = DB_PATH
+) -> str | None:
+    async with aiosqlite.connect(str(db_path)) as db:
+        cursor = await db.execute(
+            "SELECT user_id FROM sessions WHERE id = ?", (session_id,)
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else None
 
 
 async def get_session(

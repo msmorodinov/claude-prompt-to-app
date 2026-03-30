@@ -16,10 +16,12 @@ from backend.agent import run_agent
 from backend.db import (
     get_all_sessions_admin,
     get_session,
+    get_session_owner,
     get_sessions_by_user,
     init_db,
     save_message,
     save_session,
+    update_session_title,
 )
 from backend.session import SessionManager
 
@@ -105,6 +107,7 @@ async def chat(request: Request) -> dict:
 
     session.add_to_history("user", {"text": message})
     await save_message(session.session_id, "user", {"text": message})
+    await update_session_title(session.session_id, message[:80])
     session.agent_task = asyncio.create_task(run_agent(session, message))
 
     return {"session_id": session.session_id}
@@ -161,8 +164,13 @@ async def list_sessions(request: Request) -> list:
 async def load_session_history(session_id: str, request: Request) -> list:
     user_id = _get_user_id(request)
     live = sessions.get(session_id)
-    if live and live.user_id != user_id:
-        raise HTTPException(status_code=403, detail="Not your session")
+    if live:
+        if live.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not your session")
+    else:
+        owner = await get_session_owner(session_id)
+        if owner is not None and owner != user_id:
+            raise HTTPException(status_code=403, detail="Not your session")
     return await get_session(session_id)
 
 
