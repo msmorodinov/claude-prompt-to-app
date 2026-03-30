@@ -699,6 +699,7 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 200;
+  overflow: hidden;
 }
 
 .session-sidebar {
@@ -881,6 +882,21 @@ body {
 @media (max-width: 1023px) {
   .chat-container {
     max-width: 100%;
+  }
+}
+
+/* Responsive: mobile — sidebar */
+@media (max-width: 639px) {
+  .session-sidebar {
+    width: 85vw;
+    max-width: 320px;
+  }
+
+  .sidebar-toggle {
+    top: 0.5rem;
+    left: 0.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
   }
 }
 

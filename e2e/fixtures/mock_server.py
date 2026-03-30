@@ -26,49 +26,45 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
     await asyncio.sleep(0.1)
 
     # Step 1: Show welcome text
-    session.push_sse(
-        "assistant_message",
+    blocks_1 = [
         {
-            "blocks": [
-                {
-                    "type": "text",
-                    "content": "Welcome to the Positioning Workshop! Let's find your unique position.",
-                },
-                {
-                    "type": "section_header",
-                    "title": "GETTING STARTED",
-                    "subtitle": "Tell me about your company",
-                },
-            ]
+            "type": "text",
+            "content": "Welcome to the Positioning Workshop! Let's find your unique position.",
         },
-    )
+        {
+            "type": "section_header",
+            "title": "GETTING STARTED",
+            "subtitle": "Tell me about your company",
+        },
+    ]
+    session.push_sse("assistant_message", {"blocks": blocks_1})
+    meta["history"].append({"role": "assistant", "content": {"blocks": blocks_1}})
 
     await asyncio.sleep(0.1)
 
     # Step 2: Ask initial questions
     ask_id = "mock-ask-1"
-    session.push_sse(
-        "ask_message",
-        {
-            "id": ask_id,
-            "preamble": "I need to understand your business first.",
-            "questions": [
-                {
-                    "type": "free_text",
-                    "id": "company_desc",
-                    "label": "What does your company do?",
-                    "placeholder": "We build...",
-                    "multiline": True,
-                },
-                {
-                    "type": "single_select",
-                    "id": "stage",
-                    "label": "What stage is your company?",
-                    "options": ["Pre-seed", "Seed", "Series A+"],
-                },
-            ],
-        },
-    )
+    ask_data_1 = {
+        "id": ask_id,
+        "preamble": "I need to understand your business first.",
+        "questions": [
+            {
+                "type": "free_text",
+                "id": "company_desc",
+                "label": "What does your company do?",
+                "placeholder": "We build...",
+                "multiline": True,
+            },
+            {
+                "type": "single_select",
+                "id": "stage",
+                "label": "What stage is your company?",
+                "options": ["Pre-seed", "Seed", "Series A+"],
+            },
+        ],
+    }
+    session.push_sse("ask_message", ask_data_1)
+    meta["history"].append({"role": "assistant", "content": {"ask_id": ask_id, **ask_data_1}})
 
     # Wait for user answer
     session.start_ask(ask_id)
@@ -82,82 +78,79 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
     answers = session.pending_answers
     session.clear_ask()
     session.push_sse("user_message", {"answers": answers})
+    meta["history"].append({"role": "user", "content": {"answers": answers}})
 
     await asyncio.sleep(0.2)
 
     # Step 3: Show all renamed display widgets
-    session.push_sse(
-        "assistant_message",
+    blocks_3 = [
         {
-            "blocks": [
-                {
-                    "type": "data_table",
-                    "columns": ["Name", "Position", "Price", "Weakness"],
-                    "rows": [
-                        ["Acme Corp", "Fast and cheap", "Free", "No API"],
-                        ["Globex", "Enterprise-grade", "$$$", "Slow"],
-                        ["Initech", "AI-powered", "$$", "Buggy"],
-                    ],
-                    "highlights": {
-                        "table_stakes": ["Speed", "Easy onboarding"],
-                        "white_space": ["Compliance", "Local integrations"],
-                    },
-                },
-                {
-                    "type": "comparison",
-                    "left": {"label": "Draft", "content": "We make a platform for brands"},
-                    "right": {"label": "Final", "content": "We help FMCG brand managers launch compliant products 3x faster"},
-                    "note": "Much more specific and verifiable",
-                },
-                {
-                    "type": "category_list",
-                    "categories": [
-                        {"label": "Agreed", "items": ["Customer = brand managers", "Gap = compliance"], "style": "success"},
-                        {"label": "Contradicted", "items": ["Core bet: Alice says go deep, Bob says expand"], "style": "warning"},
-                        {"label": "Surprises", "items": ["Nobody mentioned speed"]},
-                    ],
-                },
-                {
-                    "type": "quote_highlight",
-                    "quote": "Nobody is doing compliance properly in this space.",
-                    "attribution": "Founder",
-                    "note": "This is the key insight.",
-                },
-            ]
+            "type": "data_table",
+            "columns": ["Name", "Position", "Price", "Weakness"],
+            "rows": [
+                ["Acme Corp", "Fast and cheap", "Free", "No API"],
+                ["Globex", "Enterprise-grade", "$$$", "Slow"],
+                ["Initech", "AI-powered", "$$", "Buggy"],
+            ],
+            "highlights": {
+                "table_stakes": ["Speed", "Easy onboarding"],
+                "white_space": ["Compliance", "Local integrations"],
+            },
         },
-    )
+        {
+            "type": "comparison",
+            "left": {"label": "Draft", "content": "We make a platform for brands"},
+            "right": {"label": "Final", "content": "We help FMCG brand managers launch compliant products 3x faster"},
+            "note": "Much more specific and verifiable",
+        },
+        {
+            "type": "category_list",
+            "categories": [
+                {"label": "Agreed", "items": ["Customer = brand managers", "Gap = compliance"], "style": "success"},
+                {"label": "Contradicted", "items": ["Core bet: Alice says go deep, Bob says expand"], "style": "warning"},
+                {"label": "Surprises", "items": ["Nobody mentioned speed"]},
+            ],
+        },
+        {
+            "type": "quote_highlight",
+            "quote": "Nobody is doing compliance properly in this space.",
+            "attribution": "Founder",
+            "note": "This is the key insight.",
+        },
+    ]
+    session.push_sse("assistant_message", {"blocks": blocks_3})
+    meta["history"].append({"role": "assistant", "content": {"blocks": blocks_3}})
 
     await asyncio.sleep(0.1)
 
     # Step 4: Second ask — slider_scale + tag_input
     ask_id_2 = "mock-ask-2"
-    session.push_sse(
-        "ask_message",
-        {
-            "id": ask_id_2,
-            "preamble": "A couple more things before we wrap up.",
-            "questions": [
-                {
-                    "type": "slider_scale",
-                    "id": "pmf_confidence",
-                    "label": "How confident are you in product-market fit?",
-                    "min": 1,
-                    "max": 10,
-                    "step": 1,
-                    "min_label": "Not at all",
-                    "max_label": "Absolutely",
-                },
-                {
-                    "type": "tag_input",
-                    "id": "brand_words",
-                    "label": "5 words that describe your brand",
-                    "min_tags": 1,
-                    "max_tags": 5,
-                    "placeholder": "Type a word and press Enter",
-                },
-            ],
-        },
-    )
+    ask_data_2 = {
+        "id": ask_id_2,
+        "preamble": "A couple more things before we wrap up.",
+        "questions": [
+            {
+                "type": "slider_scale",
+                "id": "pmf_confidence",
+                "label": "How confident are you in product-market fit?",
+                "min": 1,
+                "max": 10,
+                "step": 1,
+                "min_label": "Not at all",
+                "max_label": "Absolutely",
+            },
+            {
+                "type": "tag_input",
+                "id": "brand_words",
+                "label": "5 words that describe your brand",
+                "min_tags": 1,
+                "max_tags": 5,
+                "placeholder": "Type a word and press Enter",
+            },
+        ],
+    }
+    session.push_sse("ask_message", ask_data_2)
+    meta["history"].append({"role": "assistant", "content": {"ask_id": ask_id_2, **ask_data_2}})
 
     session.start_ask(ask_id_2)
     try:
@@ -170,45 +163,43 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
     answers_2 = session.pending_answers
     session.clear_ask()
     session.push_sse("user_message", {"answers": answers_2})
+    meta["history"].append({"role": "user", "content": {"answers": answers_2}})
 
     await asyncio.sleep(0.1)
 
     # Step 5: Final result with copyable, timer, metric bars
-    session.push_sse(
-        "assistant_message",
+    blocks_5 = [
         {
-            "blocks": [
-                {
-                    "type": "final_result",
-                    "content": "We help FMCG brand managers launch products faster.",
-                },
-                {
-                    "type": "copyable",
-                    "label": "Share with your team",
-                    "content": "Our positioning: We help FMCG brand managers launch compliant products 3x faster.",
-                },
-                {
-                    "type": "timer",
-                    "seconds": 5,
-                    "label": "Review your statement",
-                },
-                {
-                    "type": "metric_bars",
-                    "metrics": [
-                        {"label": "Specificity", "value": 8, "max": 10},
-                        {"label": "Verifiability", "value": 7, "max": 10},
-                        {"label": "Compression", "value": 9, "max": 10},
-                        {"label": "Differentiation", "value": 8, "max": 10},
-                    ],
-                },
-                {
-                    "type": "progress",
-                    "label": "Workshop complete",
-                    "percent": 100,
-                },
-            ]
+            "type": "final_result",
+            "content": "We help FMCG brand managers launch products faster.",
         },
-    )
+        {
+            "type": "copyable",
+            "label": "Share with your team",
+            "content": "Our positioning: We help FMCG brand managers launch compliant products 3x faster.",
+        },
+        {
+            "type": "timer",
+            "seconds": 5,
+            "label": "Review your statement",
+        },
+        {
+            "type": "metric_bars",
+            "metrics": [
+                {"label": "Specificity", "value": 8, "max": 10},
+                {"label": "Verifiability", "value": 7, "max": 10},
+                {"label": "Compression", "value": 9, "max": 10},
+                {"label": "Differentiation", "value": 8, "max": 10},
+            ],
+        },
+        {
+            "type": "progress",
+            "label": "Workshop complete",
+            "percent": 100,
+        },
+    ]
+    session.push_sse("assistant_message", {"blocks": blocks_5})
+    meta["history"].append({"role": "assistant", "content": {"blocks": blocks_5}})
 
     meta["status"] = "done"
     meta["message_count"] += 1
