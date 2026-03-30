@@ -2,16 +2,15 @@ import { useState } from 'react'
 
 interface Props {
   onSend: (message: string) => void
-  disabled?: boolean
 }
 
-export default function InputArea({ onSend, disabled }: Props) {
+export default function InputArea({ onSend }: Props) {
   const [input, setInput] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = input.trim()
-    if (!trimmed || disabled) return
+    if (!trimmed) return
     onSend(trimmed)
     setInput('')
   }
@@ -22,10 +21,9 @@ export default function InputArea({ onSend, disabled }: Props) {
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Type a message..."
-        disabled={disabled}
+        placeholder="Ask a follow-up..."
       />
-      <button type="submit" disabled={disabled || !input.trim()}>
+      <button type="submit" disabled={!input.trim()}>
         Send
       </button>
     </form>

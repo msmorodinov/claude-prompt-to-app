@@ -105,7 +105,7 @@ export default function ChatContainer() {
             isLoading={isLoading}
             title={appTitle}
           />
-          {!hasPendingAsk && <InputArea onSend={handleSend} disabled={isLoading} />}
+          {!hasPendingAsk && !isLoading && <InputArea onSend={handleSend} />}
         </>
       )}
     </div>
