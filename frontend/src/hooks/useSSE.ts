@@ -37,8 +37,13 @@ export function useSSE(
     const es = new EventSource(url)
     eventSourceRef.current = es
 
+    let receivedTerminal = false
+
     for (const eventType of EVENT_TYPES) {
       es.addEventListener(eventType, (e: MessageEvent) => {
+        if (eventType === 'done' || eventType === 'error') {
+          receivedTerminal = true
+        }
         try {
           const data = JSON.parse(e.data)
           onEventRef.current({ type: eventType, ...data } as SSEEvent)
@@ -50,6 +55,9 @@ export function useSSE(
 
     es.onerror = () => {
       if (es.readyState === EventSource.CLOSED) {
+        if (!receivedTerminal) {
+          onEventRef.current({ type: 'error', message: 'Connection lost' } as SSEEvent)
+        }
         disconnect()
       }
     }

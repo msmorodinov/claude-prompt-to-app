@@ -48,6 +48,34 @@ Fork this repo and replace one file — everything else is reusable:
 
 Same two tools. Same widget set. Different prompt → different product.
 
+### Writing Your Prompt
+
+Your prompt lives in [`backend/prompt.md`](backend/prompt.md). Reference widgets by name to tell Claude when to use them:
+
+```markdown
+Display research results via show with data_table.
+Ask the user via ask with single_select for forced choices.
+Use quote_highlight when the user says something important.
+```
+
+The framework guide ([`backend/framework.md`](backend/framework.md)) is automatically appended to your prompt. It contains widget selection rules and anti-patterns — edit it to match your app's needs.
+
+**Two files → one system prompt:**
+
+| File | Purpose |
+|------|---------|
+| `backend/prompt.md` | App personality, methodology, when to use which widget |
+| `backend/framework.md` | Widget selection guide, anti-patterns (appended automatically) |
+
+Claude also sees the full JSON schema for each widget (defined in `backend/schemas.py`), so it knows every field and type. Your prompt just needs to say *when* and *why* — not the exact JSON format.
+
+**Adding a new widget:**
+
+1. Add the schema to `backend/schemas.py` (in `DISPLAY_WIDGETS` or `INPUT_WIDGETS`)
+2. Add the React component to `frontend/src/components/display/` or `input/`
+3. Register it in `frontend/src/components/WidgetRenderer.tsx`
+4. Mention it in your prompt so Claude knows when to use it
+
 ## How It Works
 
 The entire app runs on two MCP tools:
