@@ -13,3 +13,5 @@ backend/.coverage
 frontend/coverage/
 test-results/
 **/CLAUDE.md
+deploy/logs/
+deploy/.deploy.lock

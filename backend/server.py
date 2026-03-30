@@ -302,6 +302,24 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
+# --- Static file serving (production) ---
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+    @app.get("/{path:path}")
+    async def spa_catch_all(path: str):
+        file_path = FRONTEND_DIST / path
+        if file_path.is_file() and ".." not in path:
+            return FileResponse(file_path)
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+
 if __name__ == "__main__":
     import argparse
 
