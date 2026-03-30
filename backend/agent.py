@@ -47,6 +47,8 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         permission_mode="acceptEdits",
     )
 
+    await session.set_status("active")
+
     try:
         async with ClaudeSDKClient(options=options) as client:
             await client.query(user_message)
@@ -54,9 +56,11 @@ async def run_agent(session: SessionState, user_message: str) -> None:
                 if isinstance(message, AssistantMessage):
                     _process_assistant_message(session, message)
 
+        await session.set_status("done")
         session.push_sse("done", {})
     except Exception as e:
         logger.exception("Agent error")
+        await session.set_status("error")
         session.push_sse("error", {"message": str(e)})
 
 

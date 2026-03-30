@@ -11,9 +11,10 @@ import TagInput from './input/TagInput'
 interface Props {
   message: ChatAskMessage
   onSubmit: (askId: string, answers: Record<string, unknown>) => void
+  readOnly?: boolean
 }
 
-export default function AskMessage({ message, onSubmit }: Props) {
+export default function AskMessage({ message, onSubmit, readOnly }: Props) {
   const [answers, setAnswers] = useState<Record<string, unknown>>(() => {
     if (message.answers) return message.answers
     const initial: Record<string, unknown> = {}
@@ -57,7 +58,7 @@ export default function AskMessage({ message, onSubmit }: Props) {
   }
 
   const renderQuestion = (q: InputQuestion) => {
-    const disabled = message.answered
+    const disabled = message.answered || !!readOnly
     switch (q.type) {
       case 'single_select':
         return (
@@ -142,7 +143,7 @@ export default function AskMessage({ message, onSubmit }: Props) {
       <div className="questions">
         {message.questions.map((q) => renderQuestion(q))}
       </div>
-      {!message.answered && (
+      {!message.answered && !readOnly && (
         <button onClick={handleSubmit} className="submit-btn">
           Submit
         </button>

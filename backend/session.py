@@ -20,6 +20,8 @@ DEDUP_CLEANUP_SECONDS = 60.0
 @dataclass
 class SessionState:
     session_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
+    user_id: str = "anonymous"
+    status: str = "idle"  # idle | active | waiting_input | done | error
     sse_queue: asyncio.Queue[dict[str, Any]] = field(default_factory=asyncio.Queue)
     pending_ask_id: str | None = None
     pending_ask_event: asyncio.Event = field(default_factory=asyncio.Event)
@@ -28,6 +30,7 @@ class SessionState:
     agent_task: asyncio.Task[None] | None = field(default=None, repr=False)
     _event_seq: int = 0
     _recent_hashes: dict[str, float] = field(default_factory=dict)
+    _admin_queues: list[asyncio.Queue[dict[str, Any]]] = field(default_factory=list)
 
     @property
     def agent_running(self) -> bool:
@@ -57,7 +60,14 @@ class SessionState:
 
         self._event_seq += 1
         logger.info("SSE #%d: %s", self._event_seq, event_type)
-        self.sse_queue.put_nowait({"event": event_type, "data": data})
+        event = {"event": event_type, "data": data}
+        self.sse_queue.put_nowait(event)
+        # Fan-out to admin observers
+        for q in self._admin_queues:
+            try:
+                q.put_nowait(event)
+            except asyncio.QueueFull:
+                pass
 
     def start_ask(self, ask_id: str) -> None:
         self.pending_ask_id = ask_id
@@ -72,18 +82,36 @@ class SessionState:
         self.pending_ask_id = None
         self.pending_answers = {}
 
+    async def set_status(self, new_status: str) -> None:
+        """Update in-memory status and persist to DB in one call."""
+        from backend.db import update_session_status
+
+        self.status = new_status
+        await update_session_status(self.session_id, new_status)
+
     def add_to_history(self, role: str, content: dict[str, Any]) -> None:
         self.history.append({"role": role, "content": content})
 
+    def add_admin_queue(self) -> asyncio.Queue[dict[str, Any]]:
+        q: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=100)
+        self._admin_queues.append(q)
+        return q
+
+    def remove_admin_queue(self, q: asyncio.Queue[dict[str, Any]]) -> None:
+        try:
+            self._admin_queues.remove(q)
+        except ValueError:
+            pass
+
 
 class SessionManager:
-    """Manages multiple concurrent sessions (single-user but keyed by ID)."""
+    """Manages multiple concurrent sessions keyed by ID."""
 
     def __init__(self) -> None:
         self._sessions: dict[str, SessionState] = {}
 
-    def create(self) -> SessionState:
-        session = SessionState()
+    def create(self, user_id: str = "anonymous") -> SessionState:
+        session = SessionState(user_id=user_id)
         self._sessions[session.session_id] = session
         return session
 
@@ -95,3 +123,6 @@ class SessionManager:
 
     def list_ids(self) -> list[str]:
         return list(self._sessions.keys())
+
+    def list_all(self) -> list[SessionState]:
+        return list(self._sessions.values())
