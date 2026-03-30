@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 const backendUrl = `http://localhost:${process.env.BACKEND_PORT || 4910}`
 
-const proxyPaths = ['/chat', '/stream', '/answers', '/sessions', '/health', '/config', '/admin']
+const proxyPaths = ['/chat', '/stream', '/answers', '/sessions', '/health', '/config', '/session-status', '/admin/sessions']
 
 export default defineConfig({
   plugins: [react()],

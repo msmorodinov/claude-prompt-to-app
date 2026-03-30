@@ -41,10 +41,13 @@ export function historyToMessages(history: HistoryEntry[]): ChatMessage[] {
   return messages
 }
 
-function finalizeResearch(messages: ChatMessage[]): ChatMessage[] {
-  return messages.map((m) =>
-    m.role === 'research' && !m.done ? { ...m, done: true } : m,
-  )
+function cleanupMessages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((m) => {
+    if (m.role === 'research' && !m.done) return { ...m, done: true }
+    if (m.role === 'ask' && !m.answered) return { ...m, answered: true }
+    if (m.role === 'assistant' && m.streaming) return { ...m, streaming: false }
+    return m
+  })
 }
 
 export function useChat() {
@@ -130,18 +133,14 @@ export function useChat() {
         case 'done':
           setIsLoading(false)
           setHasPendingAsk(false)
-          setMessages((prev) =>
-            finalizeResearch(prev).map((m) =>
-              m.role === 'assistant' && m.streaming ? { ...m, streaming: false } : m,
-            ),
-          )
+          setMessages(cleanupMessages)
           break
 
         case 'error':
           setIsLoading(false)
           setHasPendingAsk(false)
           setMessages((prev) => [
-            ...finalizeResearch(prev),
+            ...cleanupMessages(prev),
             {
               role: 'assistant' as const,
               blocks: [{ type: 'text' as const, content: `Error: ${event.message}` }],

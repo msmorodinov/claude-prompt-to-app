@@ -1,3 +1,5 @@
+import MarkdownContent from '../MarkdownContent'
+
 interface Side {
   label: string
   content: string
@@ -22,11 +24,15 @@ export default function Comparison({ left, right, note, diff_note }: Props) {
       <div className="comparison-sides">
         <div className="side left">
           <div className="side-label">{l.label}</div>
-          <div className="side-content">{l.content}</div>
+          <div className="side-content">
+            <MarkdownContent text={l.content} />
+          </div>
         </div>
         <div className="side right">
           <div className="side-label">{r.label}</div>
-          <div className="side-content">{r.content}</div>
+          <div className="side-content">
+            <MarkdownContent text={r.content} />
+          </div>
         </div>
       </div>
       {displayNote && <div className="diff-note">{displayNote}</div>}

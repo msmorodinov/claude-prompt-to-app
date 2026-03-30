@@ -13,6 +13,7 @@ from claude_agent_sdk import (
     create_sdk_mcp_server,
 )
 
+from backend.db import get_session
 from backend.session import SessionState
 from backend.tools import create_tools
 
@@ -62,6 +63,49 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         logger.exception("Agent error")
         await session.set_status("error")
         session.push_sse("error", {"message": str(e)})
+
+
+def _format_history_as_context(history: list[dict]) -> str:
+    """Format DB history into a text summary for agent context injection."""
+    lines: list[str] = []
+    for entry in history:
+        role = entry["role"]
+        content = entry["content"]
+        if role == "user":
+            text = content.get("text", "")
+            if text:
+                lines.append(f"User: {text}")
+            answers = content.get("answers")
+            if answers:
+                for k, v in answers.items():
+                    lines.append(f"User answered '{k}': {v}")
+        elif role == "assistant":
+            blocks = content.get("blocks", [])
+            for block in blocks:
+                btype = block.get("type", "text")
+                text = block.get("content", block.get("text", ""))
+                if text:
+                    lines.append(f"Assistant ({btype}): {text}")
+            stream_text = content.get("stream_text", "")
+            if stream_text:
+                lines.append(f"Assistant: {stream_text}")
+    return "\n".join(lines)
+
+
+async def run_agent_with_context(session: SessionState) -> None:
+    """Restart agent with full conversation history as context."""
+    history = await get_session(session.session_id)
+    context = _format_history_as_context(history)
+    context_message = (
+        "[CONTEXT: This session was interrupted and is being resumed. "
+        "Here is the previous conversation:\n"
+        f"{context}\n"
+        "]\n\n"
+        "[INSTRUCTION: Continue the session from where it was interrupted. "
+        "Do NOT repeat what was already said or ask questions that were already answered. "
+        "Acknowledge the interruption briefly and continue.]"
+    )
+    await run_agent(session, context_message)
 
 
 def _process_assistant_message(
