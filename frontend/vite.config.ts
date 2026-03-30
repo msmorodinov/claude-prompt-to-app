@@ -12,6 +12,7 @@ export default defineConfig({
       '/answers': backendUrl,
       '/sessions': backendUrl,
       '/health': backendUrl,
+      '/config': backendUrl,
     },
   },
   test: {

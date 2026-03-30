@@ -9,27 +9,39 @@ async function startWorkshopAndSubmit(page: any) {
   // Click Start button
   await page.locator('.start-btn').click()
 
-  // Wait for ask form
-  const askMsg = page.locator('.ask-message').first()
-  await expect(askMsg).toBeVisible({ timeout: 10000 })
+  // First ask: free_text + single_select
+  const ask1 = page.locator('.ask-message').first()
+  await expect(ask1).toBeVisible({ timeout: 10000 })
 
-  // Fill free_text
-  const textInput = askMsg.locator('textarea, input[type="text"]').first()
+  const textInput = ask1.locator('textarea, input[type="text"]').first()
   if (await textInput.isVisible()) {
     await textInput.fill('We build demand forecasting tools')
   }
-
-  // Select radio
-  const radio = askMsg.locator('input[type="radio"]').first()
+  const radio = ask1.locator('input[type="radio"]').first()
   if (await radio.isVisible()) {
     await radio.click()
   }
+  await ask1.locator('.submit-btn').click()
 
-  // Submit
-  await askMsg.locator('.submit-btn').click()
-
-  // Wait for all widgets to appear
+  // Wait for display widgets from step 3
   await expect(page.locator('.widget-data-table').first()).toBeVisible({ timeout: 10000 })
+
+  // Second ask: slider_scale + tag_input
+  const ask2 = page.locator('.ask-message').nth(1)
+  await expect(ask2).toBeVisible({ timeout: 10000 })
+
+  const slider = ask2.locator('input[type="range"]')
+  await expect(slider).toBeVisible()
+  await slider.fill('7')
+
+  const tagInput = ask2.locator('.widget-tag-input input[type="text"]')
+  await tagInput.fill('fast')
+  await tagInput.press('Enter')
+
+  await ask2.locator('.submit-btn').click()
+
+  // Wait for final widgets from step 5
+  await expect(page.locator('.widget-final-result')).toBeVisible({ timeout: 10000 })
 }
 
 test.describe('Desktop viewport', () => {
