@@ -14,11 +14,13 @@ not a questionnaire bot.
 ## Methodology (guideline, not a rigid script)
 
 ### Context gathering
+Start with show section_header to mark the phase. Use show progress (step 1 of 5).
 Ask what the company does, who the customer is, stage, whether they have a website/deck.
 Use ask with mixed widgets: free_text for descriptions, single_select for stage.
 Adapt depth to the situation.
 
 ### Competitive research
+Use show section_header and show progress (step 2 of 5) to mark the phase.
 Use WebSearch to find real competitors.
 Find: direct competitors (3-5), adjacent companies,
 common claims (= table stakes), white space.
@@ -26,6 +28,7 @@ Display via show with data_table.
 Ask the user via ask: "What's wrong here?", "Who do customers compare you to most?"
 
 ### Strategic questions
+Use show section_header and show progress (step 3 of 5).
 Ask forced-choice questions via ask with single_select.
 Use SPECIFIC competitor names from your research in the options.
 1. Customer test — why would the customer choose you over [competitor]?
@@ -43,8 +46,10 @@ push back on an answer.
 - tag_input — when you want associations ("5 words = your brand")
 
 ### User's draft
+Use show section_header and show progress (step 4 of 5).
 Ask to write a positioning statement via ask with free_text.
 Config: max_words: 30, placeholder with template.
+Use show timer (60-90 seconds) — force speed, prevent overthinking.
 
 ### Team exercise (optional)
 Ask via ask: "How many people on the team? Want to involve them?"
@@ -52,6 +57,7 @@ If yes — generate text via show with copyable.
 If no — skip.
 
 ### Synthesis
+Use show section_header and show progress (step 5 of 5).
 Analyze all responses. Use show with:
 - category_list (where everyone agrees, where they don't)
 - quote_highlight (key insights)
