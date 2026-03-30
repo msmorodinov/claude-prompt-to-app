@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createSession, loadConfig, loadSession, startChat, submitAnswers } from '../api'
+import { createSession, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
 import MessageList from './MessageList'
-import InputArea from './InputArea'
 import SessionSidebar from './SessionSidebar'
 
 const SESSION_KEY = 'session_id'
@@ -17,10 +16,27 @@ export default function ChatContainer() {
   const [viewingSessionId, setViewingSessionId] = useState<string | null>(null)
   const [viewedMessages, setViewedMessages] = useState<ReturnType<typeof historyToMessages>>([])
 
+  const [sessionError, setSessionError] = useState(false)
+  const [sessionDone, setSessionDone] = useState(false)
+
   const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, handleSSEEvent, markAskAnswered, scrollRef } =
     useChat()
 
   const isViewingPast = viewingSessionId !== null && viewingSessionId !== sessionId
+
+  const wrappedSSEEvent = useCallback(
+    (event: Parameters<typeof handleSSEEvent>[0]) => {
+      if (event.type === 'error') {
+        setSessionError(true)
+        setSessionDone(false)
+      } else if (event.type === 'done') {
+        setSessionError(false)
+        setSessionDone(true)
+      }
+      handleSSEEvent(event)
+    },
+    [handleSSEEvent],
+  )
 
   useEffect(() => {
     loadConfig().then(c => setAppTitle(c.title))
@@ -57,11 +73,12 @@ export default function ChatContainer() {
     })
   }, [sessionId, setMessages])
 
-  useSSE(sessionId, handleSSEEvent)
+  useSSE(sessionId, wrappedSSEEvent)
 
   const handleSend = useCallback(
     async (message: string) => {
       if (hasPendingAsk) return
+      setSessionError(false)
       setIsLoading(true)
       try {
         const { session_id } = await startChat(message, sessionId ?? undefined)
@@ -73,6 +90,19 @@ export default function ChatContainer() {
     },
     [sessionId, setIsLoading, hasPendingAsk],
   )
+
+  const handleRetry = useCallback(async () => {
+    if (!sessionId) return
+    setSessionError(false)
+    setSessionDone(false)
+    setIsLoading(true)
+    try {
+      await retrySession(sessionId)
+    } catch {
+      setIsLoading(false)
+      setSessionError(true)
+    }
+  }, [sessionId, setIsLoading])
 
   const handleAskSubmit = useCallback(
     async (askId: string, answers: Record<string, unknown>) => {
@@ -114,6 +144,8 @@ export default function ChatContainer() {
       setMessages([])
       setIsLoading(false)
       setHasHistory(false)
+      setSessionError(false)
+      setSessionDone(false)
       setViewingSessionId(null)
       setViewedMessages([])
       historyLoaded.current = false
@@ -128,7 +160,8 @@ export default function ChatContainer() {
     setViewedMessages([])
   }, [])
 
-  const showStartScreen = hasHistory === false && messages.length === 0 && !isLoading && !isViewingPast
+  const isSessionLoading = hasHistory === null
+  const showStartScreen = !isSessionLoading && hasHistory === false && messages.length === 0 && !isLoading && !isViewingPast
 
   const handleStart = useCallback(() => {
     handleSend('start')
@@ -161,7 +194,21 @@ export default function ChatContainer() {
         </div>
       )}
 
-      {showStartScreen ? (
+      {sessionError && !isViewingPast && (
+        <div className="session-error-banner">
+          <span>Session interrupted</span>
+          <div className="session-error-actions">
+            <button onClick={handleRetry}>Continue</button>
+            <button onClick={handleNewSession}>New Session</button>
+          </div>
+        </div>
+      )}
+
+      {isSessionLoading ? (
+        <div className="start-screen">
+          <p className="loading-text">Loading...</p>
+        </div>
+      ) : showStartScreen ? (
         <div className="start-screen">
           <h2>Ready to begin?</h2>
           <button className="start-btn" onClick={handleStart}>
@@ -178,7 +225,12 @@ export default function ChatContainer() {
             title={appTitle}
             readOnly={isViewingPast}
           />
-          {!isViewingPast && !hasPendingAsk && !isLoading && <InputArea onSend={handleSend} />}
+          {!isViewingPast && sessionDone && !sessionError && (
+            <div className="session-done-banner">
+              <span>Session complete</span>
+              <button className="start-btn" onClick={handleNewSession}>New Session</button>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -15,6 +15,10 @@ const EVENT_TYPES = [
   'error',
 ] as const
 
+const TERMINAL_EVENTS = new Set(['done', 'error'])
+const MAX_RETRIES = 3
+const BACKOFF_BASE_MS = 2000
+
 interface UseSSEOptions {
   urlFactory?: (sessionId: string) => string
 }
@@ -40,40 +44,63 @@ export function useSSE(
   useEffect(() => {
     if (!sessionId) return
 
-    const url = urlFactoryRef.current(sessionId)
-    const es = new EventSource(url)
-    eventSourceRef.current = es
-
     let receivedTerminal = false
+    let retryCount = 0
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
 
-    for (const eventType of EVENT_TYPES) {
-      es.addEventListener(eventType, (e: MessageEvent) => {
-        if (eventType === 'done' || eventType === 'error') {
-          receivedTerminal = true
-        }
-        try {
-          const data = JSON.parse(e.data)
-          onEventRef.current({ type: eventType, ...data } as SSEEvent)
-        } catch {
-          console.error('Failed to parse SSE event:', e.data)
-        }
-      })
-    }
+    function connect() {
+      if (cancelled) return
 
-    es.onerror = () => {
-      if (es.readyState === EventSource.CLOSED) {
-        if (!receivedTerminal) {
-          onEventRef.current({ type: 'error', message: 'Connection lost' } as SSEEvent)
+      const url = urlFactoryRef.current(sessionId!)
+      const es = new EventSource(url)
+      eventSourceRef.current = es
+
+      for (const eventType of EVENT_TYPES) {
+        es.addEventListener(eventType, (e: MessageEvent) => {
+          if (TERMINAL_EVENTS.has(eventType)) {
+            receivedTerminal = true
+          }
+          // Reset retry counter on any data event
+          retryCount = 0
+          try {
+            const data = JSON.parse(e.data)
+            onEventRef.current({ type: eventType, ...data } as SSEEvent)
+          } catch {
+            console.error('Failed to parse SSE event:', e.data)
+          }
+        })
+      }
+
+      es.onerror = () => {
+        if (es.readyState === EventSource.CLOSED) {
+          es.close()
+          eventSourceRef.current = null
+
+          if (receivedTerminal || cancelled) return
+
+          if (retryCount < MAX_RETRIES) {
+            const delay = BACKOFF_BASE_MS * Math.pow(2, retryCount)
+            retryCount++
+            retryTimer = setTimeout(connect, delay)
+          } else {
+            onEventRef.current({ type: 'error', message: 'Connection lost' } as SSEEvent)
+          }
         }
-        disconnect()
       }
     }
 
+    connect()
+
     return () => {
-      es.close()
-      eventSourceRef.current = null
+      cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
     }
-  }, [sessionId, disconnect])
+  }, [sessionId])
 
   return { disconnect }
 }

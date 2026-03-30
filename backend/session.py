@@ -36,6 +36,25 @@ class SessionState:
     def agent_running(self) -> bool:
         return self.agent_task is not None and not self.agent_task.done()
 
+    @property
+    def agent_dead(self) -> bool:
+        return self.agent_task is not None and self.agent_task.done()
+
+    @property
+    def agent_error(self) -> BaseException | None:
+        if self.agent_task is not None and self.agent_task.done():
+            try:
+                return self.agent_task.exception()
+            except asyncio.CancelledError:
+                return None
+        return None
+
+    async def cleanup_dead_agent(self) -> None:
+        if self.pending_ask_id is not None:
+            self.clear_ask()
+        if self.status in ("active", "waiting_input"):
+            await self.set_status("error")
+
     def push_sse(self, event_type: str, data: dict[str, Any]) -> None:
         now = time.monotonic()
 

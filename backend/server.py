@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
 
-from backend.agent import run_agent
+from backend.agent import run_agent, run_agent_with_context
 from backend.db import (
     get_all_sessions_admin,
     get_session,
@@ -23,7 +23,7 @@ from backend.db import (
     save_session,
     update_session_title,
 )
-from backend.session import SessionManager
+from backend.session import SessionManager, SessionState
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,21 +62,30 @@ _SSE_HEADERS = {
 TERMINAL_EVENTS = frozenset(("done", "error"))
 
 
-async def _sse_generator(queue: asyncio.Queue[dict]) -> ...:
-    """Yield SSE-formatted events from a queue, with 30s keepalive pings."""
+async def _sse_generator(
+    session: "SessionState", queue: asyncio.Queue[dict] | None = None,
+) -> ...:
+    """Yield SSE events with liveness detection for dead agents."""
+    q = queue or session.sse_queue
     while True:
         try:
-            event = await asyncio.wait_for(queue.get(), timeout=30.0)
+            event = await asyncio.wait_for(q.get(), timeout=15.0)
             yield f"event: {event['event']}\ndata: {json.dumps(event['data'])}\n\n"
             if event["event"] in TERMINAL_EVENTS:
                 break
         except asyncio.TimeoutError:
+            if session.agent_dead:
+                err = session.agent_error
+                msg = str(err) if err else "Agent stopped unexpectedly"
+                await session.cleanup_dead_agent()
+                yield f"event: error\ndata: {json.dumps({'message': msg})}\n\n"
+                break
             yield ": ping\n\n"
 
 
-def _sse_response(queue: asyncio.Queue[dict]) -> StreamingResponse:
+def _sse_response(session: "SessionState") -> StreamingResponse:
     return StreamingResponse(
-        _sse_generator(queue),
+        _sse_generator(session),
         media_type="text/event-stream",
         headers=_SSE_HEADERS,
     )
@@ -109,6 +118,59 @@ async def chat(request: Request) -> dict:
     await save_message(session.session_id, "user", {"text": message})
     await update_session_title(session.session_id, message[:80])
     session.agent_task = asyncio.create_task(run_agent(session, message))
+    _attach_done_callback(session)
+
+    return {"session_id": session.session_id}
+
+
+def _attach_done_callback(session: SessionState) -> None:
+    """Safety net: push SSE error if agent task crashes without handling it."""
+
+    def _on_agent_done(task: asyncio.Task) -> None:
+        if task.cancelled():
+            return
+        try:
+            exc = task.exception()
+        except asyncio.CancelledError:
+            return
+        if exc and session.status in ("active", "waiting_input"):
+            session.push_sse("error", {"message": f"Agent crashed: {exc}"})
+            if session.pending_ask_id:
+                session.pending_ask_event.set()
+
+    if session.agent_task is not None:
+        session.agent_task.add_done_callback(_on_agent_done)
+
+
+@app.post("/chat/retry")
+async def retry_chat(request: Request) -> dict:
+    body = await request.json()
+    session_id = body.get("session_id")
+    user_id = _get_user_id(request)
+
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+
+    session = sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not your session")
+    if session.agent_running:
+        raise HTTPException(status_code=409, detail="Agent is already running")
+
+    # Clean up zombie state
+    if session.pending_ask_id:
+        session.clear_ask()
+    # Drain leftover SSE events
+    while not session.sse_queue.empty():
+        try:
+            session.sse_queue.get_nowait()
+        except Exception:
+            break
+
+    session.agent_task = asyncio.create_task(run_agent_with_context(session))
+    _attach_done_callback(session)
 
     return {"session_id": session.session_id}
 
@@ -118,7 +180,7 @@ async def stream(session_id: str) -> StreamingResponse:
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    return _sse_response(session.sse_queue)
+    return _sse_response(session)
 
 
 @app.post("/answers")
@@ -174,6 +236,14 @@ async def load_session_history(session_id: str, request: Request) -> list:
     return await get_session(session_id)
 
 
+@app.get("/session-status")
+async def session_status(session_id: str) -> dict:
+    session = sessions.get(session_id)
+    if not session:
+        return {"status": "unknown", "agent_running": False}
+    return {"status": session.status, "agent_running": session.agent_running}
+
+
 # --- Admin endpoints ---
 
 
@@ -201,7 +271,7 @@ async def admin_session_stream(session_id: str) -> StreamingResponse:
 
     async def event_generator():
         try:
-            async for chunk in _sse_generator(admin_queue):
+            async for chunk in _sse_generator(session, queue=admin_queue):
                 yield chunk
         finally:
             session.remove_admin_queue(admin_queue)

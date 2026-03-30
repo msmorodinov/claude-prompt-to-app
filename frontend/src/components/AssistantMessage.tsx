@@ -1,4 +1,5 @@
 import type { ChatAssistantMessage } from '../types'
+import MarkdownContent from './MarkdownContent'
 import WidgetRenderer from './WidgetRenderer'
 
 interface Props {
@@ -13,7 +14,7 @@ export default function AssistantMessage({ message }: Props) {
       ))}
       {message.streamText && (
         <div className="stream-text">
-          {message.streamText}
+          <MarkdownContent text={message.streamText} />
           {message.streaming && <span className="cursor">|</span>}
         </div>
       )}
