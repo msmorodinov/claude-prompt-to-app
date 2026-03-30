@@ -128,7 +128,51 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
 
     await asyncio.sleep(0.1)
 
-    # Step 4: Final result with metric bars
+    # Step 4: Second ask — slider_scale + tag_input
+    ask_id_2 = "mock-ask-2"
+    session.push_sse(
+        "ask_message",
+        {
+            "id": ask_id_2,
+            "preamble": "A couple more things before we wrap up.",
+            "questions": [
+                {
+                    "type": "slider_scale",
+                    "id": "pmf_confidence",
+                    "label": "How confident are you in product-market fit?",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1,
+                    "min_label": "Not at all",
+                    "max_label": "Absolutely",
+                },
+                {
+                    "type": "tag_input",
+                    "id": "brand_words",
+                    "label": "5 words that describe your brand",
+                    "min_tags": 1,
+                    "max_tags": 5,
+                    "placeholder": "Type a word and press Enter",
+                },
+            ],
+        },
+    )
+
+    session.start_ask(ask_id_2)
+    try:
+        await asyncio.wait_for(session.pending_ask_event.wait(), timeout=300)
+    except asyncio.TimeoutError:
+        session.push_sse("error", {"message": "Timeout"})
+        session.clear_ask()
+        return
+
+    answers_2 = session.pending_answers
+    session.clear_ask()
+    session.push_sse("user_message", {"answers": answers_2})
+
+    await asyncio.sleep(0.1)
+
+    # Step 5: Final result with copyable, timer, metric bars
     session.push_sse(
         "assistant_message",
         {
@@ -136,6 +180,16 @@ async def run_mock_agent(session: SessionState, message: str) -> None:
                 {
                     "type": "final_result",
                     "content": "We help FMCG brand managers launch products faster.",
+                },
+                {
+                    "type": "copyable",
+                    "label": "Share with your team",
+                    "content": "Our positioning: We help FMCG brand managers launch compliant products 3x faster.",
+                },
+                {
+                    "type": "timer",
+                    "seconds": 5,
+                    "label": "Review your statement",
                 },
                 {
                     "type": "metric_bars",

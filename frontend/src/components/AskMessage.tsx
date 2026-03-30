@@ -15,6 +15,7 @@ interface Props {
 
 export default function AskMessage({ message, onSubmit }: Props) {
   const [answers, setAnswers] = useState<Record<string, unknown>>(() => {
+    if (message.answers) return message.answers
     const initial: Record<string, unknown> = {}
     for (const q of message.questions) {
       switch (q.type) {
