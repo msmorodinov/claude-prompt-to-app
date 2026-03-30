@@ -55,6 +55,18 @@ export async function loadSession(sessionId: string): Promise<HistoryEntry[]> {
   }
 }
 
+export interface SessionSummary {
+  id: string
+  created_at: string
+  title: string | null
+  status: string
+  message_count: number
+}
+
+export async function listSessions(): Promise<SessionSummary[]> {
+  return request('/sessions')
+}
+
 export interface AppConfig {
   title: string
 }

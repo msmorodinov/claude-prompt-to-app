@@ -38,19 +38,23 @@ Browser (React SPA)  <──SSE──>  FastAPI (Python)  <──subprocess─�
 ```
 forge-simple/
 ├── CLAUDE.md
+├── ARCHITECTURE.md
 ├── POSITIONING-WORKSHOP-SPEC.pdf
 ├── README.md
 │
 ├── backend/
 │   ├── __init__.py
-│   ├── server.py          # FastAPI app, SSE endpoint, /answers endpoint
+│   ├── server.py          # FastAPI app, SSE, /answers, admin endpoints
 │   ├── agent.py           # Claude SDK client, agent lifecycle
 │   ├── tools.py           # MCP tools: show + ask (with asyncio.Event)
 │   ├── schemas.py         # JSON schemas for all widget types
 │   ├── session.py         # Session state (pending events, answers, SSE queue)
-│   ├── db.py              # SQLite: save/load sessions
-│   ├── prompt.py          # System prompt (positioning methodology)
-│   └── requirements.txt
+│   ├── db.py              # SQLite: save/load sessions, auto-title
+│   ├── prompt.md          # System prompt (positioning methodology)
+│   ├── app.json           # App config (title, etc.)
+│   ├── framework.md       # Framework description for agent
+│   ├── requirements.txt
+│   └── tests/             # pytest: test_db, test_server, test_session, test_tools, test_schemas
 │
 ├── frontend/
 │   ├── index.html
@@ -59,21 +63,27 @@ forge-simple/
 │   ├── vite.config.ts
 │   └── src/
 │       ├── main.tsx
-│       ├── App.tsx
+│       ├── App.tsx               # Router: / → ChatPage, /admin → AdminPage
 │       ├── types.ts              # SSE events, widget types, answers
-│       ├── api.ts                # fetch helpers: POST /chat, POST /answers
+│       ├── api.ts                # fetch helpers: /chat, /answers, /sessions
+│       ├── api-admin.ts          # Admin API: /admin/sessions, stream, history
+│       ├── userId.ts             # Anonymous user ID (localStorage)
 │       ├── hooks/
 │       │   ├── useSSE.ts         # SSE connection, reconnect, event dispatch
 │       │   └── useChat.ts        # Chat message state, scroll management
+│       ├── pages/
+│       │   ├── ChatPage.tsx      # Main chat page wrapper
+│       │   └── AdminPage.tsx     # Admin monitoring dashboard
 │       ├── components/
-│       │   ├── ChatContainer.tsx
-│       │   ├── MessageList.tsx
+│       │   ├── ChatContainer.tsx  # Chat + SessionSidebar + read-only mode
+│       │   ├── SessionSidebar.tsx # Past session list sidebar
+│       │   ├── MessageList.tsx    # Message renderer (readOnly support)
 │       │   ├── AssistantMessage.tsx
-│       │   ├── AskMessage.tsx
+│       │   ├── AskMessage.tsx     # readOnly support
 │       │   ├── UserMessage.tsx
 │       │   ├── InputArea.tsx
-│       │   ├── WidgetRenderer.tsx   # Dynamic dispatch: type -> component
-│       │   ├── display/            # show widgets (11 types)
+│       │   ├── WidgetRenderer.tsx # Dynamic dispatch: type -> component
+│       │   ├── display/          # show widgets (11 types)
 │       │   │   ├── TextWidget.tsx
 │       │   │   ├── SectionHeader.tsx
 │       │   │   ├── DataTable.tsx
@@ -85,16 +95,33 @@ forge-simple/
 │       │   │   ├── ProgressBar.tsx
 │       │   │   ├── FinalResult.tsx
 │       │   │   └── TimerWidget.tsx
-│       │   └── input/              # ask widgets (7 types)
-│       │       ├── SingleSelect.tsx
-│       │       ├── MultiSelect.tsx
-│       │       ├── FreeText.tsx
-│       │       ├── RankPriorities.tsx
-│       │       ├── SliderScale.tsx
-│       │       ├── Matrix2x2.tsx
-│       │       └── TagInput.tsx
+│       │   ├── input/            # ask widgets (7 types)
+│       │   │   ├── SingleSelect.tsx
+│       │   │   ├── MultiSelect.tsx
+│       │   │   ├── FreeText.tsx
+│       │   │   ├── RankPriorities.tsx
+│       │   │   ├── SliderScale.tsx
+│       │   │   ├── Matrix2x2.tsx
+│       │   │   └── TagInput.tsx
+│       │   └── admin/            # Admin monitoring components
+│       │       ├── SessionList.tsx
+│       │       └── SessionViewer.tsx
+│       ├── __tests__/            # Vitest: widgets, hooks, components
 │       └── styles/
-│           └── global.css
+│           ├── global.css
+│           └── admin.css
+│
+└── e2e/                          # Playwright E2E tests
+    ├── playwright.config.ts
+    ├── fixtures/
+    │   ├── mock_server.py        # Mock backend for testing
+    │   └── mock-agent.py
+    └── tests/
+        ├── ask-flow.spec.ts
+        ├── workshop-flow.spec.ts
+        ├── responsive-widgets.spec.ts
+        ├── multi-user-admin.spec.ts
+        └── real-backend.spec.ts
 ```
 
 ## MCP Tools (2 tools)
@@ -157,12 +184,17 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/chat` | Start or continue session |
+| `POST` | `/chat` | Start or continue session (auto-titles on first msg) |
 | `GET` | `/stream` | SSE event stream to browser |
 | `POST` | `/answers` | User submits form -> unblocks `ask` tool |
 | `POST` | `/sessions/create` | Create new session (auto on page load) |
-| `GET` | `/sessions` | List past sessions (SQLite) |
+| `GET` | `/sessions` | List user's sessions (with status, message_count) |
 | `GET` | `/sessions/{id}` | Load specific session history |
+| `GET` | `/health` | Health check |
+| `GET` | `/config` | App config (title from app.json) |
+| `GET` | `/admin/sessions` | All sessions with status (admin) |
+| `GET` | `/admin/sessions/{id}/stream` | Read-only SSE stream (admin) |
+| `GET` | `/admin/sessions/{id}/history` | Full message history (admin) |
 
 ## Design
 
@@ -195,11 +227,15 @@ options = ClaudeAgentOptions(
 
 - Frontend auto-creates a session on page load via `POST /sessions/create`
 - Session ID stored in `sessionStorage` (key: `session_id`) — persists within tab, resets on new tab
+- User ID generated once per browser, stored in `localStorage` — sent as `X-User-Id` header
+- First user message auto-titles the session (first 80 chars)
+- Session sidebar allows browsing and viewing past sessions in read-only mode
 - Framework-level thinking indicator: `isLoading` state drives `◎ Thinking...` in MessageList (no agent SSE events needed)
 
 ## Key Constraints
 
-- Single user, single agent loop at a time
+- Multi-user with session isolation (each session has a `user_id`, ownership checked on /chat and /answers)
+- Single agent loop per session at a time
 - All state in-memory during session, persisted to SQLite
 - `ANTHROPIC_API_KEY` must NOT be set (overrides Max subscription)
 - `AskUserQuestion` built-in tool must be disabled (requires TTY)
