@@ -8,7 +8,7 @@ from typing import Any
 
 from claude_agent_sdk import tool
 
-from backend.db import save_message
+from backend.db import increment_message_count, save_message
 from backend.schemas import ASK_SCHEMA, SHOW_SCHEMA
 from backend.session import SessionState
 
@@ -51,6 +51,7 @@ def create_tools(session: SessionState, session_id: str) -> list:
             session.push_sse("assistant_message", {"blocks": blocks})
             session.add_to_history("assistant", {"blocks": blocks})
             await save_message(session_id, "assistant", {"blocks": blocks})
+            await increment_message_count(session_id)
             return _tool_result(f"Displayed {len(blocks)} block(s).")
         except Exception as e:
             return _tool_error(f"Error in show: {e}")
@@ -71,6 +72,7 @@ def create_tools(session: SessionState, session_id: str) -> list:
             await save_message(session_id, "assistant", ask_content)
 
             session.start_ask(ask_id)
+            await session.set_status("waiting_input")
             try:
                 await asyncio.wait_for(
                     session.pending_ask_event.wait(),
@@ -80,12 +82,15 @@ def create_tools(session: SessionState, session_id: str) -> list:
                 session.clear_ask()
                 return _tool_error("User did not respond in time.")
 
+            await session.set_status("active")
+
             answers = session.pending_answers
             session.clear_ask()
 
             session.push_sse("user_message", {"answers": answers})
             session.add_to_history("user", {"answers": answers})
             await save_message(session_id, "user", {"answers": answers})
+            await increment_message_count(session_id)
 
             label_by_id = {q["id"]: q.get("label", q["id"]) for q in questions}
             answer_lines = [

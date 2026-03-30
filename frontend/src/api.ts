@@ -1,9 +1,15 @@
+import { getUserId } from './userId'
+
 const BASE_URL = ''
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': getUserId(),
+      ...options?.headers,
+    },
   })
   if (!res.ok) {
     throw new Error(`${options?.method ?? 'GET'} ${path} failed: ${res.status}`)
@@ -42,9 +48,11 @@ export interface HistoryEntry {
 }
 
 export async function loadSession(sessionId: string): Promise<HistoryEntry[]> {
-  const res = await fetch(`${BASE_URL}/sessions/${sessionId}`)
-  if (!res.ok) return []
-  return res.json()
+  try {
+    return await request(`/sessions/${sessionId}`)
+  } catch {
+    return []
+  }
 }
 
 export interface AppConfig {
@@ -52,9 +60,11 @@ export interface AppConfig {
 }
 
 export async function loadConfig(): Promise<AppConfig> {
-  const res = await fetch(`${BASE_URL}/config`)
-  if (!res.ok) return { title: 'App' }
-  return res.json()
+  try {
+    return await request('/config')
+  } catch {
+    return { title: 'App' }
+  }
 }
 
 export function createSSEUrl(sessionId: string): string {

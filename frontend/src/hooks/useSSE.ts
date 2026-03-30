@@ -15,13 +15,20 @@ const EVENT_TYPES = [
   'error',
 ] as const
 
+interface UseSSEOptions {
+  urlFactory?: (sessionId: string) => string
+}
+
 export function useSSE(
   sessionId: string | null,
   onEvent: SSEHandler,
+  options?: UseSSEOptions,
 ) {
   const eventSourceRef = useRef<EventSource | null>(null)
   const onEventRef = useRef(onEvent)
   onEventRef.current = onEvent
+  const urlFactoryRef = useRef(options?.urlFactory ?? createSSEUrl)
+  urlFactoryRef.current = options?.urlFactory ?? createSSEUrl
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -33,7 +40,7 @@ export function useSSE(
   useEffect(() => {
     if (!sessionId) return
 
-    const url = createSSEUrl(sessionId)
+    const url = urlFactoryRef.current(sessionId)
     const es = new EventSource(url)
     eventSourceRef.current = es
 

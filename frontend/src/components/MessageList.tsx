@@ -9,9 +9,10 @@ interface Props {
   scrollRef: React.RefObject<HTMLDivElement | null>
   isLoading: boolean
   title?: string
+  readOnly?: boolean
 }
 
-export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, title }: Props) {
+export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, title, readOnly }: Props) {
   return (
     <div className="message-list">
       <header className="app-header">
@@ -22,7 +23,7 @@ export default function MessageList({ messages, onAskSubmit, scrollRef, isLoadin
           case 'assistant':
             return <AssistantMessage key={i} message={msg} />
           case 'ask':
-            return <AskMessage key={i} message={msg} onSubmit={onAskSubmit} />
+            return <AskMessage key={i} message={msg} onSubmit={onAskSubmit} readOnly={readOnly} />
           case 'user':
             return <UserMessage key={i} message={msg} />
           case 'research':
