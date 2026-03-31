@@ -21,6 +21,8 @@ DEDUP_CLEANUP_SECONDS = 60.0
 class SessionState:
     session_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     user_id: str = "anonymous"
+    app_id: int | None = None
+    prompt_version_id: int | None = None
     status: str = "idle"  # idle | active | waiting_input | done | error
     sse_queue: asyncio.Queue[dict[str, Any]] = field(default_factory=asyncio.Queue)
     pending_ask_id: str | None = None
@@ -129,8 +131,17 @@ class SessionManager:
     def __init__(self) -> None:
         self._sessions: dict[str, SessionState] = {}
 
-    def create(self, user_id: str = "anonymous") -> SessionState:
-        session = SessionState(user_id=user_id)
+    def create(
+        self,
+        user_id: str = "anonymous",
+        app_id: int | None = None,
+        prompt_version_id: int | None = None,
+    ) -> SessionState:
+        session = SessionState(
+            user_id=user_id,
+            app_id=app_id,
+            prompt_version_id=prompt_version_id,
+        )
         self._sessions[session.session_id] = session
         return session
 

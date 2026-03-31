@@ -14,9 +14,14 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
+from backend.admin_apps import router as admin_apps_router
 from backend.agent import run_agent, run_agent_with_context
 from backend.db import (
+    get_active_apps,
     get_all_sessions_admin,
+    get_app_by_id,
+    get_app_config_from_db,
+    get_default_app,
     get_session,
     get_session_owner,
     get_sessions_by_user,
@@ -25,7 +30,6 @@ from backend.db import (
     save_session,
     update_session_title,
 )
-from backend.prompt_config import get_app_config
 from backend.session import SessionManager, SessionState
 
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +43,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Prompt-to-App", lifespan=lifespan)
+app.include_router(admin_apps_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -110,7 +115,11 @@ async def chat(request: Request) -> dict:
         if session.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
     else:
-        session = sessions.create(user_id=user_id)
+        app_row = await get_default_app()
+        app_id = app_row["id"] if app_row else None
+        pvid = app_row["current_version_id"] if app_row else None
+        session = sessions.create(user_id=user_id, app_id=app_id, prompt_version_id=pvid)
+        await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid)
 
     if session.agent_running:
         raise HTTPException(status_code=409, detail="Agent is already running")
@@ -209,11 +218,43 @@ async def submit_answers(request: Request) -> dict:
     return {"status": "ok"}
 
 
+@app.get("/apps")
+async def list_apps_public() -> list:
+    """Active apps for user app selector."""
+    return await get_active_apps()
+
+
 @app.post("/sessions/create")
 async def create_session(request: Request) -> dict:
     user_id = _get_user_id(request)
-    session = sessions.create(user_id=user_id)
-    await save_session(session.session_id, user_id=user_id)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    req_app_id = body.get("app_id") if body else None
+
+    if req_app_id is not None:
+        app_row = await get_app_by_id(req_app_id)
+        if not app_row or not app_row["is_active"]:
+            raise HTTPException(status_code=404, detail="App not found or inactive")
+        app_id = app_row["id"]
+        prompt_version_id = app_row["current_version_id"]
+    else:
+        app_row = await get_default_app()
+        app_id = app_row["id"] if app_row else None
+        prompt_version_id = app_row["current_version_id"] if app_row else None
+
+    session = sessions.create(
+        user_id=user_id,
+        app_id=app_id,
+        prompt_version_id=prompt_version_id,
+    )
+    await save_session(
+        session.session_id,
+        user_id=user_id,
+        app_id=app_id,
+        prompt_version_id=prompt_version_id,
+    )
     return {"session_id": session.session_id}
 
 
@@ -291,8 +332,8 @@ async def admin_session_history(session_id: str) -> list:
 
 
 @app.get("/config")
-async def config() -> dict:
-    return get_app_config()
+async def config(app_id: int | None = None) -> dict:
+    return await get_app_config_from_db(app_id)
 
 
 @app.get("/health")

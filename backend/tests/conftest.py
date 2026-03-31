@@ -8,6 +8,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
+from backend.db import init_db, save_session
 from backend.server import app, sessions
 from backend.session import SessionState
 
@@ -23,6 +24,7 @@ def event_loop():
 @pytest_asyncio.fixture
 async def client():
     """Async HTTP client for testing FastAPI endpoints."""
+    await init_db()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -30,8 +32,10 @@ async def client():
 
 @pytest_asyncio.fixture
 async def session():
-    """Create and register a test session."""
+    """Create and register a test session (in-memory + DB)."""
+    await init_db()
     s = sessions.create()
+    await save_session(s.session_id, user_id=s.user_id)
     yield s
     sessions.remove(s.session_id)
 

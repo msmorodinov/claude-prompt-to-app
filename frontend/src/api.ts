@@ -38,8 +38,11 @@ export async function submitAnswers(
   })
 }
 
-export async function createSession(): Promise<{ session_id: string }> {
-  return request('/sessions/create', { method: 'POST' })
+export async function createSession(appId?: number): Promise<{ session_id: string }> {
+  return request('/sessions/create', {
+    method: 'POST',
+    body: JSON.stringify(appId != null ? { app_id: appId } : {}),
+  })
 }
 
 export interface HistoryEntry {
@@ -72,9 +75,25 @@ export interface AppConfig {
   subtitle?: string
 }
 
-export async function loadConfig(): Promise<AppConfig> {
+export interface AppInfo {
+  id: number
+  slug: string
+  title: string
+  subtitle?: string
+}
+
+export async function listApps(): Promise<AppInfo[]> {
   try {
-    return await request('/config')
+    return await request('/apps')
+  } catch {
+    return []
+  }
+}
+
+export async function loadConfig(appId?: number): Promise<AppConfig> {
+  const params = appId != null ? `?app_id=${appId}` : ''
+  try {
+    return await request(`/config${params}`)
   } catch {
     return { title: 'App' }
   }

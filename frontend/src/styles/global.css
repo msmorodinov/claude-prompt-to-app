@@ -992,6 +992,63 @@ body {
   font-size: 0.85rem;
 }
 
+/* App Selector */
+.app-selector {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  animation: fadeIn 0.4s ease;
+}
+
+.app-selector h2 {
+  font-family: var(--font-heading);
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 700px;
+}
+
+.app-card {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: var(--font-body);
+}
+
+.app-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.app-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  font-weight: 400;
+}
+
+.app-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
