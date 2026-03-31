@@ -12,6 +12,7 @@ export default function ChatContainer() {
     () => sessionStorage.getItem(SESSION_KEY),
   )
   const [appTitle, setAppTitle] = useState('App')
+  const [appSubtitle, setAppSubtitle] = useState<string | undefined>()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [viewingSessionId, setViewingSessionId] = useState<string | null>(null)
   const [viewedMessages, setViewedMessages] = useState<ReturnType<typeof historyToMessages>>([])
@@ -39,7 +40,11 @@ export default function ChatContainer() {
   )
 
   useEffect(() => {
-    loadConfig().then(c => setAppTitle(c.title))
+    loadConfig().then(c => {
+      setAppTitle(c.title)
+      setAppSubtitle(c.subtitle)
+      document.title = c.title
+    })
   }, [])
 
   useEffect(() => {
@@ -229,7 +234,7 @@ export default function ChatContainer() {
       ) : showStartScreen ? (
         <div className="start-screen">
           <h2>Ready to begin?</h2>
-          <p className="start-subtitle">Your interactive positioning workshop</p>
+          {appSubtitle && <p className="start-subtitle">{appSubtitle}</p>}
           <button className="start-btn" onClick={handleStart}>
             Start
           </button>

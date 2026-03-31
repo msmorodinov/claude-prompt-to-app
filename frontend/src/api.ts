@@ -69,6 +69,7 @@ export async function listSessions(): Promise<SessionSummary[]> {
 
 export interface AppConfig {
   title: string
+  subtitle?: string
 }
 
 export async function loadConfig(): Promise<AppConfig> {
