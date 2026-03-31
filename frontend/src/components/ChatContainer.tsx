@@ -194,6 +194,13 @@ export default function ChatContainer() {
         onClose={() => setSidebarOpen(false)}
       />
 
+      <header className="app-header">
+        <button className="sidebar-toggle" onClick={() => setSidebarOpen(true)} title="Session history">
+          &#9776;
+        </button>
+        <h1>{appTitle}</h1>
+      </header>
+
       {isViewingPast && (
         <div className="readonly-banner">
           <span>Viewing past session</span>
@@ -229,9 +236,7 @@ export default function ChatContainer() {
             onAskSubmit={handleAskSubmit}
             scrollRef={scrollRef}
             isLoading={!isViewingPast && isLoading}
-            title={appTitle}
             readOnly={isViewingPast}
-            onToggleSidebar={() => setSidebarOpen(true)}
           />
           {!isViewingPast && sessionDone && !sessionError && (
             <div className="session-done-banner">

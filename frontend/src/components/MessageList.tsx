@@ -8,22 +8,12 @@ interface Props {
   onAskSubmit: (askId: string, answers: Record<string, unknown>) => void
   scrollRef: React.RefObject<HTMLDivElement | null>
   isLoading: boolean
-  title?: string
   readOnly?: boolean
-  onToggleSidebar?: () => void
 }
 
-export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, title, readOnly, onToggleSidebar }: Props) {
+export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, readOnly }: Props) {
   return (
     <div className="message-list">
-      <header className="app-header">
-        {onToggleSidebar && (
-          <button className="sidebar-toggle" onClick={onToggleSidebar} title="Session history">
-            &#9776;
-          </button>
-        )}
-        <h1>{title ?? 'App'}</h1>
-      </header>
       {messages.map((msg, i) => {
         switch (msg.role) {
           case 'assistant':
