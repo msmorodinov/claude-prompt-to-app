@@ -171,14 +171,6 @@ export default function ChatContainer() {
 
   return (
     <div className="chat-container">
-      <button
-        className="sidebar-toggle"
-        onClick={() => setSidebarOpen(true)}
-        title="Session history"
-      >
-        &#9776;
-      </button>
-
       <SessionSidebar
         currentSessionId={isViewingPast ? viewingSessionId : sessionId}
         onSelectSession={handleSelectSession}
@@ -224,6 +216,7 @@ export default function ChatContainer() {
             isLoading={!isViewingPast && isLoading}
             title={appTitle}
             readOnly={isViewingPast}
+            onToggleSidebar={() => setSidebarOpen(true)}
           />
           {!isViewingPast && sessionDone && !sessionError && (
             <div className="session-done-banner">
