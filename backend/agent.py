@@ -13,7 +13,7 @@ from claude_agent_sdk import (
     create_sdk_mcp_server,
 )
 
-from backend.db import get_session
+from backend.db import get_prompt_body_by_version, get_session
 from backend.prompt_config import load_prompt
 from backend.session import SessionState
 from backend.tools import create_tools
@@ -23,9 +23,26 @@ logger = logging.getLogger(__name__)
 FRAMEWORK_PATH = Path(__file__).parent / "framework.md"
 
 
+async def _get_prompt_for_session(session: SessionState) -> str:
+    """Get the locked prompt version for this session from DB.
+
+    Falls back to prompt.md for pre-migration sessions or if DB lookup fails.
+    """
+    if session.prompt_version_id:
+        body = await get_prompt_body_by_version(session.prompt_version_id)
+        if body:
+            return body
+        logger.warning(
+            "prompt_version_id=%d not found in DB, falling back to file",
+            session.prompt_version_id,
+        )
+    _, body = load_prompt()
+    return body
+
+
 async def run_agent(session: SessionState, user_message: str) -> None:
     framework = FRAMEWORK_PATH.read_text()
-    _, app_prompt = load_prompt()
+    app_prompt = await _get_prompt_for_session(session)
     system_prompt = f"{app_prompt}\n\n{framework}"
     tools = create_tools(session, session.session_id)
 

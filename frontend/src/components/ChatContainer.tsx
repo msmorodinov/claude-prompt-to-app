@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { type AppConfig, createSession, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
+import { type AppConfig, type AppInfo, createSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
+import AppSelector from './AppSelector'
 import MessageList from './MessageList'
 import SessionSidebar from './SessionSidebar'
 
@@ -18,6 +19,11 @@ export default function ChatContainer() {
 
   const [sessionError, setSessionError] = useState(false)
   const [sessionDone, setSessionDone] = useState(false)
+
+  // Multi-app state
+  const [apps, setApps] = useState<AppInfo[]>([])
+  const [appsLoaded, setAppsLoaded] = useState(false)
+  const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
 
   const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, handleSSEEvent, markAskAnswered, scrollRef } =
     useChat()
@@ -38,17 +44,33 @@ export default function ChatContainer() {
     [handleSSEEvent],
   )
 
+  // Load available apps on mount
   useEffect(() => {
-    loadConfig().then(config => {
+    listApps().then(a => { setApps(a); setAppsLoaded(true) }).catch(() => setAppsLoaded(true))
+  }, [])
+
+  // Auto-select when single app
+  useEffect(() => {
+    if (apps.length === 1 && selectedAppId === null) {
+      setSelectedAppId(apps[0].id)
+    }
+  }, [apps, selectedAppId])
+
+  // Load config when app is selected
+  useEffect(() => {
+    loadConfig(selectedAppId ?? undefined).then(config => {
       setAppConfig(config)
       document.title = config.title
     })
-  }, [])
+  }, [selectedAppId])
 
+  // Create session when needed (deferred until app selected for multi-app)
   useEffect(() => {
     if (sessionId) return
+    if (!appsLoaded) return // Wait for apps response
+    if (apps.length > 1 && selectedAppId === null) return
     let cancelled = false
-    createSession().then(({ session_id }) => {
+    createSession(selectedAppId ?? undefined).then(({ session_id }) => {
       if (cancelled) return
       setSessionId(session_id)
       sessionStorage.setItem(SESSION_KEY, session_id)
@@ -56,7 +78,7 @@ export default function ChatContainer() {
       console.error('Failed to create session:', err)
     })
     return () => { cancelled = true }
-  }, [sessionId])
+  }, [sessionId, selectedAppId, appsLoaded, apps.length])
 
   const [hasHistory, setHasHistory] = useState<boolean | null>(null)
   const historyLoaded = useRef(false)
@@ -87,11 +109,10 @@ export default function ChatContainer() {
         const { session_id } = await startChat(message, sessionId ?? undefined)
         setSessionId(session_id)
       } catch (err: unknown) {
-        // Session lost after server restart — create new and retry
         const is404 = err instanceof Error && err.message.includes('404')
         if (is404) {
           try {
-            const { session_id: newId } = await createSession()
+            const { session_id: newId } = await createSession(selectedAppId ?? undefined)
             setSessionId(newId)
             sessionStorage.setItem(SESSION_KEY, newId)
             historyLoaded.current = true
@@ -106,7 +127,7 @@ export default function ChatContainer() {
         setIsLoading(false)
       }
     },
-    [sessionId, setIsLoading, hasPendingAsk],
+    [sessionId, selectedAppId, setIsLoading, hasPendingAsk],
   )
 
   const handleRetry = useCallback(async () => {
@@ -155,23 +176,21 @@ export default function ChatContainer() {
   )
 
   const handleNewSession = useCallback(async () => {
-    try {
-      const { session_id } = await createSession()
-      setSessionId(session_id)
-      sessionStorage.setItem(SESSION_KEY, session_id)
-      setMessages([])
-      setIsLoading(false)
-      setHasHistory(false)
-      setSessionError(false)
-      setSessionDone(false)
-      setViewingSessionId(null)
-      setViewedMessages([])
-      historyLoaded.current = false
-      setSidebarOpen(false)
-    } catch (err) {
-      console.error('Failed to create session:', err)
+    setSessionId(null)
+    sessionStorage.removeItem(SESSION_KEY)
+    setMessages([])
+    setIsLoading(false)
+    setHasHistory(false)
+    setSessionError(false)
+    setSessionDone(false)
+    setViewingSessionId(null)
+    setViewedMessages([])
+    historyLoaded.current = false
+    setSidebarOpen(false)
+    if (apps.length > 1) {
+      setSelectedAppId(null)
     }
-  }, [setMessages, setIsLoading])
+  }, [apps.length, setMessages, setIsLoading])
 
   const handleBackToCurrent = useCallback(() => {
     setViewingSessionId(null)
@@ -230,13 +249,20 @@ export default function ChatContainer() {
           <p className="loading-text">Loading...</p>
         </div>
       ) : showStartScreen ? (
-        <div className="start-screen">
-          <h2>Ready to begin?</h2>
-          {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
-          <button className="start-btn" onClick={handleStart}>
-            Start
-          </button>
-        </div>
+        apps.length > 1 && selectedAppId === null ? (
+          <AppSelector
+            apps={apps}
+            onSelect={(id) => setSelectedAppId(id)}
+          />
+        ) : (
+          <div className="start-screen">
+            <h2>Ready to begin?</h2>
+            {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
+            <button className="start-btn" onClick={handleStart}>
+              Start
+            </button>
+          </div>
+        )
       ) : (
         <>
           <MessageList

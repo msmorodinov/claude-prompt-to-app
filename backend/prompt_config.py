@@ -1,4 +1,13 @@
-"""Parse YAML frontmatter from prompt.md."""
+"""Parse YAML frontmatter from prompt.md.
+
+DEPRECATION NOTE (2026-03-31): After the prompt versioning migration
+(user_version >= 2), this module is only used for the initial seed from
+prompt.md during migration and as a fallback for pre-migration sessions.
+The DB (apps + prompt_versions tables) is the authoritative source for
+prompt content going forward.
+
+See db.py: get_prompt_body_by_version() for the runtime prompt lookup.
+"""
 
 from __future__ import annotations
 
