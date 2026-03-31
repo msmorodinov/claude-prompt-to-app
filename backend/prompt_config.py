@@ -38,7 +38,7 @@ def load_prompt() -> tuple[dict[str, Any], str]:
 def get_app_config() -> dict[str, Any]:
     """Return app config from prompt frontmatter, with defaults."""
     meta, _ = load_prompt()
-    return {
-        "title": meta.get("title", "App"),
-        **({"subtitle": meta["subtitle"]} if "subtitle" in meta else {}),
-    }
+    config: dict[str, Any] = {"title": meta.get("title", "App")}
+    if "subtitle" in meta:
+        config["subtitle"] = meta["subtitle"]
+    return config

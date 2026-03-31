@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createSession, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
+import { type AppConfig, createSession, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
 import MessageList from './MessageList'
@@ -11,8 +11,7 @@ export default function ChatContainer() {
   const [sessionId, setSessionId] = useState<string | null>(
     () => sessionStorage.getItem(SESSION_KEY),
   )
-  const [appTitle, setAppTitle] = useState('App')
-  const [appSubtitle, setAppSubtitle] = useState<string | undefined>()
+  const [appConfig, setAppConfig] = useState<AppConfig>({ title: 'App' })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [viewingSessionId, setViewingSessionId] = useState<string | null>(null)
   const [viewedMessages, setViewedMessages] = useState<ReturnType<typeof historyToMessages>>([])
@@ -40,10 +39,9 @@ export default function ChatContainer() {
   )
 
   useEffect(() => {
-    loadConfig().then(c => {
-      setAppTitle(c.title)
-      setAppSubtitle(c.subtitle)
-      document.title = c.title
+    loadConfig().then(config => {
+      setAppConfig(config)
+      document.title = config.title
     })
   }, [])
 
@@ -207,7 +205,7 @@ export default function ChatContainer() {
             <line x1="3" y1="13" x2="15" y2="13" />
           </svg>
         </button>
-        <h1>{appTitle}</h1>
+        <h1>{appConfig.title}</h1>
       </header>
 
       {isViewingPast && (
@@ -234,7 +232,7 @@ export default function ChatContainer() {
       ) : showStartScreen ? (
         <div className="start-screen">
           <h2>Ready to begin?</h2>
-          {appSubtitle && <p className="start-subtitle">{appSubtitle}</p>}
+          {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
           <button className="start-btn" onClick={handleStart}>
             Start
           </button>
