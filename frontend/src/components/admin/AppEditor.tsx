@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { AdminAppDetail } from '../../api-admin'
-import { fetchAdminApp, updateAdminApp } from '../../api-admin'
+import type { AdminAppDetail, EnvironmentInfo } from '../../api-admin'
+import { errorMessage, fetchAdminApp, fetchEnvironment, updateAdminApp } from '../../api-admin'
+import EnvironmentReference from './EnvironmentReference'
 import VersionHistory from './VersionHistory'
 
 interface Props {
@@ -27,6 +28,10 @@ export default function AppEditor({ appId }: Props) {
   // Version history panel
   const [showVersionHistory, setShowVersionHistory] = useState(false)
 
+  // Environment reference panel
+  const [showEnvRef, setShowEnvRef] = useState(false)
+  const [envData, setEnvData] = useState<EnvironmentInfo | null>(null)
+
   const isDirty = editedBody !== originalBody
 
   const loadDetail = useCallback(async () => {
@@ -40,7 +45,7 @@ export default function AppEditor({ appId }: Props) {
       setOriginalBody(body)
       setEditedBody(body)
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load app')
+      setLoadError(errorMessage(err, 'Failed to load app'))
     }
   }, [appId])
 
@@ -56,7 +61,7 @@ export default function AppEditor({ appId }: Props) {
       await updateAdminApp(appId, { is_active: newActive })
       setDetail({ ...detail, is_active: newActive ? 1 : 0 })
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to toggle active state')
+      setSaveError(errorMessage(err, 'Failed to toggle active state'))
     }
   }
 
@@ -69,7 +74,7 @@ export default function AppEditor({ appId }: Props) {
         setDetail({ ...detail, title: editTitle, subtitle: editSubtitle })
       }
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save metadata')
+      setSaveError(errorMessage(err, 'Failed to save metadata'))
     } finally {
       setIsSavingMeta(false)
     }
@@ -86,7 +91,7 @@ export default function AppEditor({ appId }: Props) {
       setSuccessFlash(true)
       setTimeout(() => setSuccessFlash(false), 2500)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to publish version')
+      setSaveError(errorMessage(err, 'Failed to publish version'))
     } finally {
       setIsSaving(false)
     }
@@ -107,6 +112,23 @@ export default function AppEditor({ appId }: Props) {
         target.selectionEnd = start + 1
       })
     }
+  }
+
+  async function handleToggleEnvRef() {
+    if (showEnvRef) {
+      setShowEnvRef(false)
+      return
+    }
+    if (!envData) {
+      try {
+        const data = await fetchEnvironment()
+        setEnvData(data)
+      } catch (err) {
+        setSaveError(errorMessage(err, 'Failed to load environment reference'))
+        return
+      }
+    }
+    setShowEnvRef(true)
   }
 
   const charCount = editedBody.length.toLocaleString()
@@ -233,13 +255,31 @@ export default function AppEditor({ appId }: Props) {
             <span className="success-flash">Version published</span>
           )}
         </div>
-        <button
-          className="btn btn--secondary"
-          onClick={() => setShowVersionHistory(v => !v)}
-        >
-          {showVersionHistory ? 'Hide History' : 'Version History'}
-        </button>
+        <div className="action-bar-right">
+          <button
+            className="btn btn--secondary"
+            onClick={handleToggleEnvRef}
+          >
+            {showEnvRef ? 'Hide Env' : 'Environment'}
+          </button>
+          <button
+            className="btn btn--secondary"
+            onClick={() => setShowVersionHistory(v => !v)}
+          >
+            {showVersionHistory ? 'Hide History' : 'Version History'}
+          </button>
+        </div>
       </div>
+
+      {/* Environment Reference */}
+      {showEnvRef && envData && (
+        <div className="app-editor-env-reference">
+          <EnvironmentReference
+            data={envData}
+            onClose={() => setShowEnvRef(false)}
+          />
+        </div>
+      )}
 
       {/* Version History */}
       {showVersionHistory && (

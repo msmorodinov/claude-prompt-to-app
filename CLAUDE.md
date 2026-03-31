@@ -4,6 +4,8 @@
 
 Generic framework for prompt-driven agentic web apps. Claude drives the logic via MCP tools (`show` and `ask`). The UI is a "dumb" chat renderer — it shows whatever Claude requests.
 
+Supports **multi-app prompt management** with versioning — admins can create, edit, and version control multiple prompts/apps. Each session runs with a specific app version; switching apps mid-session creates a new session.
+
 The example app is a positioning workshop based on Gerstep's methodology, but the framework is app-agnostic.
 
 ## Architecture
@@ -44,14 +46,16 @@ forge-simple/
 │
 ├── backend/
 │   ├── __init__.py
-│   ├── server.py          # FastAPI app, SSE, /answers, admin endpoints
-│   ├── agent.py           # Claude SDK client, agent lifecycle
+│   ├── server.py          # FastAPI app, SSE, /answers, session + app endpoints
+│   ├── admin_apps.py      # Admin API router: CRUD apps, manage versions
+│   ├── agent.py           # Claude SDK client, agent lifecycle (loads app version)
 │   ├── tools.py           # MCP tools: show + ask (with asyncio.Event)
 │   ├── schemas.py         # JSON schemas for all widget types
-│   ├── session.py         # Session state (pending events, answers, SSE queue)
-│   ├── db.py              # SQLite: save/load sessions, auto-title
-│   ├── prompt.md          # System prompt with YAML frontmatter (title, subtitle)
-│   ├── prompt_config.py   # Parse frontmatter from prompt.md for /config
+│   ├── session.py         # Session state (pending events, answers, app_id, version_id)
+│   ├── db.py              # SQLite: sessions, apps, versions CRUD + versioning
+│   ├── prompt.md          # System prompt with YAML frontmatter (legacy, replaced by apps DB)
+│   ├── app-builder-prompt.md # App Builder meta-app prompt (seeded via migration v3)
+│   ├── prompt_config.py   # Parse frontmatter from prompt.md for backward compat
 │   ├── framework.md       # Framework description for agent
 │   ├── requirements.txt
 │   └── tests/             # pytest: test_db, test_server, test_session, test_tools, test_schemas
@@ -72,9 +76,10 @@ forge-simple/
 │       │   ├── useSSE.ts         # SSE connection, reconnect, event dispatch
 │       │   └── useChat.ts        # Chat message state, scroll management
 │       ├── pages/
-│       │   ├── ChatPage.tsx      # Main chat page wrapper
-│       │   └── AdminPage.tsx     # Admin monitoring dashboard
+│       │   ├── ChatPage.tsx      # Main chat page with AppSelector
+│       │   └── AdminPage.tsx     # Admin dashboard: sessions + app management
 │       ├── components/
+│       │   ├── AppSelector.tsx    # Select/switch app before starting session
 │       │   ├── ChatContainer.tsx  # Chat + SessionSidebar + read-only mode
 │       │   ├── SessionSidebar.tsx # Past session list sidebar
 │       │   ├── MessageList.tsx    # Message renderer (readOnly support)
@@ -103,9 +108,14 @@ forge-simple/
 │       │   │   ├── SliderScale.tsx
 │       │   │   ├── Matrix2x2.tsx
 │       │   │   └── TagInput.tsx
-│       │   └── admin/            # Admin monitoring components
-│       │       ├── SessionList.tsx
-│       │       └── SessionViewer.tsx
+│       │   └── admin/            # Admin app + session management
+│       │       ├── AppList.tsx             # List all apps
+│       │       ├── AppEditor.tsx           # Create/edit app + versioning
+│       │       ├── EnvironmentReference.tsx # Widget/tool catalog reference panel
+│       │       ├── VersionHistory.tsx      # App version timeline
+│       │       ├── VersionDiff.tsx         # Diff between versions
+│       │       ├── SessionList.tsx         # List all sessions
+│       │       └── SessionViewer.tsx       # View session history (read-only)
 │       ├── __tests__/            # Vitest: widgets, hooks, components
 │       └── styles/
 │           ├── global.css
@@ -124,7 +134,7 @@ forge-simple/
         └── real-backend.spec.ts
 ```
 
-## MCP Tools (2 tools)
+## MCP Tools (3 tools)
 
 ### `show` — fire-and-forget display
 - Claude calls when it wants to display content to user
@@ -136,6 +146,12 @@ forge-simple/
 - Sends questions to browser via SSE, blocks via asyncio.Event
 - Unblocked when user POSTs /answers
 - Widget types: single_select, multi_select, free_text, rank_priorities, slider_scale, matrix_2x2, tag_input
+
+### `save_app` — save new app to database (App Builder only)
+- Only available when running the `app-builder` app
+- Creates a new app as inactive draft (admin must activate)
+- Parameters: `slug`, `title`, `subtitle` (optional), `body` (prompt markdown)
+- Validates slug format, title, body length
 
 Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (read competitor sites).
 
@@ -182,16 +198,33 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 
 ## API Endpoints
 
+### Session & Chat
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/chat` | Start or continue session (auto-titles on first msg) |
 | `GET` | `/stream` | SSE event stream to browser |
 | `POST` | `/answers` | User submits form -> unblocks `ask` tool |
-| `POST` | `/sessions/create` | Create new session (auto on page load) |
-| `GET` | `/sessions` | List user's sessions (with status, message_count) |
+| `POST` | `/sessions/create` | Create new session with app_id (auto on page load) |
+| `GET` | `/sessions` | List user's sessions (with status, app_id, version_id) |
 | `GET` | `/sessions/{id}` | Load specific session history |
+| `GET` | `/api/environment` | Widget and tool catalog for prompt authors |
 | `GET` | `/health` | Health check |
-| `GET` | `/config` | App config (title/subtitle from prompt.md frontmatter) |
+
+### App Management (Admin)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/apps` | List all apps (public) |
+| `GET` | `/config` | App config (title/subtitle for current/default app) |
+| `GET` | `/admin/apps` | List all apps with metadata (admin) |
+| `POST` | `/admin/apps` | Create new app (admin) |
+| `GET` | `/admin/apps/{app_id}` | Get app detail + current version (admin) |
+| `PUT` | `/admin/apps/{app_id}` | Update app + create new version (admin) |
+| `GET` | `/admin/apps/{app_id}/versions` | List all versions for app (admin) |
+| `GET` | `/admin/apps/{app_id}/versions/{version_id}` | Get specific version (admin) |
+
+### Session Monitoring (Admin)
+| Method | Path | Description |
+|--------|------|-------------|
 | `GET` | `/admin/sessions` | All sessions with status (admin) |
 | `GET` | `/admin/sessions/{id}/stream` | Read-only SSE stream (admin) |
 | `GET` | `/admin/sessions/{id}/history` | Full message history (admin) |
@@ -225,12 +258,23 @@ options = ClaudeAgentOptions(
 
 ## Session Lifecycle
 
-- Frontend auto-creates a session on page load via `POST /sessions/create`
+- User selects app via `AppSelector` (shows active/inactive apps)
+- Frontend creates session via `POST /sessions/create` with `app_id` + `version_id` (uses current/default)
 - Session ID stored in `sessionStorage` (key: `session_id`) — persists within tab, resets on new tab
 - User ID generated once per browser, stored in `localStorage` — sent as `X-User-Id` header
 - First user message auto-titles the session (first 80 chars)
 - Session sidebar allows browsing and viewing past sessions in read-only mode
+- Switching apps mid-session creates a new session (old session preserved in history)
 - Framework-level thinking indicator: `isLoading` state drives `◎ Thinking...` in MessageList (no agent SSE events needed)
+
+## App & Version Management
+
+- Each app has a `slug` (unique), `title`, `subtitle`, `is_active` flag
+- Versions track `prompt_body` changes with `change_note` + `created_at` timestamp
+- Admin can create, edit, and view version history via `/admin/apps`
+- Editing an app creates a new version automatically
+- `current_version_id` on the app points to active version; new sessions use this version
+- Version diffing UI shows side-by-side comparison of prompt changes
 
 ## Key Constraints
 

@@ -17,6 +17,39 @@ class TestHealthEndpoint:
         assert resp.json() == {"status": "ok"}
 
 
+class TestEnvironmentEndpoint:
+    @pytest.mark.asyncio
+    async def test_environment_returns_structure(self, client):
+        resp = await client.get("/api/environment")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "display_widgets" in data
+        assert "input_widgets" in data
+        assert "tools" in data
+        assert len(data["display_widgets"]) == 11
+        assert len(data["input_widgets"]) == 7
+        assert len(data["tools"]) == 5
+
+    @pytest.mark.asyncio
+    async def test_environment_widget_fields(self, client):
+        resp = await client.get("/api/environment")
+        data = resp.json()
+        widget = data["display_widgets"][0]
+        assert "type" in widget
+        assert "required" in widget
+        assert "optional" in widget
+        assert isinstance(widget["required"], list)
+
+    @pytest.mark.asyncio
+    async def test_environment_tool_fields(self, client):
+        resp = await client.get("/api/environment")
+        data = resp.json()
+        tool = data["tools"][0]
+        assert "name" in tool
+        assert "description" in tool
+        assert "behavior" in tool
+
+
 class TestChatEndpoint:
     @pytest.mark.asyncio
     @patch("backend.server.run_agent", new_callable=AsyncMock)

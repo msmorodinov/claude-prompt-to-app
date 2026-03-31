@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from backend.db import (
+    create_app,
+    get_app_by_id,
     get_session,
     get_sessions_by_user,
     init_db,
@@ -117,3 +119,43 @@ class TestDatabase:
         sessions = await get_sessions_by_user("user-1", db_path)
         assert len(sessions) == 1
         assert sessions[0]["id"] == "sess-1"
+
+
+class TestAppCrud:
+    @pytest.mark.asyncio
+    async def test_migration_seeds_app_builder(self, db_path):
+        await init_db(db_path)
+        import aiosqlite
+
+        db = await aiosqlite.connect(str(db_path))
+        db.row_factory = aiosqlite.Row
+        try:
+            cursor = await db.execute("SELECT slug, is_active FROM apps WHERE slug = 'app-builder'")
+            row = await cursor.fetchone()
+            assert row is not None
+            assert row["slug"] == "app-builder"
+            assert row["is_active"] == 1
+        finally:
+            await db.close()
+
+    @pytest.mark.asyncio
+    async def test_create_app_inactive(self, db_path):
+        await init_db(db_path)
+        result = await create_app(
+            "test-inactive", "Test Inactive", "sub", "Prompt body",
+            is_active=False, db_path=db_path,
+        )
+        app = await get_app_by_id(result["id"], db_path)
+        assert app is not None
+        assert app["is_active"] == 0
+
+    @pytest.mark.asyncio
+    async def test_create_app_active_by_default(self, db_path):
+        await init_db(db_path)
+        result = await create_app(
+            "test-active", "Test Active", "sub", "Prompt body",
+            db_path=db_path,
+        )
+        app = await get_app_by_id(result["id"], db_path)
+        assert app is not None
+        assert app["is_active"] == 1

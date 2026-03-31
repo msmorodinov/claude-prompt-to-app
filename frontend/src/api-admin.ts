@@ -1,6 +1,10 @@
 import { request } from './api'
 import type { HistoryEntry } from './api'
 
+export function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback
+}
+
 export interface AdminSession {
   id: string
   user_id: string
@@ -119,4 +123,29 @@ export async function fetchVersionFull(
   versionId: number,
 ): Promise<PromptVersionFull> {
   return request(`/admin/apps/${appId}/versions/${versionId}`)
+}
+
+// --- Environment reference ---
+
+export interface WidgetInfo {
+  type: string
+  description: string
+  required: string[]
+  optional: string[]
+}
+
+export interface ToolInfo {
+  name: string
+  description: string
+  behavior: string
+}
+
+export interface EnvironmentInfo {
+  display_widgets: WidgetInfo[]
+  input_widgets: WidgetInfo[]
+  tools: ToolInfo[]
+}
+
+export async function fetchEnvironment(): Promise<EnvironmentInfo> {
+  return request('/api/environment')
 }

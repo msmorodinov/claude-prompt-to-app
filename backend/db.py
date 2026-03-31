@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 import aiosqlite
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = Path(__file__).parent / "sessions.db"
 
@@ -21,6 +24,38 @@ async def _get_db(db_path: str | Path = DB_PATH) -> aiosqlite.Connection:
     await db.execute("PRAGMA foreign_keys = ON")
     await db.execute("PRAGMA journal_mode = WAL")
     return db
+
+
+async def _insert_app_with_version(
+    db: aiosqlite.Connection,
+    slug: str,
+    title: str,
+    subtitle: str,
+    body: str,
+    change_note: str,
+    *,
+    is_active: int = 1,
+) -> tuple[int, int]:
+    """Insert an app row + its first prompt version, link them. Returns (app_id, version_id)."""
+    await db.execute(
+        "INSERT INTO apps (slug, title, subtitle, is_active) VALUES (?, ?, ?, ?)",
+        (slug, title, subtitle, is_active),
+    )
+    app_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
+    app_id = app_row[0]
+
+    await db.execute(
+        "INSERT INTO prompt_versions (app_id, body, change_note) VALUES (?, ?, ?)",
+        (app_id, body, change_note),
+    )
+    ver_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
+    version_id = ver_row[0]
+
+    await db.execute(
+        "UPDATE apps SET current_version_id = ? WHERE id = ?",
+        (version_id, app_id),
+    )
+    return app_id, version_id
 
 
 async def _column_exists(db: aiosqlite.Connection, table: str, column: str) -> bool:
@@ -149,12 +184,10 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             )
             ver_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
             version_id = ver_row[0]
-
             await db.execute(
                 "UPDATE apps SET current_version_id = ? WHERE id = ?",
                 (version_id, app_id),
             )
-
             # Backfill existing sessions
             await db.execute(
                 "UPDATE sessions SET app_id = ?, prompt_version_id = ? WHERE app_id IS NULL",
@@ -162,6 +195,27 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             )
 
         await db.execute("PRAGMA user_version = 2")
+        await db.commit()
+
+    if version < 3:
+        cursor = await db.execute("SELECT id FROM apps WHERE slug = 'app-builder'")
+        if not (await cursor.fetchone()):
+            builder_path = Path(__file__).parent / "app-builder-prompt.md"
+            if builder_path.exists():
+                await _insert_app_with_version(
+                    db,
+                    slug="app-builder",
+                    title="App Builder",
+                    subtitle="Design new apps interactively",
+                    body=builder_path.read_text(),
+                    change_note="Initial App Builder prompt",
+                )
+            else:
+                logger.warning(
+                    "app-builder-prompt.md not found, skipping App Builder seed"
+                )
+
+        await db.execute("PRAGMA user_version = 3")
         await db.commit()
 
 
@@ -254,28 +308,21 @@ async def get_all_apps_admin(db_path: str | Path = DB_PATH) -> list[dict[str, An
 
 async def create_app(
     slug: str, title: str, subtitle: str, body: str,
+    *,
+    is_active: bool = True,
     db_path: str | Path = DB_PATH,
 ) -> dict[str, Any]:
     """Create app + first version. Returns {id, slug, current_version_id}."""
     db = await _get_db(db_path)
     try:
-        await db.execute(
-            "INSERT INTO apps (slug, title, subtitle) VALUES (?, ?, ?)",
-            (slug, title, subtitle),
-        )
-        app_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
-        app_id = app_row[0]
-
-        await db.execute(
-            "INSERT INTO prompt_versions (app_id, body, change_note) VALUES (?, ?, ?)",
-            (app_id, body, "Initial version"),
-        )
-        ver_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
-        version_id = ver_row[0]
-
-        await db.execute(
-            "UPDATE apps SET current_version_id = ? WHERE id = ?",
-            (version_id, app_id),
+        app_id, version_id = await _insert_app_with_version(
+            db,
+            slug=slug,
+            title=title,
+            subtitle=subtitle,
+            body=body,
+            change_note="Initial version",
+            is_active=1 if is_active else 0,
         )
         await db.commit()
         return {"id": app_id, "slug": slug, "current_version_id": version_id}
@@ -364,13 +411,12 @@ async def get_app_config_from_db(
     db = await _get_db(db_path)
     try:
         if app_id is not None:
-            cursor = await db.execute(
-                "SELECT title, subtitle FROM apps WHERE id = ?", (app_id,)
-            )
+            query = "SELECT title, subtitle FROM apps WHERE id = ?"
+            params: tuple = (app_id,)
         else:
-            cursor = await db.execute(
-                "SELECT title, subtitle FROM apps WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
-            )
+            query = "SELECT title, subtitle FROM apps WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
+            params = ()
+        cursor = await db.execute(query, params)
         row = await cursor.fetchone()
         if not row:
             return {"title": "App"}
