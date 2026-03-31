@@ -14,18 +14,18 @@ from claude_agent_sdk import (
 )
 
 from backend.db import get_session
+from backend.prompt_config import load_prompt
 from backend.session import SessionState
 from backend.tools import create_tools
 
 logger = logging.getLogger(__name__)
 
 FRAMEWORK_PATH = Path(__file__).parent / "framework.md"
-PROMPT_PATH = Path(__file__).parent / "prompt.md"
 
 
 async def run_agent(session: SessionState, user_message: str) -> None:
     framework = FRAMEWORK_PATH.read_text()
-    app_prompt = PROMPT_PATH.read_text()
+    _, app_prompt = load_prompt()
     system_prompt = f"{app_prompt}\n\n{framework}"
     tools = create_tools(session, session.session_id)
 

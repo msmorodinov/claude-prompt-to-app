@@ -49,8 +49,8 @@ forge-simple/
 │   ├── schemas.py         # JSON schemas for all widget types
 │   ├── session.py         # Session state (pending events, answers, SSE queue)
 │   ├── db.py              # SQLite: save/load sessions, auto-title
-│   ├── prompt.md          # System prompt (positioning methodology)
-│   ├── app.json           # App config (title, etc.)
+│   ├── prompt.md          # System prompt with YAML frontmatter (title, subtitle)
+│   ├── prompt_config.py   # Parse frontmatter from prompt.md for /config
 │   ├── framework.md       # Framework description for agent
 │   ├── requirements.txt
 │   └── tests/             # pytest: test_db, test_server, test_session, test_tools, test_schemas
@@ -190,7 +190,7 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 | `GET` | `/sessions` | List user's sessions (with status, message_count) |
 | `GET` | `/sessions/{id}` | Load specific session history |
 | `GET` | `/health` | Health check |
-| `GET` | `/config` | App config (title from app.json) |
+| `GET` | `/config` | App config (title/subtitle from prompt.md frontmatter) |
 | `GET` | `/admin/sessions` | All sessions with status (admin) |
 | `GET` | `/admin/sessions/{id}/stream` | Read-only SSE stream (admin) |
 | `GET` | `/admin/sessions/{id}/history` | Full message history (admin) |

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
 from backend.agent import run_agent, run_agent_with_context
@@ -23,12 +25,12 @@ from backend.db import (
     save_session,
     update_session_title,
 )
+from backend.prompt_config import get_app_config
 from backend.session import SessionManager, SessionState
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-APP_CONFIG_PATH = Path(__file__).parent / "app.json"
 
 
 @asynccontextmanager
@@ -291,10 +293,7 @@ async def admin_session_history(session_id: str) -> list:
 
 @app.get("/config")
 async def config() -> dict:
-    try:
-        return json.loads(APP_CONFIG_PATH.read_text())
-    except FileNotFoundError:
-        return {"title": "App"}
+    return get_app_config()
 
 
 @app.get("/health")
@@ -304,18 +303,15 @@ async def health() -> dict:
 
 # --- Static file serving (production) ---
 
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
 if FRONTEND_DIST.is_dir():
-    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
 
     @app.get("/{path:path}")
-    async def spa_catch_all(path: str):
-        file_path = FRONTEND_DIST / path
-        if file_path.is_file() and ".." not in path:
+    async def spa_catch_all(path: str) -> FileResponse:
+        file_path = (FRONTEND_DIST / path).resolve()
+        if file_path.is_file() and str(file_path).startswith(str(FRONTEND_DIST.resolve())):
             return FileResponse(file_path)
         return FileResponse(FRONTEND_DIST / "index.html")
 
