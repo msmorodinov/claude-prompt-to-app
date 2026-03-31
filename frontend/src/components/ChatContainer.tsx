@@ -83,7 +83,22 @@ export default function ChatContainer() {
       try {
         const { session_id } = await startChat(message, sessionId ?? undefined)
         setSessionId(session_id)
-      } catch (err) {
+      } catch (err: unknown) {
+        // Session lost after server restart — create new and retry
+        const is404 = err instanceof Error && err.message.includes('404')
+        if (is404) {
+          try {
+            const { session_id: newId } = await createSession()
+            setSessionId(newId)
+            sessionStorage.setItem(SESSION_KEY, newId)
+            historyLoaded.current = true
+            const { session_id } = await startChat(message, newId)
+            setSessionId(session_id)
+            return
+          } catch (retryErr) {
+            console.error('Retry after new session failed:', retryErr)
+          }
+        }
         console.error('Failed to start chat:', err)
         setIsLoading(false)
       }
