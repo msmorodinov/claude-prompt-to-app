@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { SSEEvent } from '../types'
 import { createSSEUrl } from '../api'
 
-export type SSEHandler = (event: SSEEvent) => void
+type SSEHandler = (event: SSEEvent) => void
 
 const EVENT_TYPES = [
   'assistant_message',

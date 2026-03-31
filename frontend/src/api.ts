@@ -80,12 +80,6 @@ export async function loadConfig(): Promise<AppConfig> {
   }
 }
 
-export async function getSessionStatus(
-  sessionId: string,
-): Promise<{ status: string; agent_running: boolean }> {
-  return request(`/session-status?session_id=${sessionId}`)
-}
-
 export async function retrySession(
   sessionId: string,
 ): Promise<{ session_id: string }> {
