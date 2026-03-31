@@ -132,17 +132,17 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         else:
             title, subtitle, body = "Default App", "", "You are a helpful assistant."
 
-        # Only seed if no apps exist (idempotent)
-        cursor = await db.execute("SELECT COUNT(*) FROM apps")
-        count_row = await cursor.fetchone()
-        if count_row[0] == 0:
-            await db.execute(
-                "INSERT INTO apps (slug, title, subtitle) VALUES (?, ?, ?)",
-                ("default", title, subtitle),
-            )
-            app_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
-            app_id = app_row[0]
-
+        # Seed default app if none exist (idempotent via INSERT OR IGNORE)
+        await db.execute(
+            "INSERT OR IGNORE INTO apps (slug, title, subtitle) VALUES (?, ?, ?)",
+            ("default", title, subtitle),
+        )
+        cursor = await db.execute(
+            "SELECT id, current_version_id FROM apps WHERE slug = 'default'"
+        )
+        default_app = await cursor.fetchone()
+        if default_app and default_app[1] is None:
+            app_id = default_app[0]
             await db.execute(
                 "INSERT INTO prompt_versions (app_id, body, change_note) VALUES (?, ?, ?)",
                 (app_id, body, "Seeded from prompt.md"),
@@ -155,7 +155,7 @@ async def _migrate(db: aiosqlite.Connection) -> None:
                 (version_id, app_id),
             )
 
-            # 5. Backfill existing sessions
+            # Backfill existing sessions
             await db.execute(
                 "UPDATE sessions SET app_id = ?, prompt_version_id = ? WHERE app_id IS NULL",
                 (app_id, version_id),

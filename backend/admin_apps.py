@@ -88,6 +88,9 @@ async def update_app_endpoint(app_id: int, request: Request) -> dict:
         )
     except ValueError:
         raise HTTPException(status_code=404, detail="App not found")
+    except Exception:
+        logger.exception("Failed to update app %s", app_id)
+        raise HTTPException(status_code=500, detail="Failed to update app")
 
 
 @router.get("/{app_id}/versions")
