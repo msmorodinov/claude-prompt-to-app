@@ -13,7 +13,7 @@ from claude_agent_sdk import (
     create_sdk_mcp_server,
 )
 
-from backend.db import get_prompt_body_by_version, get_session
+from backend.db import get_app_by_id, get_prompt_body_by_version, get_session
 from backend.prompt_config import load_prompt
 from backend.session import SessionState
 from backend.tools import create_tools
@@ -21,6 +21,14 @@ from backend.tools import create_tools
 logger = logging.getLogger(__name__)
 
 FRAMEWORK_PATH = Path(__file__).parent / "framework.md"
+APP_BUILDER_SLUG = "app-builder"
+
+
+async def _is_app_builder(app_id: int | None) -> bool:
+    if app_id is None:
+        return False
+    app = await get_app_by_id(app_id)
+    return app is not None and app["slug"] == APP_BUILDER_SLUG
 
 
 async def _get_prompt_for_session(session: SessionState) -> str:
@@ -44,7 +52,9 @@ async def run_agent(session: SessionState, user_message: str) -> None:
     framework = FRAMEWORK_PATH.read_text()
     app_prompt = await _get_prompt_for_session(session)
     system_prompt = f"{app_prompt}\n\n{framework}"
-    tools = create_tools(session, session.session_id)
+
+    is_builder = await _is_app_builder(session.app_id)
+    tools = create_tools(session, session.session_id, include_save_app=is_builder)
 
     server = create_sdk_mcp_server(
         name="app",
@@ -52,14 +62,18 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         tools=tools,
     )
 
+    allowed = [
+        "mcp__app__show",
+        "mcp__app__ask",
+        "WebSearch",
+        "WebFetch",
+    ]
+    if is_builder:
+        allowed.append("mcp__app__save_app")
+
     options = ClaudeAgentOptions(
         mcp_servers={"app": server},
-        allowed_tools=[
-            "mcp__app__show",
-            "mcp__app__ask",
-            "WebSearch",
-            "WebFetch",
-        ],
+        allowed_tools=allowed,
         disallowed_tools=["AskUserQuestion"],
         system_prompt=system_prompt,
         permission_mode="acceptEdits",

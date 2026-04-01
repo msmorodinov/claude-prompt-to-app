@@ -270,5 +270,33 @@ ASK_SCHEMA = {
     "required": ["questions"],
 }
 
+SAVE_APP_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "slug": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "description": "URL-friendly ID (lowercase, hyphens, 2+ chars)",
+        },
+        "title": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Human-readable app title",
+        },
+        "subtitle": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Short tagline (optional)",
+        },
+        "body": {
+            "type": "string",
+            "maxLength": 50000,
+            "description": "Full system prompt in Markdown",
+        },
+    },
+    "required": ["slug", "title", "body"],
+}
+
 DISPLAY_WIDGET_TYPES = set(DISPLAY_WIDGETS.keys())
 INPUT_WIDGET_TYPES = set(INPUT_WIDGETS.keys())

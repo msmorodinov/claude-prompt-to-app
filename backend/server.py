@@ -30,6 +30,7 @@ from backend.db import (
     save_session,
     update_session_title,
 )
+from backend.schemas import DISPLAY_WIDGETS, INPUT_WIDGETS
 from backend.session import SessionManager, SessionState
 
 logging.basicConfig(level=logging.INFO)
@@ -101,6 +102,19 @@ def _get_user_id(request: Request) -> str:
     return request.headers.get("x-user-id", "anonymous")
 
 
+async def _resolve_app(app_id: int | None) -> tuple[int | None, int | None]:
+    """Resolve app_id to (app_id, prompt_version_id). Falls back to default app."""
+    if app_id is not None:
+        app_row = await get_app_by_id(app_id)
+        if not app_row or not app_row["is_active"]:
+            raise HTTPException(status_code=404, detail="App not found or inactive")
+    else:
+        app_row = await get_default_app()
+    if not app_row:
+        return None, None
+    return app_row["id"], app_row["current_version_id"]
+
+
 @app.post("/chat")
 async def chat(request: Request) -> dict:
     body = await request.json()
@@ -115,9 +129,7 @@ async def chat(request: Request) -> dict:
         if session.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
     else:
-        app_row = await get_default_app()
-        app_id = app_row["id"] if app_row else None
-        pvid = app_row["current_version_id"] if app_row else None
+        app_id, pvid = await _resolve_app(None)
         session = sessions.create(user_id=user_id, app_id=app_id, prompt_version_id=pvid)
         await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid)
 
@@ -233,16 +245,7 @@ async def create_session(request: Request) -> dict:
         body = {}
     req_app_id = body.get("app_id") if body else None
 
-    if req_app_id is not None:
-        app_row = await get_app_by_id(req_app_id)
-        if not app_row or not app_row["is_active"]:
-            raise HTTPException(status_code=404, detail="App not found or inactive")
-        app_id = app_row["id"]
-        prompt_version_id = app_row["current_version_id"]
-    else:
-        app_row = await get_default_app()
-        app_id = app_row["id"] if app_row else None
-        prompt_version_id = app_row["current_version_id"] if app_row else None
+    app_id, prompt_version_id = await _resolve_app(req_app_id)
 
     session = sessions.create(
         user_id=user_id,
@@ -331,6 +334,43 @@ async def admin_session_history(session_id: str) -> list:
     return await get_session(session_id)
 
 
+def _widget_summary(schema: dict) -> dict:
+    """Build a compact summary of a widget JSON schema."""
+    props = schema.get("properties", {})
+    required_list = schema.get("required", [])
+    required_set = set(required_list)
+
+    desc = ""
+    for key in ("content", "label", "title", "quote"):
+        desc = props.get(key, {}).get("description", "")
+        if desc:
+            break
+
+    return {
+        "type": props.get("type", {}).get("const", ""),
+        "description": desc,
+        "required": [f for f in required_list if f != "type"],
+        "optional": [k for k in props if k not in required_set and k != "type"],
+    }
+
+
+# SECURITY: no auth — localhost only (widget catalog, no sensitive data)
+@app.get("/api/environment")
+async def environment_info() -> dict:
+    """Widget and tool catalog for prompt authors."""
+    return {
+        "display_widgets": [_widget_summary(s) for s in DISPLAY_WIDGETS.values()],
+        "input_widgets": [_widget_summary(s) for s in INPUT_WIDGETS.values()],
+        "tools": [
+            {"name": "show", "description": "Display content to the user", "behavior": "Fire-and-forget"},
+            {"name": "ask", "description": "Ask questions and wait for response", "behavior": "Blocks until user submits"},
+            {"name": "save_app", "description": "Save new app as draft (App Builder only)", "behavior": "Creates draft app"},
+            {"name": "WebSearch", "description": "Search the web", "behavior": "Built-in"},
+            {"name": "WebFetch", "description": "Fetch URL content", "behavior": "Built-in"},
+        ],
+    }
+
+
 @app.get("/config")
 async def config(app_id: int | None = None) -> dict:
     return await get_app_config_from_db(app_id)
@@ -350,6 +390,8 @@ if FRONTEND_DIST.is_dir():
 
     @app.get("/{path:path}")
     async def spa_catch_all(path: str) -> FileResponse:
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
         file_path = (FRONTEND_DIST / path).resolve()
         if file_path.is_file() and str(file_path).startswith(str(FRONTEND_DIST.resolve())):
             return FileResponse(file_path)
