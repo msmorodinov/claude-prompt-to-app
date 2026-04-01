@@ -9,6 +9,7 @@ import pytest
 
 from backend.db import (
     create_app,
+    get_all_sessions_admin,
     get_app_by_id,
     get_session,
     get_sessions_by_user,
@@ -159,3 +160,44 @@ class TestAppCrud:
         app = await get_app_by_id(result["id"], db_path)
         assert app is not None
         assert app["is_active"] == 1
+
+
+class TestSessionAppName:
+    @pytest.mark.asyncio
+    async def test_sessions_include_app_name(self, db_path):
+        """get_sessions_by_user should return app_name from joined apps table."""
+        await init_db(db_path)
+        app_result = await create_app(
+            "my-app", "My App Title", "", "Prompt body", db_path=db_path
+        )
+        app_id = app_result["id"]
+        await save_session("sess-a", user_id="user-1", app_id=app_id, db_path=db_path)
+        sessions = await get_sessions_by_user("user-1", db_path)
+        assert len(sessions) == 1
+        assert sessions[0]["app_name"] == "My App Title"
+        assert sessions[0]["app_id"] == app_id
+
+    @pytest.mark.asyncio
+    async def test_sessions_app_name_null_without_app(self, db_path):
+        """Sessions without app_id should have app_name = None."""
+        await init_db(db_path)
+        await save_session("sess-b", user_id="user-2", db_path=db_path)
+        sessions = await get_sessions_by_user("user-2", db_path)
+        assert len(sessions) == 1
+        assert sessions[0]["app_name"] is None
+
+    @pytest.mark.asyncio
+    async def test_admin_sessions_include_app_name(self, db_path):
+        """get_all_sessions_admin should return app_name from joined apps table."""
+        await init_db(db_path)
+        app_result = await create_app(
+            "admin-app", "Admin App Title", "", "Prompt body", db_path=db_path
+        )
+        app_id = app_result["id"]
+        await save_session("sess-c", user_id="user-3", app_id=app_id, db_path=db_path)
+        sessions = await get_all_sessions_admin(db_path)
+        # Filter to just our test session
+        our = [s for s in sessions if s["id"] == "sess-c"]
+        assert len(our) == 1
+        assert our[0]["app_name"] == "Admin App Title"
+        assert our[0]["app_id"] == app_id

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { type AppConfig, type AppInfo, createSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
+import { getUserDisplayName } from '../userDisplayName'
 import AppSelector from './AppSelector'
 import MessageList from './MessageList'
 import SessionSidebar from './SessionSidebar'
@@ -274,7 +275,8 @@ export default function ChatContainer() {
             <line x1="3" y1="13" x2="15" y2="13" />
           </svg>
         </button>
-        <h1>{appConfig.title}</h1>
+        <h1 title={`v${__APP_VERSION__}`}>{appConfig.title}</h1>
+        <span className="user-identity">{getUserDisplayName()}</span>
       </header>
 
       {isViewingPast && (

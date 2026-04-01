@@ -72,6 +72,9 @@ export default function SessionSidebar({
                 <span>{s.message_count} msgs</span>
                 <span>{formatDate(s.created_at)}</span>
               </div>
+              {s.app_name && (
+                <span className="sidebar-session-app">{s.app_name}</span>
+              )}
             </div>
           ))}
           {sessions.length === 0 && (
