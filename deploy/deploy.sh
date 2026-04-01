@@ -40,15 +40,12 @@ if git diff "$LOCAL" "$REMOTE" -- backend/requirements.txt | grep -q .; then
     .venv/bin/pip install -r backend/requirements.txt >> "$LOG_FILE" 2>&1
 fi
 
-# Frontend deps + build
-if git diff "$LOCAL" "$REMOTE" -- frontend/ | grep -q .; then
-    log "Building frontend..."
-    if git diff "$LOCAL" "$REMOTE" -- frontend/package-lock.json | grep -q .; then
-        npm ci --prefix frontend >> "$LOG_FILE" 2>&1
-    fi
-    npm run build --prefix frontend >> "$LOG_FILE" 2>&1
-    log "Frontend build complete"
-fi
+# Frontend deps + build (always rebuild — merge commits can hide diffs)
+log "Installing frontend dependencies..."
+npm install --prefix frontend >> "$LOG_FILE" 2>&1
+log "Building frontend..."
+npm run build --prefix frontend >> "$LOG_FILE" 2>&1
+log "Frontend build complete"
 
 # Restart app via PM2
 pm2 restart forge-simple >> "$LOG_FILE" 2>&1
