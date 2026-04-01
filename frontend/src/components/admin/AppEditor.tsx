@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { AdminAppDetail, EnvironmentInfo } from '../../api-admin'
 import { errorMessage, fetchAdminApp, fetchEnvironment, updateAdminApp } from '../../api-admin'
 import EnvironmentReference from './EnvironmentReference'
@@ -16,6 +16,7 @@ export default function AppEditor({ appId }: Props) {
   const [editTitle, setEditTitle] = useState('')
   const [editSubtitle, setEditSubtitle] = useState('')
   const [isSavingMeta, setIsSavingMeta] = useState(false)
+  const [metaCollapsed, setMetaCollapsed] = useState(true)
 
   // Prompt body
   const [originalBody, setOriginalBody] = useState('')
@@ -53,8 +54,30 @@ export default function AppEditor({ appId }: Props) {
     void loadDetail()
   }, [loadDetail])
 
+  // Cmd+S / Ctrl+S to publish — use ref to avoid re-registering on every render
+  const publishRef = useRef({ isDirty, isSaving, handlePublish })
+  publishRef.current = { isDirty, isSaving, handlePublish }
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        const { isDirty: dirty, isSaving: saving, handlePublish: publish } = publishRef.current
+        if (dirty && !saving) {
+          void publish()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   async function handleToggleActive() {
     if (!detail) return
+    // Confirm archive action
+    if (detail.is_active) {
+      if (!window.confirm(`Archive "${detail.title}"? It will be hidden from users.`)) return
+    }
     setSaveError(null)
     const newActive = detail.is_active === 0
     try {
@@ -95,6 +118,11 @@ export default function AppEditor({ appId }: Props) {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  function handleDiscard() {
+    setEditedBody(originalBody)
+    setChangeNote('')
   }
 
   function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -182,79 +210,106 @@ export default function AppEditor({ appId }: Props) {
         <div className="app-form-error">{saveError}</div>
       )}
 
-      {/* Metadata */}
+      {/* Metadata — collapsible */}
       <div className="app-editor-meta">
-        <h3 className="app-editor-section-title">Metadata</h3>
-        <div className="meta-field">
-          <label htmlFor="meta-title">Title</label>
-          <input
-            id="meta-title"
-            type="text"
-            value={editTitle}
-            onChange={e => setEditTitle(e.target.value)}
-            className="meta-input"
-          />
-        </div>
-        <div className="meta-field">
-          <label htmlFor="meta-subtitle">Subtitle</label>
-          <input
-            id="meta-subtitle"
-            type="text"
-            value={editSubtitle}
-            onChange={e => setEditSubtitle(e.target.value)}
-            className="meta-input"
-          />
-        </div>
         <button
-          className="btn btn--secondary"
-          onClick={handleSaveMeta}
-          disabled={isSavingMeta}
+          className="collapsible-header"
+          onClick={() => setMetaCollapsed((v) => !v)}
+          aria-expanded={!metaCollapsed}
         >
-          {isSavingMeta ? 'Saving...' : 'Save Metadata'}
+          <span className="collapsible-arrow">{metaCollapsed ? '\u25B6' : '\u25BC'}</span>
+          <span className="app-editor-section-title">Metadata</span>
         </button>
+        {!metaCollapsed && (
+          <div className="collapsible-body">
+            <div className="meta-field">
+              <label htmlFor="meta-title">Title</label>
+              <input
+                id="meta-title"
+                type="text"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                className="meta-input"
+              />
+            </div>
+            <div className="meta-field">
+              <label htmlFor="meta-subtitle">Subtitle</label>
+              <input
+                id="meta-subtitle"
+                type="text"
+                value={editSubtitle}
+                onChange={e => setEditSubtitle(e.target.value)}
+                className="meta-input"
+              />
+            </div>
+            <button
+              className="btn btn--secondary"
+              onClick={handleSaveMeta}
+              disabled={isSavingMeta}
+            >
+              {isSavingMeta ? 'Saving...' : 'Save Metadata'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Prompt Editor */}
-      <div className="app-editor-prompt">
-        <h3 className="app-editor-section-title">Prompt</h3>
-        <textarea
-          className="prompt-textarea"
-          rows={20}
-          value={editedBody}
-          onChange={e => setEditedBody(e.target.value)}
-          onKeyDown={handleTextareaKeyDown}
-          spellCheck={false}
-        />
-        <div className="char-count">
-          {charCount} / {charMax}
+      {/* Prompt Editor — hidden when version history is open */}
+      {!showVersionHistory && (
+        <div className="app-editor-prompt">
+          <h3 className="app-editor-section-title">Prompt</h3>
+          <textarea
+            className="prompt-textarea"
+            rows={20}
+            value={editedBody}
+            onChange={e => setEditedBody(e.target.value)}
+            onKeyDown={handleTextareaKeyDown}
+            spellCheck={false}
+          />
+          <div className="char-count">
+            {charCount} / {charMax}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Change Note */}
-      <div className="app-editor-change-note">
-        <input
-          type="text"
-          className="meta-input"
-          placeholder="Describe what changed..."
-          value={changeNote}
-          onChange={e => setChangeNote(e.target.value)}
-        />
-      </div>
-
-      {/* Action Bar */}
-      <div className="action-bar">
-        <div className="action-bar-left">
+      {/* Change Note + Publish inline */}
+      {!showVersionHistory && (
+        <div className="publish-bar">
+          <input
+            type="text"
+            className="meta-input publish-bar-note"
+            placeholder="Describe what changed..."
+            value={changeNote}
+            onChange={e => setChangeNote(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && isDirty && !isSaving) {
+                void handlePublish()
+              }
+            }}
+          />
           <button
             className="btn btn--primary"
             onClick={handlePublish}
             disabled={!isDirty || isSaving}
           >
-            {isSaving ? 'Publishing...' : 'Publish New Version'}
+            {isSaving ? 'Publishing...' : 'Publish'}
           </button>
+          {isDirty && (
+            <button
+              className="btn btn--secondary"
+              onClick={handleDiscard}
+            >
+              Discard
+            </button>
+          )}
           {successFlash && (
-            <span className="success-flash">Version published</span>
+            <span className="success-flash">Published</span>
           )}
         </div>
+      )}
+
+      {/* Action Bar */}
+      <div className="action-bar">
+        <div className="action-bar-left" />
         <div className="action-bar-right">
           <button
             className="btn btn--secondary"

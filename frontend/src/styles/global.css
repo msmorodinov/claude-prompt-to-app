@@ -9,6 +9,8 @@
   --text-muted: #888;
   --border: #2a2a2f;
   --error: #e85454;
+  --warning: #e8a46c;
+  --accent-warning: #f0c430;
   --success: #4caf50;
   --font-heading: 'Playfair Display', serif;
   --font-body: 'DM Sans', sans-serif;
