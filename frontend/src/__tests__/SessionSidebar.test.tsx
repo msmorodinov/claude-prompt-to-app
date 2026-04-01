@@ -26,6 +26,8 @@ function makeSessions(overrides: Partial<SessionSummary>[] = []): SessionSummary
     title: `Session ${i}`,
     status: 'done',
     message_count: 2,
+    app_id: null,
+    app_name: null,
     ...o,
   }))
 }
@@ -153,6 +155,23 @@ describe('SessionSidebar', () => {
     )
     render(<SessionSidebar {...defaultProps} />)
     await waitFor(() => screen.getByText('7 msgs'))
+  })
+
+  it('shows app name badge when session has app_name', async () => {
+    mockListSessions.mockResolvedValue(
+      makeSessions([{ title: 'My Session', message_count: 2, app_name: 'My App', app_id: 1 }]),
+    )
+    render(<SessionSidebar {...defaultProps} />)
+    await waitFor(() => expect(screen.getByText('My App')).toBeInTheDocument())
+  })
+
+  it('does not show app name badge when app_name is null', async () => {
+    mockListSessions.mockResolvedValue(
+      makeSessions([{ title: 'No App Session', message_count: 2, app_name: null, app_id: null }]),
+    )
+    render(<SessionSidebar {...defaultProps} />)
+    await waitFor(() => screen.getByText('No App Session'))
+    expect(document.querySelector('.sidebar-session-app')).not.toBeInTheDocument()
   })
 
   describe('formatDate()', () => {

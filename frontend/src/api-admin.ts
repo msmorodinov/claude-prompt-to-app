@@ -12,6 +12,9 @@ export interface AdminSession {
   message_count: number
   created_at: string
   title: string | null
+  app_id: number | null
+  app_name: string | null
+  user_display_name: string | null
 }
 
 export async function fetchAdminSessions(): Promise<AdminSession[]> {

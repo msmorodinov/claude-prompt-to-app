@@ -218,6 +218,14 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         await db.execute("PRAGMA user_version = 3")
         await db.commit()
 
+    if version < 4:
+        if not await _column_exists(db, "sessions", "user_display_name"):
+            await db.execute(
+                "ALTER TABLE sessions ADD COLUMN user_display_name TEXT DEFAULT NULL"
+            )
+        await db.execute("PRAGMA user_version = 4")
+        await db.commit()
+
 
 # --- App CRUD ---
 
@@ -489,14 +497,16 @@ async def save_session(
     title: str | None = None,
     app_id: int | None = None,
     prompt_version_id: int | None = None,
+    user_display_name: str | None = None,
     db_path: str | Path = DB_PATH,
 ) -> None:
     db = await _get_db(db_path)
     try:
         await db.execute(
-            "INSERT OR REPLACE INTO sessions (id, user_id, title, app_id, prompt_version_id) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (session_id, user_id, title, app_id, prompt_version_id),
+            "INSERT OR REPLACE INTO sessions "
+            "(id, user_id, title, app_id, prompt_version_id, user_display_name) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (session_id, user_id, title, app_id, prompt_version_id, user_display_name),
         )
         await db.commit()
     finally:
@@ -571,8 +581,10 @@ async def get_sessions_by_user(
     db = await _get_db(db_path)
     try:
         cursor = await db.execute(
-            "SELECT id, created_at, title, status, message_count "
-            "FROM sessions WHERE user_id = ? ORDER BY created_at DESC",
+            "SELECT s.id, s.created_at, s.title, s.status, s.message_count, "
+            "s.app_id, a.title as app_name "
+            "FROM sessions s LEFT JOIN apps a ON s.app_id = a.id "
+            "WHERE s.user_id = ? ORDER BY s.created_at DESC",
             (user_id,),
         )
         rows = await cursor.fetchall()
@@ -587,8 +599,10 @@ async def get_all_sessions_admin(
     db = await _get_db(db_path)
     try:
         cursor = await db.execute(
-            "SELECT id, user_id, status, message_count, created_at, title "
-            "FROM sessions ORDER BY created_at DESC"
+            "SELECT s.id, s.user_id, s.status, s.message_count, s.created_at, s.title, "
+            "s.app_id, a.title as app_name, s.user_display_name "
+            "FROM sessions s LEFT JOIN apps a ON s.app_id = a.id "
+            "ORDER BY s.created_at DESC"
         )
         rows = await cursor.fetchall()
         return [dict(row) for row in rows]

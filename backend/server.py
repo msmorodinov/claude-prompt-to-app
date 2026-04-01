@@ -102,6 +102,10 @@ def _get_user_id(request: Request) -> str:
     return request.headers.get("x-user-id", "anonymous")
 
 
+def _get_display_name(request: Request) -> str | None:
+    return request.headers.get("x-user-display-name") or None
+
+
 async def _resolve_app(app_id: int | None) -> tuple[int | None, int | None]:
     """Resolve app_id to (app_id, prompt_version_id). Falls back to default app."""
     if app_id is not None:
@@ -131,7 +135,7 @@ async def chat(request: Request) -> dict:
     else:
         app_id, pvid = await _resolve_app(None)
         session = sessions.create(user_id=user_id, app_id=app_id, prompt_version_id=pvid)
-        await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid)
+        await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid, user_display_name=_get_display_name(request))
 
     if session.agent_running:
         raise HTTPException(status_code=409, detail="Agent is already running")
@@ -257,6 +261,7 @@ async def create_session(request: Request) -> dict:
         user_id=user_id,
         app_id=app_id,
         prompt_version_id=prompt_version_id,
+        user_display_name=_get_display_name(request),
     )
     return {"session_id": session.session_id}
 

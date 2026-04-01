@@ -16,6 +16,7 @@ export default function AdminPage() {
     <div className="admin-page">
       <header className="admin-header">
         <h1>Admin</h1>
+        <span className="admin-version">v{__APP_VERSION__}</span>
         <nav className="admin-tabs">
           <button
             className={`admin-tab ${tab === 'sessions' ? 'active' : ''}`}

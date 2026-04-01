@@ -1,4 +1,5 @@
 import { getUserId } from './userId'
+import { getUserDisplayName } from './userDisplayName'
 
 const BASE_URL = ''
 
@@ -8,6 +9,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': getUserId(),
+      'X-User-Display-Name': getUserDisplayName(),
       ...options?.headers,
     },
   })
@@ -64,6 +66,8 @@ export interface SessionSummary {
   title: string | null
   status: string
   message_count: number
+  app_id: number | null
+  app_name: string | null
 }
 
 export async function listSessions(): Promise<SessionSummary[]> {

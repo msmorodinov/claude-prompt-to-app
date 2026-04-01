@@ -20,6 +20,13 @@
   font-size: 1.5rem;
 }
 
+.admin-version {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+
 .admin-tabs {
   display: flex;
   gap: 0.5rem;
@@ -126,6 +133,18 @@
 
 .status-badge.idle {
   color: var(--text-muted);
+}
+
+.session-app-name {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  margin: 0.2rem 0;
 }
 
 .session-item-meta {

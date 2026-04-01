@@ -30,9 +30,14 @@ export default function SessionList({ selectedId, onSelect }: Props) {
             onClick={() => onSelect(s.id)}
           >
             <div className="session-item-header">
-              <span className="session-user">{s.user_id}</span>
+              <span className="session-user" title={s.user_id}>
+                {s.user_display_name || s.user_id}
+              </span>
               <span className={`status-badge ${s.status}`}>{s.status}</span>
             </div>
+            {s.app_name && (
+              <span className="session-app-name">{s.app_name}</span>
+            )}
             <div className="session-item-meta">
               <span>{s.message_count} msgs</span>
               <span>{new Date(s.created_at).toLocaleString()}</span>
