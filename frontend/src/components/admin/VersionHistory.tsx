@@ -3,7 +3,7 @@ import type {
   PromptVersion,
   PromptVersionFull,
 } from '../../api-admin'
-import { fetchAppVersions, fetchVersionFull } from '../../api-admin'
+import { errorMessage, fetchAppVersions, fetchVersionFull } from '../../api-admin'
 
 const VersionDiff = lazy(() => import('./VersionDiff'))
 
@@ -30,7 +30,7 @@ export default function VersionHistory({ appId, onClose }: Props) {
     fetchAppVersions(appId)
       .then(setVersions)
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Failed to load versions')
+        setError(errorMessage(err, 'Failed to load versions'))
       })
       .finally(() => setLoading(false))
   }, [appId])
@@ -65,7 +65,7 @@ export default function VersionHistory({ appId, onClose }: Props) {
       setDiffRight(right)
       setShowDiff(true)
     } catch (err: unknown) {
-      setDiffError(err instanceof Error ? err.message : 'Failed to load diff')
+      setDiffError(errorMessage(err, 'Failed to load diff'))
     } finally {
       setDiffLoading(false)
     }
@@ -201,7 +201,7 @@ function ExpandedBody({ appId, versionId }: ExpandedBodyProps) {
     fetchVersionFull(appId, versionId)
       .then((v) => setBody(v.body))
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Failed to load body')
+        setError(errorMessage(err, 'Failed to load body'))
       })
       .finally(() => setLoading(false))
   }, [appId, versionId])

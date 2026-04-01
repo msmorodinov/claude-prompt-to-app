@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   fetchAdminApps,
   createAdminApp,
+  errorMessage,
   type AdminApp,
 } from '../../api-admin'
 
@@ -38,10 +39,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
     }
   }, [])
 
-  const sorted = [
-    ...apps.filter((a) => a.is_active),
-    ...apps.filter((a) => !a.is_active),
-  ]
+  const sorted = apps.toSorted((a, b) => Number(b.is_active) - Number(a.is_active))
 
   const handleCreate = async () => {
     if (!form.slug.trim() || !form.title.trim() || !form.body.trim()) {
@@ -61,7 +59,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
       setForm(EMPTY_FORM)
       onSelect(result.id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create app.')
+      setError(errorMessage(err, 'Failed to create app.'))
     } finally {
       setCreating(false)
     }

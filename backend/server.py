@@ -390,6 +390,8 @@ if FRONTEND_DIST.is_dir():
 
     @app.get("/{path:path}")
     async def spa_catch_all(path: str) -> FileResponse:
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
         file_path = (FRONTEND_DIST / path).resolve()
         if file_path.is_file() and str(file_path).startswith(str(FRONTEND_DIST.resolve())):
             return FileResponse(file_path)

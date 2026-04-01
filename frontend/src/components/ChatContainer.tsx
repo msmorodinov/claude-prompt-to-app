@@ -197,7 +197,7 @@ export default function ChatContainer() {
     setViewedMessages([])
   }, [])
 
-  const isSessionLoading = hasHistory === null
+  const isSessionLoading = hasHistory === null && sessionId !== null
   const showStartScreen = !isSessionLoading && hasHistory === false && messages.length === 0 && !isLoading && !isViewingPast
 
   const handleStart = useCallback(() => {
@@ -205,6 +205,56 @@ export default function ChatContainer() {
   }, [handleSend])
 
   const displayMessages = isViewingPast ? viewedMessages : messages
+
+  function renderMainContent() {
+    // Show AppSelector early when waiting for app choice (before session exists)
+    if (!sessionId && appsLoaded && apps.length > 1 && selectedAppId === null) {
+      return (
+        <AppSelector
+          apps={apps}
+          onSelect={(id) => setSelectedAppId(id)}
+        />
+      )
+    }
+
+    if (isSessionLoading) {
+      return (
+        <div className="start-screen">
+          <p className="loading-text">Loading...</p>
+        </div>
+      )
+    }
+
+    if (showStartScreen) {
+      return (
+        <div className="start-screen">
+          <h2>Ready to begin?</h2>
+          {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
+          <button className="start-btn" onClick={handleStart} disabled={!sessionId}>
+            Start
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <>
+        <MessageList
+          messages={displayMessages}
+          onAskSubmit={handleAskSubmit}
+          scrollRef={scrollRef}
+          isLoading={!isViewingPast && isLoading}
+          readOnly={isViewingPast}
+        />
+        {!isViewingPast && sessionDone && !sessionError && (
+          <div className="session-done-banner">
+            <span>Session complete</span>
+            <button className="start-btn" onClick={handleNewSession}>New Session</button>
+          </div>
+        )}
+      </>
+    )
+  }
 
   return (
     <div className="chat-container">
@@ -244,42 +294,7 @@ export default function ChatContainer() {
         </div>
       )}
 
-      {isSessionLoading ? (
-        <div className="start-screen">
-          <p className="loading-text">Loading...</p>
-        </div>
-      ) : showStartScreen ? (
-        apps.length > 1 && selectedAppId === null ? (
-          <AppSelector
-            apps={apps}
-            onSelect={(id) => setSelectedAppId(id)}
-          />
-        ) : (
-          <div className="start-screen">
-            <h2>Ready to begin?</h2>
-            {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
-            <button className="start-btn" onClick={handleStart}>
-              Start
-            </button>
-          </div>
-        )
-      ) : (
-        <>
-          <MessageList
-            messages={displayMessages}
-            onAskSubmit={handleAskSubmit}
-            scrollRef={scrollRef}
-            isLoading={!isViewingPast && isLoading}
-            readOnly={isViewingPast}
-          />
-          {!isViewingPast && sessionDone && !sessionError && (
-            <div className="session-done-banner">
-              <span>Session complete</span>
-              <button className="start-btn" onClick={handleNewSession}>New Session</button>
-            </div>
-          )}
-        </>
-      )}
+      {renderMainContent()}
     </div>
   )
 }
