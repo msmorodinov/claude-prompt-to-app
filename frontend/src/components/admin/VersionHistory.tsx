@@ -4,6 +4,7 @@ import type {
   PromptVersionFull,
 } from '../../api-admin'
 import { errorMessage, fetchAppVersions, fetchVersionFull } from '../../api-admin'
+import { relativeTime } from '../../relativeTime'
 
 const VersionDiff = lazy(() => import('./VersionDiff'))
 
@@ -125,8 +126,8 @@ export default function VersionHistory({ appId, onClose }: Props) {
                   />
                 </label>
                 <span className="version-number">v{vNum}</span>
-                <span className="version-date">
-                  {new Date(v.created_at).toLocaleString()}
+                <span className="version-date" title={new Date(v.created_at).toLocaleString()}>
+                  {relativeTime(v.created_at)}
                 </span>
               </div>
 
