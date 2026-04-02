@@ -42,6 +42,12 @@ export default function AdminPage() {
 
         {tab === 'apps' && appInfo && (
           <div className="admin-app-context">
+            <button
+              className="admin-header-btn admin-header-back"
+              onClick={() => setSelectedAppId(null)}
+            >
+              &larr;
+            </button>
             <span className="admin-app-name">{appInfo.title}</span>
             <span className={`status-badge ${appInfo.isActive ? 'status-badge--active' : 'status-badge--archived'}`}>
               {appInfo.isActive ? 'active' : 'archived'}
@@ -67,7 +73,7 @@ export default function AdminPage() {
             </button>
             {!showVersionHistory && (
               <>
-                <span className="admin-header-sep" />
+                <span className="admin-header-sep admin-header-sep--publish" />
                 <input
                   type="text"
                   className="admin-header-note"
@@ -89,7 +95,7 @@ export default function AdminPage() {
                 </button>
                 {appInfo?.isDirty && (
                   <button
-                    className="admin-header-btn"
+                    className="admin-header-btn admin-header-btn--discard"
                     onClick={() => discardRef.current()}
                   >
                     Discard
@@ -118,7 +124,7 @@ export default function AdminPage() {
           </button>
         </nav>
       </header>
-      <div className="admin-layout">
+      <div className={`admin-layout${tab === 'apps' && selectedAppId ? ' admin-layout--has-detail' : ''}`}>
         {tab === 'sessions' ? (
           <>
             <SessionList
@@ -156,6 +162,42 @@ export default function AdminPage() {
           </>
         )}
       </div>
+
+      {/* Mobile publish bar — sticky bottom, hidden on desktop */}
+      {tab === 'apps' && appInfo && !showVersionHistory && (
+        <div className="admin-mobile-publish">
+          <input
+            type="text"
+            className="admin-header-note"
+            placeholder="Change note..."
+            value={changeNote}
+            onChange={e => setChangeNote(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && appInfo?.isDirty && !appInfo?.isSaving) {
+                publishRef.current()
+              }
+            }}
+          />
+          <button
+            className="admin-header-btn admin-header-btn--publish"
+            onClick={() => publishRef.current()}
+            disabled={!appInfo?.isDirty || appInfo?.isSaving}
+          >
+            {appInfo?.isSaving ? 'Publishing...' : 'Publish'}
+          </button>
+          {appInfo?.isDirty && (
+            <button
+              className="admin-header-btn admin-header-btn--discard"
+              onClick={() => discardRef.current()}
+            >
+              Discard
+            </button>
+          )}
+          {appInfo?.successFlash && (
+            <span className="success-flash">Published</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
