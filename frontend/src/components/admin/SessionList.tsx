@@ -17,7 +17,7 @@ export default function SessionList({ selectedId, onSelect }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(null)
   const [searchText, setSearchText] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     const load = () =>
