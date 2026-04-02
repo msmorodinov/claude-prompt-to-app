@@ -24,7 +24,54 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.admin-version--spacer {
   margin-right: auto;
+}
+
+/* App context controls in header */
+.admin-app-context {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: auto;
+}
+
+.admin-app-name {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.status-badge--active {
+  color: var(--accent);
+}
+
+.status-badge--archived {
+  color: var(--text-muted);
+}
+
+.admin-header-btn {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-header-btn:hover { color: var(--text); }
+.admin-header-btn.active { border-color: var(--accent); color: var(--accent); }
+.admin-header-btn--danger:hover { color: var(--error); border-color: var(--error); }
+
+.admin-header-sep {
+  width: 1px;
+  height: 1rem;
+  background: var(--border);
 }
 
 .admin-tabs {
