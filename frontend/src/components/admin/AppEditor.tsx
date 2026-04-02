@@ -5,11 +5,22 @@ import EnvironmentReference from './EnvironmentReference'
 import VersionHistory from './VersionHistory'
 import { PromptHighlighter } from './PromptHighlighter'
 
-interface Props {
-  appId: number
+interface AppInfo {
+  title: string
+  isActive: boolean
 }
 
-export default function AppEditor({ appId }: Props) {
+interface Props {
+  appId: number
+  showEnvRef: boolean
+  showVersionHistory: boolean
+  onAppInfo: (info: AppInfo) => void
+  onRegisterToggleActive: (fn: () => void) => void
+}
+
+const CHAR_MAX = (50_000).toLocaleString()
+
+export default function AppEditor({ appId, showEnvRef, showVersionHistory, onAppInfo, onRegisterToggleActive }: Props) {
   const [detail, setDetail] = useState<AdminAppDetail | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -27,11 +38,7 @@ export default function AppEditor({ appId }: Props) {
   const [successFlash, setSuccessFlash] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // Version history panel
-  const [showVersionHistory, setShowVersionHistory] = useState(false)
-
-  // Environment reference panel
-  const [showEnvRef, setShowEnvRef] = useState(false)
+  // Environment data (loaded on demand)
   const [envData, setEnvData] = useState<EnvironmentInfo | null>(null)
 
   // Validation
@@ -60,6 +67,21 @@ export default function AppEditor({ appId }: Props) {
   useEffect(() => {
     void loadDetail()
   }, [loadDetail])
+
+  // Report app info to parent when detail loads/changes
+  useEffect(() => {
+    if (detail) {
+      onAppInfo({ title: detail.title, isActive: !!detail.is_active })
+    }
+  }, [detail, onAppInfo])
+
+  // Register toggle active callback with parent via ref (stable registration)
+  const toggleActiveLocalRef = useRef(handleToggleActive)
+  toggleActiveLocalRef.current = handleToggleActive
+
+  useEffect(() => {
+    onRegisterToggleActive(() => toggleActiveLocalRef.current())
+  }, [onRegisterToggleActive])
 
   // Cmd+S / Ctrl+S to publish — use ref to avoid re-registering on every render
   const publishRef = useRef({ isDirty, isSaving, handlePublish })
@@ -149,22 +171,14 @@ export default function AppEditor({ appId }: Props) {
     }
   }
 
-  async function handleToggleEnvRef() {
-    if (showEnvRef) {
-      setShowEnvRef(false)
-      return
+  // Load env data when panel becomes visible
+  useEffect(() => {
+    if (showEnvRef && !envData) {
+      fetchEnvironment()
+        .then(setEnvData)
+        .catch((err) => setSaveError(errorMessage(err, 'Failed to load environment reference')))
     }
-    if (!envData) {
-      try {
-        const data = await fetchEnvironment()
-        setEnvData(data)
-      } catch (err) {
-        setSaveError(errorMessage(err, 'Failed to load environment reference'))
-        return
-      }
-    }
-    setShowEnvRef(true)
-  }
+  }, [showEnvRef, envData])
 
   async function handleValidate() {
     setIsValidating(true)
@@ -181,7 +195,6 @@ export default function AppEditor({ appId }: Props) {
   }
 
   const charCount = editedBody.length.toLocaleString()
-  const charMax = (50000).toLocaleString()
 
   if (loadError) {
     return (
@@ -213,17 +226,6 @@ export default function AppEditor({ appId }: Props) {
             {detail.title}
           </h2>
           <span className="app-editor-slug">{detail.slug}</span>
-        </div>
-        <div className="app-editor-active-row">
-          <span className="app-editor-active-label">
-            {detail.is_active ? 'Active' : 'Archived'}
-          </span>
-          <button
-            className={`toggle-btn ${detail.is_active ? 'toggle-btn--active' : 'toggle-btn--inactive'}`}
-            onClick={handleToggleActive}
-          >
-            {detail.is_active ? 'Archive' : 'Activate'}
-          </button>
         </div>
       </div>
 
@@ -292,7 +294,7 @@ export default function AppEditor({ appId }: Props) {
             placeholder="Write your app's system prompt..."
           />
           <div className="char-count">
-            {charCount} / {charMax}
+            {charCount} / {CHAR_MAX}
           </div>
           <div className="validation-bar">
             {validationSummary && (
@@ -352,42 +354,17 @@ export default function AppEditor({ appId }: Props) {
         </div>
       )}
 
-      {/* Action Bar */}
-      <div className="action-bar">
-        <div className="action-bar-left" />
-        <div className="action-bar-right">
-          <button
-            className="btn btn--secondary"
-            onClick={handleToggleEnvRef}
-          >
-            {showEnvRef ? 'Hide Env' : 'Environment'}
-          </button>
-          <button
-            className="btn btn--secondary"
-            onClick={() => setShowVersionHistory(v => !v)}
-          >
-            {showVersionHistory ? 'Hide History' : 'Version History'}
-          </button>
-        </div>
-      </div>
-
       {/* Environment Reference */}
       {showEnvRef && envData && (
         <div className="app-editor-env-reference">
-          <EnvironmentReference
-            data={envData}
-            onClose={() => setShowEnvRef(false)}
-          />
+          <EnvironmentReference data={envData} />
         </div>
       )}
 
       {/* Version History */}
       {showVersionHistory && (
         <div className="app-editor-version-history">
-          <VersionHistory
-            appId={appId}
-            onClose={() => setShowVersionHistory(false)}
-          />
+          <VersionHistory appId={appId} />
         </div>
       )}
     </div>

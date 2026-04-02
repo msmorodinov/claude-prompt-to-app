@@ -3,7 +3,7 @@ import type { EnvironmentInfo, WidgetInfo } from '../../api-admin'
 
 interface Props {
   data: EnvironmentInfo
-  onClose: () => void
+  onClose?: () => void
 }
 
 function Section({
@@ -60,9 +60,11 @@ export default function EnvironmentReference({ data, onClose }: Props) {
     <div className="env-reference">
       <div className="env-reference-header">
         <span className="env-reference-title">Environment Reference</span>
-        <button className="env-reference-close" onClick={onClose}>
-          &times;
-        </button>
+        {onClose && (
+          <button className="env-reference-close" onClick={onClose}>
+            &times;
+          </button>
+        )}
       </div>
 
       <Section title={`Display Widgets — show (${data.display_widgets.length})`}>

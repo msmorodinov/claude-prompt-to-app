@@ -10,7 +10,7 @@ const VersionDiff = lazy(() => import('./VersionDiff'))
 
 interface Props {
   appId: number
-  onClose: () => void
+  onClose?: () => void
 }
 
 export default function VersionHistory({ appId, onClose }: Props) {
@@ -84,9 +84,11 @@ export default function VersionHistory({ appId, onClose }: Props) {
     <div className="version-history">
       <div className="version-history-header">
         <h2 className="version-history-title">Version History</h2>
-        <button className="version-history-close" onClick={onClose} aria-label="Close">
-          &#x2715;
-        </button>
+        {onClose && (
+          <button className="version-history-close" onClick={onClose} aria-label="Close">
+            &#x2715;
+          </button>
+        )}
       </div>
 
       {loading && (
