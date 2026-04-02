@@ -128,6 +128,36 @@ export async function fetchVersionFull(
   return request(`/admin/apps/${appId}/versions/${versionId}`)
 }
 
+// --- Prompt validation ---
+
+export interface ValidationReference {
+  quote: string
+  tool: string | null
+  widget: string | null
+  status: 'clear' | 'ambiguous' | 'not_found'
+  note: string | null
+}
+
+export interface ValidationResult {
+  references: ValidationReference[]
+  summary: { total: number; clear: number; ambiguous: number; not_found: number }
+  cached: boolean
+  error?: string
+}
+
+export async function validatePrompt(promptBody: string): Promise<ValidationResult> {
+  const res = await fetch('/admin/validate-prompt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt_body: promptBody }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error((data as { error?: string }).error || `Validation failed (${res.status})`)
+  }
+  return res.json() as Promise<ValidationResult>
+}
+
 // --- Environment reference ---
 
 export interface WidgetInfo {

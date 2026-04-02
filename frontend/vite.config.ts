@@ -5,7 +5,7 @@ import { version } from './package.json'
 
 const backendUrl = `http://localhost:${process.env.BACKEND_PORT || 4910}`
 
-const proxyPaths = ['/chat', '/stream', '/answers', '/sessions', '/health', '/config', '/session-status', '/admin/sessions', '/apps', '/admin/apps', '/api/environment']
+const proxyPaths = ['/chat', '/stream', '/answers', '/sessions', '/health', '/config', '/session-status', '/admin/sessions', '/apps', '/admin/apps', '/api/environment', '/admin/validate-prompt']
 
 export default defineConfig({
   plugins: [react()],

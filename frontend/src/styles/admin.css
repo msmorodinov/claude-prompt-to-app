@@ -589,6 +589,124 @@
   text-align: right;
 }
 
+/* Prompt Highlight Overlay */
+.prompt-highlight-container {
+  position: relative;
+}
+
+.prompt-highlight-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Must match .prompt-textarea exactly */
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--text);
+  tab-size: 2;
+}
+
+.prompt-textarea--highlighted {
+  color: transparent !important;
+  caret-color: var(--text);
+  resize: none;
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+}
+
+/* Mark styles — spell-check feel */
+mark.ref-clear {
+  background: transparent;
+  color: inherit;
+  border-bottom: 1.5px solid color-mix(in srgb, var(--success) 60%, transparent);
+  padding-bottom: 1px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+mark.ref-ambiguous {
+  background: transparent;
+  color: inherit;
+  border-bottom: 1.5px dashed var(--warning);
+  padding-bottom: 1px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+mark.ref-not_found {
+  background: transparent;
+  color: inherit;
+  border-bottom: 1.5px dashed var(--error);
+  padding-bottom: 1px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Validation Bar */
+.validation-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.validation-summary {
+  display: flex;
+  gap: 12px;
+}
+
+.validation-clear {
+  color: var(--success);
+}
+
+.validation-ambiguous {
+  color: var(--warning);
+}
+
+.validation-not-found {
+  color: var(--error);
+}
+
+.validation-error {
+  color: var(--error);
+  font-size: 0.8rem;
+}
+
+.validation-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.validation-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.validation-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .app-editor-change-note {
   display: flex;
   flex-direction: column;

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { AdminAppDetail, EnvironmentInfo } from '../../api-admin'
-import { errorMessage, fetchAdminApp, fetchEnvironment, updateAdminApp } from '../../api-admin'
+import type { AdminAppDetail, EnvironmentInfo, ValidationReference } from '../../api-admin'
+import { errorMessage, fetchAdminApp, fetchEnvironment, updateAdminApp, validatePrompt } from '../../api-admin'
 import EnvironmentReference from './EnvironmentReference'
 import VersionHistory from './VersionHistory'
+import { PromptHighlighter } from './PromptHighlighter'
 
 interface Props {
   appId: number
@@ -32,6 +33,12 @@ export default function AppEditor({ appId }: Props) {
   // Environment reference panel
   const [showEnvRef, setShowEnvRef] = useState(false)
   const [envData, setEnvData] = useState<EnvironmentInfo | null>(null)
+
+  // Validation
+  const [validationRefs, setValidationRefs] = useState<ValidationReference[] | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [validationSummary, setValidationSummary] = useState<{ total: number; clear: number; ambiguous: number; not_found: number } | null>(null)
 
   const isDirty = editedBody !== originalBody
 
@@ -159,6 +166,20 @@ export default function AppEditor({ appId }: Props) {
     setShowEnvRef(true)
   }
 
+  async function handleValidate() {
+    setIsValidating(true)
+    setValidationError(null)
+    try {
+      const result = await validatePrompt(editedBody)
+      setValidationRefs(result.references)
+      setValidationSummary(result.summary)
+    } catch (e: unknown) {
+      setValidationError(e instanceof Error ? e.message : 'Validation failed')
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
   const charCount = editedBody.length.toLocaleString()
   const charMax = (50000).toLocaleString()
 
@@ -257,16 +278,40 @@ export default function AppEditor({ appId }: Props) {
       {!showVersionHistory && (
         <div className="app-editor-prompt">
           <h3 className="app-editor-section-title">Prompt</h3>
-          <textarea
-            className="prompt-textarea"
-            rows={20}
+          <PromptHighlighter
             value={editedBody}
-            onChange={e => setEditedBody(e.target.value)}
+            onChange={(val) => {
+              setEditedBody(val)
+              setValidationRefs(null)
+              setValidationSummary(null)
+              setValidationError(null)
+            }}
             onKeyDown={handleTextareaKeyDown}
+            references={validationRefs}
             spellCheck={false}
+            placeholder="Write your app's system prompt..."
           />
           <div className="char-count">
             {charCount} / {charMax}
+          </div>
+          <div className="validation-bar">
+            {validationSummary && (
+              <span className="validation-summary">
+                <span className="validation-clear">✓ {validationSummary.clear} clear</span>
+                <span className="validation-ambiguous">⚠ {validationSummary.ambiguous} ambiguous</span>
+                <span className="validation-not-found">✕ {validationSummary.not_found} not found</span>
+              </span>
+            )}
+            {validationError && (
+              <span className="validation-error">{validationError}</span>
+            )}
+            <button
+              className="validation-btn"
+              onClick={handleValidate}
+              disabled={isValidating || !editedBody.trim()}
+            >
+              {isValidating ? 'Validating...' : 'Validate'}
+            </button>
           </div>
         </div>
       )}

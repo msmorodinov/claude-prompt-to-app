@@ -10,12 +10,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
 from backend.admin_apps import router as admin_apps_router
 from backend.agent import run_agent, run_agent_with_context
+from backend.validator import check_rate_limit, validate_prompt
 from backend.db import (
     get_active_apps,
     get_all_sessions_admin,
@@ -337,6 +338,46 @@ async def admin_session_stream(session_id: str) -> StreamingResponse:
 async def admin_session_history(session_id: str) -> list:
     """Full message history for admin view."""
     return await get_session(session_id)
+
+
+@app.post("/admin/validate-prompt")
+async def admin_validate_prompt(request: Request) -> JSONResponse:
+    """Validate prompt MCP tool coverage via Sonnet."""
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Too many validation requests. Try again in a minute."},
+        )
+
+    try:
+        body = await request.json()
+    except (json.JSONDecodeError, ValueError):
+        return JSONResponse(
+            status_code=400, content={"error": "Invalid JSON body"}
+        )
+
+    prompt_body = body.get("prompt_body", "")
+    if len(prompt_body) > 50_000:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Prompt too long (max 50K chars)"},
+        )
+
+    try:
+        result = await validate_prompt(prompt_body)
+        return JSONResponse(content=result)
+    except (json.JSONDecodeError, ValueError):
+        return JSONResponse(
+            status_code=502,
+            content={"error": "Validation service returned invalid response"},
+        )
+    except Exception:
+        logger.exception("Validation error")
+        return JSONResponse(
+            status_code=502,
+            content={"error": "Validation service unavailable"},
+        )
 
 
 def _widget_summary(schema: dict) -> dict:
