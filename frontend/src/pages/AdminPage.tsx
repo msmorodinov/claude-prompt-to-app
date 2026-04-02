@@ -15,14 +15,21 @@ export default function AdminPage() {
   // App context bar state (visible when editing an app)
   const [showEnvRef, setShowEnvRef] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
-  const [appInfo, setAppInfo] = useState<{ title: string; isActive: boolean } | null>(null)
+  const [appInfo, setAppInfo] = useState<{
+    title: string; isActive: boolean
+    isDirty: boolean; isSaving: boolean; successFlash: boolean
+  } | null>(null)
+  const [changeNote, setChangeNote] = useState('')
   const toggleActiveRef = useRef(() => {})
+  const publishRef = useRef(() => {})
+  const discardRef = useRef(() => {})
 
   // Reset when app changes
   useEffect(() => {
     setShowEnvRef(false)
     setShowVersionHistory(false)
     setAppInfo(null)
+    setChangeNote('')
   }, [selectedAppId])
 
   return (
@@ -58,6 +65,41 @@ export default function AdminPage() {
             >
               History
             </button>
+            {!showVersionHistory && (
+              <>
+                <span className="admin-header-sep" />
+                <input
+                  type="text"
+                  className="admin-header-note"
+                  placeholder="Change note..."
+                  value={changeNote}
+                  onChange={e => setChangeNote(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && appInfo?.isDirty && !appInfo?.isSaving) {
+                      publishRef.current()
+                    }
+                  }}
+                />
+                <button
+                  className="admin-header-btn admin-header-btn--publish"
+                  onClick={() => publishRef.current()}
+                  disabled={!appInfo?.isDirty || appInfo?.isSaving}
+                >
+                  {appInfo?.isSaving ? 'Publishing...' : 'Publish'}
+                </button>
+                {appInfo?.isDirty && (
+                  <button
+                    className="admin-header-btn"
+                    onClick={() => discardRef.current()}
+                  >
+                    Discard
+                  </button>
+                )}
+                {appInfo?.successFlash && (
+                  <span className="success-flash">Published</span>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -101,8 +143,12 @@ export default function AdminPage() {
                 appId={selectedAppId}
                 showEnvRef={showEnvRef}
                 showVersionHistory={showVersionHistory}
+                changeNote={changeNote}
+                onChangeNote={setChangeNote}
                 onAppInfo={setAppInfo}
                 onRegisterToggleActive={(fn) => { toggleActiveRef.current = fn }}
+                onRegisterPublish={(fn) => { publishRef.current = fn }}
+                onRegisterDiscard={(fn) => { discardRef.current = fn }}
               />
             ) : (
               <div className="admin-empty">Select an app to edit</div>

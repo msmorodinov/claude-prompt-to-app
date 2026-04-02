@@ -8,19 +8,26 @@ import { PromptHighlighter } from './PromptHighlighter'
 interface AppInfo {
   title: string
   isActive: boolean
+  isDirty: boolean
+  isSaving: boolean
+  successFlash: boolean
 }
 
 interface Props {
   appId: number
   showEnvRef: boolean
   showVersionHistory: boolean
+  changeNote: string
+  onChangeNote: (note: string) => void
   onAppInfo: (info: AppInfo) => void
   onRegisterToggleActive: (fn: () => void) => void
+  onRegisterPublish: (fn: () => void) => void
+  onRegisterDiscard: (fn: () => void) => void
 }
 
 const CHAR_MAX = (50_000).toLocaleString()
 
-export default function AppEditor({ appId, showEnvRef, showVersionHistory, onAppInfo, onRegisterToggleActive }: Props) {
+export default function AppEditor({ appId, showEnvRef, showVersionHistory, changeNote, onChangeNote, onAppInfo, onRegisterToggleActive, onRegisterPublish, onRegisterDiscard }: Props) {
   const [detail, setDetail] = useState<AdminAppDetail | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -33,7 +40,6 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, onApp
   // Prompt body
   const [originalBody, setOriginalBody] = useState('')
   const [editedBody, setEditedBody] = useState('')
-  const [changeNote, setChangeNote] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [successFlash, setSuccessFlash] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -68,12 +74,12 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, onApp
     void loadDetail()
   }, [loadDetail])
 
-  // Report app info to parent when detail loads/changes
+  // Report app info + editor state to parent
   useEffect(() => {
     if (detail) {
-      onAppInfo({ title: detail.title, isActive: !!detail.is_active })
+      onAppInfo({ title: detail.title, isActive: !!detail.is_active, isDirty, isSaving, successFlash })
     }
-  }, [detail, onAppInfo])
+  }, [detail, onAppInfo, isDirty, isSaving, successFlash])
 
   // Register toggle active callback with parent via ref (stable registration)
   const toggleActiveLocalRef = useRef(handleToggleActive)
@@ -82,6 +88,20 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, onApp
   useEffect(() => {
     onRegisterToggleActive(() => toggleActiveLocalRef.current())
   }, [onRegisterToggleActive])
+
+  // Register publish/discard callbacks with parent via refs
+  const publishLocalRef = useRef(handlePublish)
+  publishLocalRef.current = handlePublish
+  const discardLocalRef = useRef(handleDiscard)
+  discardLocalRef.current = handleDiscard
+
+  useEffect(() => {
+    onRegisterPublish(() => publishLocalRef.current())
+  }, [onRegisterPublish])
+
+  useEffect(() => {
+    onRegisterDiscard(() => discardLocalRef.current())
+  }, [onRegisterDiscard])
 
   // Cmd+S / Ctrl+S to publish — use ref to avoid re-registering on every render
   const publishRef = useRef({ isDirty, isSaving, handlePublish })
@@ -139,7 +159,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, onApp
     try {
       await updateAdminApp(appId, { body: editedBody, change_note: changeNote })
       await loadDetail()
-      setChangeNote('')
+      onChangeNote('')
       setSuccessFlash(true)
       setTimeout(() => setSuccessFlash(false), 2500)
     } catch (err) {
@@ -151,7 +171,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, onApp
 
   function handleDiscard() {
     setEditedBody(originalBody)
-    setChangeNote('')
+    onChangeNote('')
   }
 
   function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -315,42 +335,6 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, onApp
               {isValidating ? 'Validating...' : 'Validate'}
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Change Note + Publish inline */}
-      {!showVersionHistory && (
-        <div className="publish-bar">
-          <input
-            type="text"
-            className="meta-input publish-bar-note"
-            placeholder="Describe what changed..."
-            value={changeNote}
-            onChange={e => setChangeNote(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && isDirty && !isSaving) {
-                void handlePublish()
-              }
-            }}
-          />
-          <button
-            className="btn btn--primary"
-            onClick={handlePublish}
-            disabled={!isDirty || isSaving}
-          >
-            {isSaving ? 'Publishing...' : 'Publish'}
-          </button>
-          {isDirty && (
-            <button
-              className="btn btn--secondary"
-              onClick={handleDiscard}
-            >
-              Discard
-            </button>
-          )}
-          {successFlash && (
-            <span className="success-flash">Published</span>
-          )}
         </div>
       )}
 
