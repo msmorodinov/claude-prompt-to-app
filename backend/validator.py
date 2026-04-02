@@ -155,7 +155,7 @@ async def validate_prompt(prompt_body: str) -> dict:
                             text += block.text
 
     # Parse JSON response
-    logger.debug("Validator raw response (%d chars): %s", len(text), text[:500])
+    logger.info("Validator raw response (%d chars): %s", len(text), text[:500])
     if not text.strip():
         raise ValueError("Empty response from validator")
     # Strip markdown code fences if Sonnet wrapped the JSON
