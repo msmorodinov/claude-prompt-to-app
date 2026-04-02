@@ -145,7 +145,7 @@ async def validate_prompt(prompt_body: str) -> dict:
     )
 
     text = ""
-    async with asyncio.timeout(90):
+    async with asyncio.timeout(180):
         async with ClaudeSDKClient(options=options) as client:
             await client.query(user_message)
             async for message in client.receive_response():
