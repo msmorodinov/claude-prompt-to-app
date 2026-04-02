@@ -367,7 +367,8 @@ async def admin_validate_prompt(request: Request) -> JSONResponse:
     try:
         result = await validate_prompt(prompt_body)
         return JSONResponse(content=result)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.error("Validation parse error: %s", e)
         return JSONResponse(
             status_code=502,
             content={"error": "Validation service returned invalid response"},

@@ -155,7 +155,18 @@ async def validate_prompt(prompt_body: str) -> dict:
                             text += block.text
 
     # Parse JSON response
-    result = json.loads(text)
+    logger.debug("Validator raw response (%d chars): %s", len(text), text[:500])
+    if not text.strip():
+        raise ValueError("Empty response from validator")
+    # Strip markdown code fences if Sonnet wrapped the JSON
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        first_nl = cleaned.index("\n") if "\n" in cleaned else 3
+        cleaned = cleaned[first_nl + 1 :]
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+    result = json.loads(cleaned)
     if not isinstance(result, dict) or "references" not in result:
         raise ValueError(f"Unexpected response shape: {type(result).__name__}")
 
