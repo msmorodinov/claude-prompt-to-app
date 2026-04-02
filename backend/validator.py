@@ -137,7 +137,7 @@ async def validate_prompt(prompt_body: str) -> dict:
         )
 
     options = ClaudeAgentOptions(
-        model="claude-sonnet-4-6-20250514",
+        model="claude-sonnet-4-6",
         system_prompt=VALIDATOR_SYSTEM_PROMPT,
         max_turns=1,
         allowed_tools=[],
