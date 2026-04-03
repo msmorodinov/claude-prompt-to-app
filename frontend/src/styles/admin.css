@@ -89,10 +89,112 @@
   outline-color: var(--accent);
 }
 
-.admin-header-sep {
-  width: 1px;
-  height: 1rem;
+/* ── ⋯ Menu Dropdown ───────────────────────────────────── */
+
+.admin-menu-container {
+  position: relative;
+}
+
+.admin-menu-trigger {
+  font-size: 1.2rem;
+  letter-spacing: 0.15em;
+  padding: 0.2rem 0.6rem;
+}
+
+.admin-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.admin-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.admin-menu-item:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.admin-menu-item:disabled {
+  color: var(--text-muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-menu-item.active {
+  color: var(--accent);
+}
+
+.admin-menu-item--danger:hover:not(:disabled) {
+  color: var(--error);
+}
+
+.admin-menu-sep {
+  height: 1px;
   background: var(--border);
+  margin: 0.3rem 0;
+}
+
+.admin-menu-note {
+  padding: 0.4rem 0.75rem;
+}
+
+.admin-menu-note input {
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  outline: 2px solid transparent;
+  transition: border-color 0.15s, outline-color 0.15s;
+}
+
+.admin-menu-note input:focus-visible {
+  border-color: var(--accent);
+  outline-color: var(--accent);
+}
+
+/* ── Inline Rename ─────────────────────────────────────── */
+
+.admin-rename-input {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  outline: none;
+  min-width: 120px;
+}
+
+/* ── Slug Preview ──────────────────────────────────────── */
+
+.app-form-slug-preview {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 0.25rem;
 }
 
 .admin-tabs {
@@ -1279,9 +1381,6 @@ mark.ref-not_found {
 /* Back button — hidden on desktop, visible on mobile */
 .admin-header-back { display: none; }
 
-/* Mobile publish bar — hidden on desktop */
-.admin-mobile-publish { display: none; }
-
 /* ── Mobile ────────────────────────────────────────────── */
 
 @media (max-width: 639px) {
@@ -1317,45 +1416,7 @@ mark.ref-not_found {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Hide publish controls from header on mobile — they move to bottom bar */
-  .admin-header .admin-header-note,
-  .admin-header .admin-header-btn--publish,
-  .admin-header .success-flash,
-  .admin-header .admin-header-btn--discard {
-    display: none;
-  }
-
-  /* Hide the separator before publish controls (second sep) */
-  .admin-header .admin-header-sep--publish {
-    display: none;
-  }
-
-  /* ── 2. Publish → Sticky bottom bar ─────────────────── */
-  .admin-mobile-publish {
-    display: flex;
-    position: sticky;
-    bottom: 0;
-    padding: 0.5rem 1rem;
-    gap: 0.5rem;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    z-index: 10;
-    align-items: center;
-  }
-
-  .admin-mobile-publish .admin-header-note {
-    display: block;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .admin-mobile-publish .admin-header-btn--publish,
-  .admin-mobile-publish .admin-header-btn--discard {
-    display: inline-flex;
-    flex-shrink: 0;
-  }
-
-  /* ── 3. App List ↔ Editor — Master-detail toggle ──── */
+  /* ── 2. App List ↔ Editor — Master-detail toggle ──── */
   .admin-layout {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
@@ -1376,7 +1437,7 @@ mark.ref-not_found {
     max-height: none;
   }
 
-  /* ── 4. Environment/History — Full-screen overlay ──── */
+  /* ── 3. Environment/History — Full-screen overlay ──── */
   .app-editor-env-reference,
   .app-editor-version-history {
     position: fixed;

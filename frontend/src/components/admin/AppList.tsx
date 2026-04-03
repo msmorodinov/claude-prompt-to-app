@@ -11,19 +11,19 @@ interface Props {
   onSelect: (id: number) => void
 }
 
-interface CreateForm {
-  slug: string
-  title: string
-  body: string
-}
-
-const EMPTY_FORM: CreateForm = { slug: '', title: '', body: '' }
 const POLL_INTERVAL = 10_000
+
+function titleToSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
 
 export default function AppList({ selectedId, onSelect }: Props) {
   const [apps, setApps] = useState<AdminApp[]>([])
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState<CreateForm>(EMPTY_FORM)
+  const [title, setTitle] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -42,21 +42,23 @@ export default function AppList({ selectedId, onSelect }: Props) {
   const sorted = apps.toSorted((a, b) => Number(b.is_active) - Number(a.is_active))
 
   const handleCreate = async () => {
-    if (!form.slug.trim() || !form.title.trim() || !form.body.trim()) {
-      setError('All fields are required.')
+    const trimmed = title.trim()
+    if (!trimmed) {
+      setError('Title is required.')
+      return
+    }
+    const slug = titleToSlug(trimmed)
+    if (slug.length < 2) {
+      setError('Title must produce a valid slug (2+ alphanumeric chars).')
       return
     }
     setCreating(true)
     setError(null)
     try {
-      const result = await createAdminApp({
-        slug: form.slug.trim(),
-        title: form.title.trim(),
-        body: form.body.trim(),
-      })
+      const result = await createAdminApp({ slug, title: trimmed })
       await load()
       setShowCreate(false)
-      setForm(EMPTY_FORM)
+      setTitle('')
       onSelect(result.id)
     } catch (err) {
       setError(errorMessage(err, 'Failed to create app.'))
@@ -67,7 +69,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
 
   const handleToggleCreate = () => {
     setShowCreate((prev) => !prev)
-    setForm(EMPTY_FORM)
+    setTitle('')
     setError(null)
   }
 
@@ -88,24 +90,19 @@ export default function AppList({ selectedId, onSelect }: Props) {
           <input
             className="app-form-input"
             type="text"
-            placeholder="my-app-slug"
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
+            placeholder="App title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !creating) void handleCreate()
+            }}
+            autoFocus
           />
-          <input
-            className="app-form-input"
-            type="text"
-            placeholder="Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
-          <textarea
-            className="app-form-textarea"
-            rows={6}
-            placeholder="Prompt body..."
-            value={form.body}
-            onChange={(e) => setForm({ ...form, body: e.target.value })}
-          />
+          {title.trim() && (
+            <span className="app-form-slug-preview">
+              {titleToSlug(title.trim())}
+            </span>
+          )}
           {error && <div className="app-form-error">{error}</div>}
           <button
             className="btn-create-app-submit"

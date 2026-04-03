@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import SessionList from '../components/admin/SessionList'
 import SessionViewer from '../components/admin/SessionViewer'
 import AppList from '../components/admin/AppList'
 import AppEditor from '../components/admin/AppEditor'
+import { listApps, request } from '../api'
+import { updateAdminApp } from '../api-admin'
 import '../styles/admin.css'
 
 type AdminTab = 'sessions' | 'apps'
@@ -24,12 +26,88 @@ export default function AdminPage() {
   const publishRef = useRef(() => {})
   const discardRef = useRef(() => {})
 
+  // ⋯ menu state
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Rename state
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
   // Reset when app changes
   useEffect(() => {
     setShowEnvRef(false)
     setShowVersionHistory(false)
     setAppInfo(null)
     setChangeNote('')
+    setShowMenu(false)
+    setIsRenaming(false)
+  }, [selectedAppId])
+
+  // Close menu on click outside
+  useEffect(() => {
+    if (!showMenu) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMenu])
+
+  // Focus rename input when entering rename mode
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus()
+      renameInputRef.current.select()
+    }
+  }, [isRenaming])
+
+  const handleRenameStart = useCallback(() => {
+    if (!appInfo) return
+    setRenameValue(appInfo.title)
+    setIsRenaming(true)
+    setShowMenu(false)
+  }, [appInfo])
+
+  const handleRenameSubmit = useCallback(async () => {
+    const trimmed = renameValue.trim()
+    if (!trimmed || !selectedAppId) return
+    const appId = selectedAppId
+    try {
+      await updateAdminApp(appId, { title: trimmed })
+      // Force editor to reload by toggling selection
+      setSelectedAppId(null)
+      requestAnimationFrame(() => setSelectedAppId(appId))
+    } catch {
+      // Silently fail — editor will show stale title
+    }
+    setIsRenaming(false)
+  }, [renameValue, selectedAppId])
+
+  const handleEditWithAI = useCallback(async () => {
+    if (!selectedAppId) return
+    setShowMenu(false)
+    try {
+      // Find App Builder app
+      const apps = await listApps()
+      const builder = apps.find(a => a.slug === 'app-builder')
+      if (!builder) {
+        alert('App Builder app not found. Is it active?')
+        return
+      }
+      // Create session with edit_app_id
+      const data = await request<{ session_id: string }>('/sessions/create', {
+        method: 'POST',
+        body: JSON.stringify({ app_id: builder.id, edit_app_id: selectedAppId }),
+      })
+      // Navigate to chat page with the session
+      window.location.href = `/?session=${data.session_id}`
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to start AI edit session')
+    }
   }, [selectedAppId])
 
   return (
@@ -48,63 +126,110 @@ export default function AdminPage() {
             >
               &larr;
             </button>
-            <span className="admin-app-name">{appInfo.title}</span>
+
+            {isRenaming ? (
+              <input
+                ref={renameInputRef}
+                className="admin-rename-input"
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') void handleRenameSubmit()
+                  if (e.key === 'Escape') {
+                    setRenameValue('')
+                    setIsRenaming(false)
+                  }
+                }}
+                onBlur={() => void handleRenameSubmit()}
+              />
+            ) : (
+              <span className="admin-app-name">{appInfo.title}</span>
+            )}
+
             <span className={`status-badge ${appInfo.isActive ? 'status-badge--active' : 'status-badge--archived'}`}>
               {appInfo.isActive ? 'active' : 'archived'}
             </span>
-            <button
-              className="admin-header-btn admin-header-btn--danger"
-              onClick={() => toggleActiveRef.current()}
-            >
-              {appInfo.isActive ? 'Archive' : 'Activate'}
-            </button>
-            <span className="admin-header-sep" />
-            <button
-              className={`admin-header-btn ${showEnvRef ? 'active' : ''}`}
-              onClick={() => setShowEnvRef(v => !v)}
-            >
-              Environment
-            </button>
-            <button
-              className={`admin-header-btn ${showVersionHistory ? 'active' : ''}`}
-              onClick={() => setShowVersionHistory(v => !v)}
-            >
-              History
-            </button>
-            {!showVersionHistory && (
-              <>
-                <span className="admin-header-sep admin-header-sep--publish" />
-                <input
-                  type="text"
-                  className="admin-header-note"
-                  placeholder="Change note..."
-                  value={changeNote}
-                  onChange={e => setChangeNote(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && appInfo?.isDirty && !appInfo?.isSaving) {
-                      publishRef.current()
-                    }
-                  }}
-                />
-                <button
-                  className="admin-header-btn admin-header-btn--publish"
-                  onClick={() => publishRef.current()}
-                  disabled={!appInfo?.isDirty || appInfo?.isSaving}
-                >
-                  {appInfo?.isSaving ? 'Publishing...' : 'Publish'}
-                </button>
-                {appInfo?.isDirty && (
+
+            {/* ⋯ menu */}
+            <div className="admin-menu-container" ref={menuRef}>
+              <button
+                className="admin-header-btn admin-menu-trigger"
+                onClick={() => setShowMenu(v => !v)}
+              >
+                ⋯
+              </button>
+              {showMenu && (
+                <div className="admin-menu-dropdown">
+                  {!showVersionHistory && (
+                    <>
+                      <div className="admin-menu-note">
+                        <input
+                          type="text"
+                          placeholder="Change note..."
+                          value={changeNote}
+                          onChange={e => setChangeNote(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && appInfo?.isDirty && !appInfo?.isSaving) {
+                              publishRef.current()
+                              setShowMenu(false)
+                            }
+                          }}
+                        />
+                      </div>
+                      <button
+                        className="admin-menu-item"
+                        disabled={!appInfo?.isDirty || appInfo?.isSaving}
+                        onClick={() => { publishRef.current(); setShowMenu(false) }}
+                      >
+                        {appInfo?.isSaving ? 'Publishing...' : 'Publish'}
+                      </button>
+                      <button
+                        className="admin-menu-item"
+                        disabled={!appInfo?.isDirty}
+                        onClick={() => { discardRef.current(); setShowMenu(false) }}
+                      >
+                        Discard
+                      </button>
+                      <div className="admin-menu-sep" />
+                    </>
+                  )}
                   <button
-                    className="admin-header-btn admin-header-btn--discard"
-                    onClick={() => discardRef.current()}
+                    className={`admin-menu-item${showEnvRef ? ' active' : ''}`}
+                    onClick={() => { setShowEnvRef(v => !v); setShowMenu(false) }}
                   >
-                    Discard
+                    {showEnvRef ? '\u2713 ' : ''}Environment
                   </button>
-                )}
-                {appInfo?.successFlash && (
-                  <span className="success-flash">Published</span>
-                )}
-              </>
+                  <button
+                    className={`admin-menu-item${showVersionHistory ? ' active' : ''}`}
+                    onClick={() => { setShowVersionHistory(v => !v); setShowMenu(false) }}
+                  >
+                    {showVersionHistory ? '\u2713 ' : ''}History
+                  </button>
+                  <div className="admin-menu-sep" />
+                  <button
+                    className="admin-menu-item"
+                    onClick={handleRenameStart}
+                  >
+                    Rename
+                  </button>
+                  <button
+                    className="admin-menu-item"
+                    onClick={handleEditWithAI}
+                  >
+                    Edit with AI
+                  </button>
+                  <button
+                    className="admin-menu-item admin-menu-item--danger"
+                    onClick={() => { toggleActiveRef.current(); setShowMenu(false) }}
+                  >
+                    {appInfo.isActive ? 'Archive' : 'Activate'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {appInfo?.successFlash && (
+              <span className="success-flash">Published</span>
             )}
           </div>
         )}
@@ -162,42 +287,6 @@ export default function AdminPage() {
           </>
         )}
       </div>
-
-      {/* Mobile publish bar — sticky bottom, hidden on desktop */}
-      {tab === 'apps' && appInfo && !showVersionHistory && (
-        <div className="admin-mobile-publish">
-          <input
-            type="text"
-            className="admin-header-note"
-            placeholder="Change note..."
-            value={changeNote}
-            onChange={e => setChangeNote(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && appInfo?.isDirty && !appInfo?.isSaving) {
-                publishRef.current()
-              }
-            }}
-          />
-          <button
-            className="admin-header-btn admin-header-btn--publish"
-            onClick={() => publishRef.current()}
-            disabled={!appInfo?.isDirty || appInfo?.isSaving}
-          >
-            {appInfo?.isSaving ? 'Publishing...' : 'Publish'}
-          </button>
-          {appInfo?.isDirty && (
-            <button
-              className="admin-header-btn admin-header-btn--discard"
-              onClick={() => discardRef.current()}
-            >
-              Discard
-            </button>
-          )}
-          {appInfo?.successFlash && (
-            <span className="success-flash">Published</span>
-          )}
-        </div>
-      )}
     </div>
   )
 }

@@ -35,7 +35,9 @@ async def create_app_endpoint(request: Request) -> dict:
     subtitle = body.get("subtitle", "")
     prompt_body = body.get("body", "")
 
-    errors = validate_app_fields(slug=slug, title=title, body=prompt_body)
+    errors = validate_app_fields(slug=slug, title=title)
+    if prompt_body:
+        errors.extend(validate_app_fields(body=prompt_body))
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors})
 

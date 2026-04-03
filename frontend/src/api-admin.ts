@@ -93,7 +93,7 @@ export async function createAdminApp(data: {
   slug: string
   title: string
   subtitle?: string
-  body: string
+  body?: string
 }): Promise<{ id: number; slug: string; current_version_id: number }> {
   return request('/admin/apps', {
     method: 'POST',
