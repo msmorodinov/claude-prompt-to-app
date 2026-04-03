@@ -54,7 +54,26 @@ async def run_agent(session: SessionState, user_message: str) -> None:
     system_prompt = f"{app_prompt}\n\n{framework}"
 
     is_builder = await _is_app_builder(session.app_id)
-    tools = create_tools(session, session.session_id, include_save_app=is_builder)
+    is_edit_mode = is_builder and session.edit_app_id is not None
+
+    # Inject editing context when in edit mode
+    if is_edit_mode:
+        target_app = await get_app_by_id(session.edit_app_id)
+        if target_app and target_app["current_version_id"]:
+            target_body = await get_prompt_body_by_version(target_app["current_version_id"])
+            if target_body:
+                system_prompt += (
+                    f"\n\n## EDITING MODE\n"
+                    f"You are editing '{target_app['title']}' (ID: {session.edit_app_id}).\n"
+                    f"Current prompt:\n```\n{target_body}\n```"
+                )
+
+    tools = create_tools(
+        session,
+        session.session_id,
+        include_save_app=is_builder,
+        include_update_app=is_edit_mode,
+    )
 
     server = create_sdk_mcp_server(
         name="app",
@@ -70,6 +89,8 @@ async def run_agent(session: SessionState, user_message: str) -> None:
     ]
     if is_builder:
         allowed.append("mcp__app__save_app")
+    if is_edit_mode:
+        allowed.append("mcp__app__update_app")
 
     options = ClaudeAgentOptions(
         mcp_servers={"app": server},

@@ -298,5 +298,26 @@ SAVE_APP_SCHEMA = {
     "required": ["slug", "title", "body"],
 }
 
+UPDATE_APP_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "app_id": {
+            "type": "integer",
+            "description": "ID of the app to update",
+        },
+        "body": {
+            "type": "string",
+            "maxLength": 50000,
+            "description": "Updated system prompt in Markdown",
+        },
+        "change_note": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Short description of changes (optional)",
+        },
+    },
+    "required": ["app_id", "body"],
+}
+
 DISPLAY_WIDGET_TYPES = set(DISPLAY_WIDGETS.keys())
 INPUT_WIDGET_TYPES = set(INPUT_WIDGETS.keys())

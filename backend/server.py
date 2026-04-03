@@ -249,6 +249,13 @@ async def create_session(request: Request) -> dict:
     except Exception:
         body = {}
     req_app_id = body.get("app_id") if body else None
+    edit_app_id = body.get("edit_app_id") if body else None
+
+    # Validate edit target exists if provided
+    if edit_app_id is not None:
+        target = await get_app_by_id(edit_app_id)
+        if not target:
+            raise HTTPException(status_code=404, detail="Edit target app not found")
 
     app_id, prompt_version_id = await _resolve_app(req_app_id)
 
@@ -256,6 +263,7 @@ async def create_session(request: Request) -> dict:
         user_id=user_id,
         app_id=app_id,
         prompt_version_id=prompt_version_id,
+        edit_app_id=edit_app_id,
     )
     await save_session(
         session.session_id,
@@ -412,6 +420,7 @@ async def environment_info() -> dict:
             {"name": "show", "description": "Display content to the user", "behavior": "Fire-and-forget"},
             {"name": "ask", "description": "Ask questions and wait for response", "behavior": "Blocks until user submits"},
             {"name": "save_app", "description": "Save new app as draft (App Builder only)", "behavior": "Creates draft app"},
+            {"name": "update_app", "description": "Update existing app prompt (App Builder edit mode)", "behavior": "Creates new version"},
             {"name": "WebSearch", "description": "Search the web", "behavior": "Built-in"},
             {"name": "WebFetch", "description": "Fetch URL content", "behavior": "Built-in"},
         ],

@@ -31,12 +31,6 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
   const [detail, setDetail] = useState<AdminAppDetail | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  // Metadata fields
-  const [editTitle, setEditTitle] = useState('')
-  const [editSubtitle, setEditSubtitle] = useState('')
-  const [isSavingMeta, setIsSavingMeta] = useState(false)
-  const [metaCollapsed, setMetaCollapsed] = useState(true)
-
   // Prompt body
   const [originalBody, setOriginalBody] = useState('')
   const [editedBody, setEditedBody] = useState('')
@@ -60,8 +54,6 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
     try {
       const data = await fetchAdminApp(appId)
       setDetail(data)
-      setEditTitle(data.title)
-      setEditSubtitle(data.subtitle ?? '')
       const body = data.current_version?.body ?? ''
       setOriginalBody(body)
       setEditedBody(body)
@@ -134,21 +126,6 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
       setDetail({ ...detail, is_active: newActive ? 1 : 0 })
     } catch (err) {
       setSaveError(errorMessage(err, 'Failed to toggle active state'))
-    }
-  }
-
-  async function handleSaveMeta() {
-    setIsSavingMeta(true)
-    setSaveError(null)
-    try {
-      await updateAdminApp(appId, { title: editTitle, subtitle: editSubtitle })
-      if (detail) {
-        setDetail({ ...detail, title: editTitle, subtitle: editSubtitle })
-      }
-    } catch (err) {
-      setSaveError(errorMessage(err, 'Failed to save metadata'))
-    } finally {
-      setIsSavingMeta(false)
     }
   }
 
@@ -252,49 +229,6 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
       {saveError && (
         <div className="app-form-error">{saveError}</div>
       )}
-
-      {/* Metadata — collapsible */}
-      <div className="app-editor-meta">
-        <button
-          className="collapsible-header"
-          onClick={() => setMetaCollapsed((v) => !v)}
-          aria-expanded={!metaCollapsed}
-        >
-          <span className="collapsible-arrow">{metaCollapsed ? '\u25B6' : '\u25BC'}</span>
-          <span className="app-editor-section-title">Metadata</span>
-        </button>
-        {!metaCollapsed && (
-          <div className="collapsible-body">
-            <div className="meta-field">
-              <label htmlFor="meta-title">Title</label>
-              <input
-                id="meta-title"
-                type="text"
-                value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
-                className="meta-input"
-              />
-            </div>
-            <div className="meta-field">
-              <label htmlFor="meta-subtitle">Subtitle</label>
-              <input
-                id="meta-subtitle"
-                type="text"
-                value={editSubtitle}
-                onChange={e => setEditSubtitle(e.target.value)}
-                className="meta-input"
-              />
-            </div>
-            <button
-              className="btn btn--secondary"
-              onClick={handleSaveMeta}
-              disabled={isSavingMeta}
-            >
-              {isSavingMeta ? 'Saving...' : 'Save Metadata'}
-            </button>
-          </div>
-        )}
-      </div>
 
       {/* Prompt Editor — hidden when version history is open */}
       {!showVersionHistory && (

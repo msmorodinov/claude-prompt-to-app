@@ -8,8 +8,8 @@ from typing import Any
 
 from claude_agent_sdk import tool
 
-from backend.db import create_app, increment_message_count, save_message, validate_app_fields
-from backend.schemas import ASK_SCHEMA, SAVE_APP_SCHEMA, SHOW_SCHEMA
+from backend.db import create_app, increment_message_count, save_message, update_app, validate_app_fields
+from backend.schemas import ASK_SCHEMA, SAVE_APP_SCHEMA, SHOW_SCHEMA, UPDATE_APP_SCHEMA
 from backend.session import SessionState
 
 ASK_TIMEOUT_SECONDS = 600
@@ -42,7 +42,7 @@ def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]
     return result
 
 
-def create_tools(session: SessionState, session_id: str, *, include_save_app: bool = False) -> list:
+def create_tools(session: SessionState, session_id: str, *, include_save_app: bool = False, include_update_app: bool = False) -> list:
     @tool("show", "Display content to the user. Blocks can include text, tables, comparisons, metrics, quotes, and more. Returns immediately.", SHOW_SCHEMA)
     async def show_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
@@ -124,7 +124,40 @@ def create_tools(session: SessionState, session_id: str, *, include_save_app: bo
                 return _tool_response(f"Slug '{slug}' already exists. Choose a different slug.", is_error=True)
             return _tool_response(f"Error saving app: {e}", is_error=True)
 
+    @tool("update_app", "Update an existing app's prompt. Creates a new version. Only available in App Builder edit mode.", UPDATE_APP_SCHEMA)
+    async def update_app_tool(args: dict[str, Any]) -> dict[str, Any]:
+        try:
+            app_id = args.get("app_id")
+            body = args.get("body", "")
+            change_note = args.get("change_note", "AI-assisted edit")
+
+            if not app_id:
+                return _tool_response("app_id is required", is_error=True)
+
+            # Security: only allow updating the session's assigned edit target
+            if session.edit_app_id is None or app_id != session.edit_app_id:
+                return _tool_response(
+                    f"Unauthorized: can only update the assigned edit target (app {session.edit_app_id})",
+                    is_error=True,
+                )
+
+            errors = validate_app_fields(body=body)
+            if errors:
+                return _tool_response("Validation failed: " + "; ".join(errors), is_error=True)
+
+            result = await update_app(app_id, body=body, change_note=change_note)
+            return _tool_response(
+                f"App updated (ID: {result['id']}). "
+                f"New version created. Version ID: {result['current_version_id']}"
+            )
+        except ValueError as e:
+            return _tool_response(str(e), is_error=True)
+        except Exception as e:
+            return _tool_response(f"Error updating app: {e}", is_error=True)
+
     tools = [show_tool, ask_tool]
     if include_save_app:
         tools.append(save_app_tool)
+    if include_update_app:
+        tools.append(update_app_tool)
     return tools

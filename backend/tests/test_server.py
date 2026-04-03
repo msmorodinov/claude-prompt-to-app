@@ -28,7 +28,7 @@ class TestEnvironmentEndpoint:
         assert "tools" in data
         assert len(data["display_widgets"]) == 11
         assert len(data["input_widgets"]) == 7
-        assert len(data["tools"]) == 5
+        assert len(data["tools"]) == 6
 
     @pytest.mark.asyncio
     async def test_environment_widget_fields(self, client):

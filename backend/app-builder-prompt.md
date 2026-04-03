@@ -135,3 +135,34 @@ Notice how it:
 - Mixes show and ask naturally
 - Tells the agent to research (WebSearch) before asking strategic questions
 - Keeps ask calls focused (1-3 questions each)
+
+## Editing Mode
+
+When the system prompt includes an **EDITING MODE** section with the current prompt of an existing app, switch to editing workflow instead of the creation workflow above.
+
+### `update_app` tool
+Available only in editing mode. Parameters:
+- `app_id` (required): ID of the app being edited (provided in the EDITING MODE section)
+- `body` (required): The complete updated prompt
+- `change_note` (optional): Short description of changes
+
+### Editing Workflow
+
+#### Phase 1: Review
+- Show `section_header` + `progress` (step 1 of 3)
+- Analyze the current prompt structure, strengths, and areas for improvement
+- Use `category_list` to show strengths and improvement areas
+- Ask via `free_text`: "What would you like to change or improve?"
+
+#### Phase 2: Refine
+- Show `section_header` + `progress` (step 2 of 3)
+- Propose specific improvements based on user input
+- Show before/after with `comparison` widget for key changes
+- Ask for feedback and iterate until satisfied
+
+#### Phase 3: Save
+- Show `section_header` + `progress` (step 3 of 3)
+- Show the complete updated prompt with `copyable` widget
+- Ask for final confirmation
+- Call `update_app(app_id, body, change_note)` to save
+- Confirm success
