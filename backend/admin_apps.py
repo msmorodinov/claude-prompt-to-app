@@ -6,8 +6,6 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
-logger = logging.getLogger(__name__)
-
 from backend.db import (
     create_app,
     get_all_apps_admin,
@@ -17,6 +15,8 @@ from backend.db import (
     update_app,
     validate_app_fields,
 )
+
+logger = logging.getLogger(__name__)
 
 # SECURITY: no auth — localhost only
 router = APIRouter(prefix="/admin/apps", tags=["admin-apps"])
@@ -42,7 +42,7 @@ async def create_app_endpoint(request: Request) -> dict:
         raise HTTPException(status_code=422, detail={"errors": errors})
 
     try:
-        return await create_app(slug, title, subtitle, prompt_body)
+        return await create_app(slug, title, subtitle, prompt_body, is_active=bool(prompt_body))
     except Exception as e:
         if "UNIQUE constraint" in str(e):
             raise HTTPException(status_code=409, detail="Slug already exists")
@@ -57,12 +57,10 @@ async def get_app_detail(app_id: int) -> dict:
         raise HTTPException(status_code=404, detail="App not found")
 
     result = dict(app_row)
-    # Attach current version body
-    if app_row["current_version_id"]:
-        version = await get_version_by_id(app_id, app_row["current_version_id"])
-        result["current_version"] = version
-    else:
-        result["current_version"] = None
+    version_id = app_row["current_version_id"]
+    result["current_version"] = (
+        await get_version_by_id(app_id, version_id) if version_id else None
+    )
     return result
 
 

@@ -58,33 +58,38 @@ class SessionState:
         if self.status in ("active", "waiting_input"):
             await self.set_status("error")
 
-    def push_sse(self, event_type: str, data: dict[str, Any]) -> None:
+    def _is_duplicate(self, event_type: str, data: dict[str, Any]) -> bool:
+        """Check and record SSE event hash for deduplication."""
+        if event_type == "ping":
+            return False
+
         now = time.monotonic()
+        event_hash = hashlib.md5(
+            f"{event_type}:{json.dumps(data, sort_keys=True)}".encode()
+        ).hexdigest()
 
-        if event_type != "ping":
-            event_hash = hashlib.md5(
-                f"{event_type}:{json.dumps(data, sort_keys=True)}".encode()
-            ).hexdigest()
+        last_seen = self._recent_hashes.get(event_hash)
+        if last_seen is not None and (now - last_seen) < DEDUP_WINDOW_SECONDS:
+            logger.warning("Skipping duplicate SSE event: %s", event_type)
+            return True
 
-            last_seen = self._recent_hashes.get(event_hash)
-            if last_seen is not None and (now - last_seen) < DEDUP_WINDOW_SECONDS:
-                logger.warning("Skipping duplicate SSE event: %s", event_type)
-                return
+        self._recent_hashes[event_hash] = now
 
-            self._recent_hashes[event_hash] = now
+        # Periodic cleanup of stale hashes
+        self._recent_hashes = {
+            h: ts for h, ts in self._recent_hashes.items()
+            if (now - ts) <= DEDUP_CLEANUP_SECONDS
+        }
+        return False
 
-            stale = [
-                h for h, ts in self._recent_hashes.items()
-                if (now - ts) > DEDUP_CLEANUP_SECONDS
-            ]
-            for h in stale:
-                del self._recent_hashes[h]
+    def push_sse(self, event_type: str, data: dict[str, Any]) -> None:
+        if self._is_duplicate(event_type, data):
+            return
 
         self._event_seq += 1
         logger.info("SSE #%d: %s", self._event_seq, event_type)
         event = {"event": event_type, "data": data}
         self.sse_queue.put_nowait(event)
-        # Fan-out to admin observers
         for q in self._admin_queues:
             try:
                 q.put_nowait(event)

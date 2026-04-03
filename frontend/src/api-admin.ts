@@ -152,8 +152,8 @@ export async function validatePrompt(promptBody: string): Promise<ValidationResu
     body: JSON.stringify({ prompt_body: promptBody }),
   })
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    throw new Error((data as { error?: string }).error || `Validation failed (${res.status})`)
+    const data: { error?: string } = await res.json().catch(() => ({}))
+    throw new Error(data.error || `Validation failed (${res.status})`)
   }
   return res.json() as Promise<ValidationResult>
 }

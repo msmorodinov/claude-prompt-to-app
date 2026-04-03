@@ -319,5 +319,5 @@ UPDATE_APP_SCHEMA = {
     "required": ["app_id", "body"],
 }
 
-DISPLAY_WIDGET_TYPES = set(DISPLAY_WIDGETS.keys())
-INPUT_WIDGET_TYPES = set(INPUT_WIDGETS.keys())
+DISPLAY_WIDGET_TYPES = frozenset(DISPLAY_WIDGETS.keys())
+INPUT_WIDGET_TYPES = frozenset(INPUT_WIDGETS.keys())

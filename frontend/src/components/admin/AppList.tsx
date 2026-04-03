@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   fetchAdminApps,
   createAdminApp,
@@ -26,22 +26,20 @@ export default function AppList({ selectedId, onSelect }: Props) {
   const [title, setTitle] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const load = () =>
-    fetchAdminApps().then(setApps).catch(console.error)
+  function load() {
+    void fetchAdminApps().then(setApps).catch(console.error)
+  }
 
   useEffect(() => {
     load()
-    intervalRef.current = setInterval(load, POLL_INTERVAL)
-    return () => {
-      if (intervalRef.current !== null) clearInterval(intervalRef.current)
-    }
+    const id = setInterval(load, POLL_INTERVAL)
+    return () => clearInterval(id)
   }, [])
 
   const sorted = apps.toSorted((a, b) => Number(b.is_active) - Number(a.is_active))
 
-  const handleCreate = async () => {
+  async function handleCreate() {
     const trimmed = title.trim()
     if (!trimmed) {
       setError('Title is required.')
@@ -56,7 +54,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
     setError(null)
     try {
       const result = await createAdminApp({ slug, title: trimmed })
-      await load()
+      load()
       setShowCreate(false)
       setTitle('')
       onSelect(result.id)
@@ -67,8 +65,8 @@ export default function AppList({ selectedId, onSelect }: Props) {
     }
   }
 
-  const handleToggleCreate = () => {
-    setShowCreate((prev) => !prev)
+  function handleToggleCreate() {
+    setShowCreate(prev => !prev)
     setTitle('')
     setError(null)
   }
@@ -124,7 +122,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
             <div className="app-item-header">
               <span className="app-item-title">{app.title}</span>
               <span
-                className={`status-badge ${app.is_active ? 'done' : 'idle'}`}
+                className={`status-badge ${app.is_active ? 'status-badge--active' : 'status-badge--archived'}`}
               >
                 {app.is_active ? 'active' : 'archived'}
               </span>

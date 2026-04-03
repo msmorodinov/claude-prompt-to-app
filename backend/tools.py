@@ -34,11 +34,11 @@ def _normalize_option(opt: Any) -> str:
 
 def _normalize_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result = []
-    for q in questions:
-        q = dict(q)
-        if q.get("type") in _SELECT_TYPES and "options" in q:
-            q["options"] = [_normalize_option(o) for o in q["options"]]
-        result.append(q)
+    for question in questions:
+        normalized = dict(question)
+        if normalized.get("type") in _SELECT_TYPES and "options" in normalized:
+            normalized["options"] = [_normalize_option(o) for o in normalized["options"]]
+        result.append(normalized)
     return result
 
 
@@ -127,17 +127,20 @@ def create_tools(session: SessionState, session_id: str, *, include_save_app: bo
     @tool("update_app", "Update an existing app's prompt. Creates a new version. Only available in App Builder edit mode.", UPDATE_APP_SCHEMA)
     async def update_app_tool(args: dict[str, Any]) -> dict[str, Any]:
         try:
-            app_id = args.get("app_id")
+            raw_app_id = args.get("app_id")
             body = args.get("body", "")
             change_note = args.get("change_note", "AI-assisted edit")
 
-            if not app_id:
+            if raw_app_id is None:
                 return _tool_response("app_id is required", is_error=True)
+            if not isinstance(raw_app_id, int):
+                return _tool_response("app_id must be an integer", is_error=True)
+            app_id = raw_app_id
 
             # Security: only allow updating the session's assigned edit target
             if session.edit_app_id is None or app_id != session.edit_app_id:
                 return _tool_response(
-                    f"Unauthorized: can only update the assigned edit target (app {session.edit_app_id})",
+                    "Unauthorized: not authorized to update this app",
                     is_error=True,
                 )
 

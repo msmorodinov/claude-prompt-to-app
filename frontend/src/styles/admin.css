@@ -66,30 +66,9 @@
 
 .admin-header-btn:hover { color: var(--text); }
 .admin-header-btn.active { border-color: var(--accent); color: var(--accent); }
-.admin-header-btn--danger:hover { color: var(--error); border-color: var(--error); }
-.admin-header-btn--publish { border-color: var(--accent); color: var(--accent); }
-.admin-header-btn--publish:hover:not(:disabled) { background: var(--accent); color: var(--bg); }
 .admin-header-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.admin-header-note {
-  padding: 0.3rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-2);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  min-width: 140px;
-  outline: 2px solid transparent;
-  transition: border-color 0.15s, outline-color 0.15s;
-}
-
-.admin-header-note:focus-visible {
-  border-color: var(--accent);
-  outline-color: var(--accent);
-}
-
-/* ── ⋯ Menu Dropdown ───────────────────────────────────── */
+/* ── Menu Dropdown ──────────────────────────────────────── */
 
 .admin-menu-container {
   position: relative;
@@ -639,47 +618,6 @@
   border: 1px solid var(--border);
 }
 
-.app-editor-active-label {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.toggle-btn {
-  padding: 0.3rem 0.75rem;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  background: var(--surface-2);
-  color: var(--text);
-  transition: background 0.15s, color 0.15s;
-}
-
-.toggle-btn:hover {
-  background: var(--surface);
-}
-
-.toggle-btn--active {
-  color: var(--text-muted);
-}
-
-.toggle-btn--inactive {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.app-editor-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.25rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
 .app-editor-section-title {
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -687,35 +625,6 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
-}
-
-.meta-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.meta-field label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-}
-
-.meta-input {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  outline: 2px solid transparent;
-  transition: border-color 0.15s, outline-color 0.15s;
-}
-
-.meta-input:focus-visible {
-  border-color: var(--accent);
-  outline-color: var(--accent);
 }
 
 .app-editor-prompt {
@@ -871,46 +780,6 @@ mark.ref-not_found {
   cursor: not-allowed;
 }
 
-.app-editor-change-note {
-  display: flex;
-  flex-direction: column;
-}
-
-.btn {
-  padding: 0.5rem 1.1rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background 0.15s, opacity 0.15s;
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.btn--primary {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-.btn--primary:not(:disabled):hover {
-  opacity: 0.85;
-}
-
-.btn--secondary {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.btn--secondary:not(:disabled):hover {
-  background: var(--surface);
-}
-
 .unsaved-dot {
   display: inline-block;
   width: 8px;
@@ -926,40 +795,10 @@ mark.ref-not_found {
   color: var(--success);
 }
 
-/* ── Collapsible Sections ─────────────────────────────── */
-
-.collapsible-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--text-muted);
-  width: 100%;
-  text-align: left;
-}
-
-.collapsible-header:hover {
-  color: var(--text);
-}
-
-.collapsible-header .app-editor-section-title {
-  margin-bottom: 0;
-}
-
-.collapsible-arrow {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.collapsible-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+.admin-header-error {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--error, #e85454);
 }
 
 .app-editor-env-reference,
@@ -1468,11 +1307,6 @@ mark.ref-not_found {
     font-size: 1.15rem;
   }
 
-  .app-editor-meta {
-    padding: 0.75rem;
-  }
-
-  .meta-input,
   .app-form-input,
   .app-form-textarea {
     font-size: 16px; /* prevent iOS zoom */

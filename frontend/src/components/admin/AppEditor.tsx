@@ -73,39 +73,33 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
     }
   }, [detail, onAppInfo, isDirty, isSaving, successFlash])
 
-  // Register toggle active callback with parent via ref (stable registration)
-  const toggleActiveLocalRef = useRef(handleToggleActive)
-  toggleActiveLocalRef.current = handleToggleActive
+  // Register action callbacks with parent via refs (avoids re-registration on every render)
+  const actionsRef = useRef({ handleToggleActive, handlePublish, handleDiscard })
+  actionsRef.current = { handleToggleActive, handlePublish, handleDiscard }
 
   useEffect(() => {
-    onRegisterToggleActive(() => toggleActiveLocalRef.current())
+    onRegisterToggleActive(() => actionsRef.current.handleToggleActive())
   }, [onRegisterToggleActive])
 
-  // Register publish/discard callbacks with parent via refs
-  const publishLocalRef = useRef(handlePublish)
-  publishLocalRef.current = handlePublish
-  const discardLocalRef = useRef(handleDiscard)
-  discardLocalRef.current = handleDiscard
-
   useEffect(() => {
-    onRegisterPublish(() => publishLocalRef.current())
+    onRegisterPublish(() => actionsRef.current.handlePublish())
   }, [onRegisterPublish])
 
   useEffect(() => {
-    onRegisterDiscard(() => discardLocalRef.current())
+    onRegisterDiscard(() => actionsRef.current.handleDiscard())
   }, [onRegisterDiscard])
 
-  // Cmd+S / Ctrl+S to publish — use ref to avoid re-registering on every render
-  const publishRef = useRef({ isDirty, isSaving, handlePublish })
-  publishRef.current = { isDirty, isSaving, handlePublish }
+  // Cmd+S / Ctrl+S to publish
+  const saveStateRef = useRef({ isDirty, isSaving })
+  saveStateRef.current = { isDirty, isSaving }
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault()
-        const { isDirty: dirty, isSaving: saving, handlePublish: publish } = publishRef.current
+        const { isDirty: dirty, isSaving: saving } = saveStateRef.current
         if (dirty && !saving) {
-          void publish()
+          void actionsRef.current.handlePublish()
         }
       }
     }
@@ -115,15 +109,14 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
 
   async function handleToggleActive() {
     if (!detail) return
-    // Confirm archive action
     if (detail.is_active) {
       if (!window.confirm(`Archive "${detail.title}"? It will be hidden from users.`)) return
     }
     setSaveError(null)
-    const newActive = detail.is_active === 0
+    const willBeActive = !detail.is_active
     try {
-      await updateAdminApp(appId, { is_active: newActive })
-      setDetail({ ...detail, is_active: newActive ? 1 : 0 })
+      await updateAdminApp(appId, { is_active: willBeActive })
+      setDetail({ ...detail, is_active: willBeActive ? 1 : 0 })
     } catch (err) {
       setSaveError(errorMessage(err, 'Failed to toggle active state'))
     }
@@ -149,6 +142,13 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
   function handleDiscard() {
     setEditedBody(originalBody)
     onChangeNote('')
+  }
+
+  function handleBodyChange(val: string) {
+    setEditedBody(val)
+    setValidationRefs(null)
+    setValidationSummary(null)
+    setValidationError(null)
   }
 
   function handleTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -236,12 +236,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
           <h3 className="app-editor-section-title">Prompt</h3>
           <PromptHighlighter
             value={editedBody}
-            onChange={(val) => {
-              setEditedBody(val)
-              setValidationRefs(null)
-              setValidationSummary(null)
-              setValidationError(null)
-            }}
+            onChange={handleBodyChange}
             onKeyDown={handleTextareaKeyDown}
             references={validationRefs}
             spellCheck={false}

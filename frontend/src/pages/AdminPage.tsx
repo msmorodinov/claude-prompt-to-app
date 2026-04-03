@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('sessions')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
+  const [appReloadKey, setAppReloadKey] = useState(0)
 
   // App context bar state (visible when editing an app)
   const [showEnvRef, setShowEnvRef] = useState(false)
@@ -22,11 +23,11 @@ export default function AdminPage() {
     isDirty: boolean; isSaving: boolean; successFlash: boolean
   } | null>(null)
   const [changeNote, setChangeNote] = useState('')
+  const [headerError, setHeaderError] = useState<string | null>(null)
   const toggleActiveRef = useRef(() => {})
   const publishRef = useRef(() => {})
   const discardRef = useRef(() => {})
 
-  // ⋯ menu state
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -34,6 +35,7 @@ export default function AdminPage() {
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const renameInputRef = useRef<HTMLInputElement>(null)
+  const skipBlurRef = useRef(false)
 
   // Reset when app changes
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function AdminPage() {
     setChangeNote('')
     setShowMenu(false)
     setIsRenaming(false)
+    setHeaderError(null)
   }, [selectedAppId])
 
   // Close menu on click outside
@@ -74,15 +77,17 @@ export default function AdminPage() {
 
   const handleRenameSubmit = useCallback(async () => {
     const trimmed = renameValue.trim()
-    if (!trimmed || !selectedAppId) return
-    const appId = selectedAppId
+    if (!trimmed || !selectedAppId) {
+      setIsRenaming(false)
+      return
+    }
+    skipBlurRef.current = true
+    setHeaderError(null)
     try {
-      await updateAdminApp(appId, { title: trimmed })
-      // Force editor to reload by toggling selection
-      setSelectedAppId(null)
-      requestAnimationFrame(() => setSelectedAppId(appId))
+      await updateAdminApp(selectedAppId, { title: trimmed })
+      setAppReloadKey(k => k + 1)
     } catch {
-      // Silently fail — editor will show stale title
+      setHeaderError('Failed to rename app')
     }
     setIsRenaming(false)
   }, [renameValue, selectedAppId])
@@ -90,23 +95,22 @@ export default function AdminPage() {
   const handleEditWithAI = useCallback(async () => {
     if (!selectedAppId) return
     setShowMenu(false)
+    setHeaderError(null)
     try {
-      // Find App Builder app
       const apps = await listApps()
       const builder = apps.find(a => a.slug === 'app-builder')
       if (!builder) {
-        alert('App Builder app not found. Is it active?')
+        setHeaderError('App Builder app not found. Is it active?')
         return
       }
-      // Create session with edit_app_id
       const data = await request<{ session_id: string }>('/sessions/create', {
         method: 'POST',
         body: JSON.stringify({ app_id: builder.id, edit_app_id: selectedAppId }),
       })
-      // Navigate to chat page with the session
-      window.location.href = `/?session=${data.session_id}`
+      sessionStorage.setItem('session_id', data.session_id)
+      window.location.href = '/'
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to start AI edit session')
+      setHeaderError(err instanceof Error ? err.message : 'Failed to start AI edit session')
     }
   }, [selectedAppId])
 
@@ -114,6 +118,7 @@ export default function AdminPage() {
     <div className="admin-page">
       <header className="admin-header">
         <h1>Admin</h1>
+        {/* Spacer pushes tabs right when no app context bar is shown */}
         <span className={`admin-version${tab === 'apps' && appInfo ? '' : ' admin-version--spacer'}`}>
           v{__APP_VERSION__}
         </span>
@@ -131,16 +136,26 @@ export default function AdminPage() {
               <input
                 ref={renameInputRef}
                 className="admin-rename-input"
+                aria-label="Rename app"
                 value={renameValue}
                 onChange={e => setRenameValue(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') void handleRenameSubmit()
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    void handleRenameSubmit()
+                  }
                   if (e.key === 'Escape') {
-                    setRenameValue('')
+                    skipBlurRef.current = true
                     setIsRenaming(false)
                   }
                 }}
-                onBlur={() => void handleRenameSubmit()}
+                onBlur={() => {
+                  if (skipBlurRef.current) {
+                    skipBlurRef.current = false
+                    return
+                  }
+                  void handleRenameSubmit()
+                }}
               />
             ) : (
               <span className="admin-app-name">{appInfo.title}</span>
@@ -154,12 +169,14 @@ export default function AdminPage() {
             <div className="admin-menu-container" ref={menuRef}>
               <button
                 className="admin-header-btn admin-menu-trigger"
+                aria-haspopup="menu"
+                aria-expanded={showMenu}
                 onClick={() => setShowMenu(v => !v)}
               >
                 ⋯
               </button>
               {showMenu && (
-                <div className="admin-menu-dropdown">
+                <div className="admin-menu-dropdown" role="menu">
                   {!showVersionHistory && (
                     <>
                       <div className="admin-menu-note">
@@ -231,6 +248,9 @@ export default function AdminPage() {
             {appInfo?.successFlash && (
               <span className="success-flash">Published</span>
             )}
+            {headerError && (
+              <span className="admin-header-error">{headerError}</span>
+            )}
           </div>
         )}
 
@@ -270,16 +290,16 @@ export default function AdminPage() {
             <AppList selectedId={selectedAppId} onSelect={setSelectedAppId} />
             {selectedAppId ? (
               <AppEditor
-                key={selectedAppId}
+                key={`${selectedAppId}-${appReloadKey}`}
                 appId={selectedAppId}
                 showEnvRef={showEnvRef}
                 showVersionHistory={showVersionHistory}
                 changeNote={changeNote}
                 onChangeNote={setChangeNote}
                 onAppInfo={setAppInfo}
-                onRegisterToggleActive={(fn) => { toggleActiveRef.current = fn }}
-                onRegisterPublish={(fn) => { publishRef.current = fn }}
-                onRegisterDiscard={(fn) => { discardRef.current = fn }}
+                onRegisterToggleActive={fn => { toggleActiveRef.current = fn }}
+                onRegisterPublish={fn => { publishRef.current = fn }}
+                onRegisterDiscard={fn => { discardRef.current = fn }}
               />
             ) : (
               <div className="admin-empty">Select an app to edit</div>

@@ -250,14 +250,24 @@ async def create_session(request: Request) -> dict:
         body = {}
     req_app_id = body.get("app_id") if body else None
     edit_app_id = body.get("edit_app_id") if body else None
+    if edit_app_id is not None and not isinstance(edit_app_id, int):
+        raise HTTPException(status_code=422, detail="edit_app_id must be an integer")
 
-    # Validate edit target exists if provided
+    # Validate edit target exists and is active
     if edit_app_id is not None:
         target = await get_app_by_id(edit_app_id)
         if not target:
             raise HTTPException(status_code=404, detail="Edit target app not found")
+        if not target["is_active"]:
+            raise HTTPException(status_code=403, detail="Cannot edit an archived app")
 
     app_id, prompt_version_id = await _resolve_app(req_app_id)
+
+    # edit_app_id only valid with the app-builder app
+    if edit_app_id is not None:
+        resolved = await get_app_by_id(app_id) if app_id else None
+        if not resolved or resolved.get("slug") != "app-builder":
+            raise HTTPException(status_code=400, detail="edit_app_id requires the app-builder app")
 
     session = sessions.create(
         user_id=user_id,
@@ -395,11 +405,12 @@ def _widget_summary(schema: dict) -> dict:
     required_list = schema.get("required", [])
     required_set = set(required_list)
 
-    desc = ""
-    for key in ("content", "label", "title", "quote"):
-        desc = props.get(key, {}).get("description", "")
-        if desc:
-            break
+    desc = next(
+        (props.get(key, {}).get("description", "")
+         for key in ("content", "label", "title", "quote")
+         if props.get(key, {}).get("description")),
+        "",
+    )
 
     return {
         "type": props.get("type", {}).get("const", ""),
