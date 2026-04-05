@@ -1069,6 +1069,77 @@ body {
   line-height: 1.4;
 }
 
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 380px;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.9rem;
+  animation: toastIn 0.25s ease;
+}
+
+.toast-error {
+  border-color: var(--error);
+  background: rgba(232, 84, 84, 0.12);
+  color: var(--error);
+}
+
+.toast-success {
+  border-color: var(--success);
+  background: rgba(76, 175, 80, 0.12);
+  color: var(--success);
+}
+
+.toast-info {
+  border-color: var(--accent);
+  background: rgba(232, 196, 108, 0.12);
+  color: var(--accent);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
@@ -1215,6 +1286,12 @@ body {
   .widget-tag-input input,
   .input-area input {
     font-size: 16px;
+  }
+
+  .toast-container {
+    right: 0.5rem;
+    left: 0.5rem;
+    max-width: none;
   }
 
   .submit-btn {

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { type AppConfig, type AppInfo, createSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
+import { useToast } from '../contexts/ToastContext'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
 import { getUserDisplayName } from '../userDisplayName'
@@ -10,9 +12,24 @@ import SessionSidebar from './SessionSidebar'
 const SESSION_KEY = 'session_id'
 
 export default function ChatContainer() {
-  const [sessionId, setSessionId] = useState<string | null>(
-    () => sessionStorage.getItem(SESSION_KEY),
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { showToast } = useToast()
+
+  const [sessionId, setSessionIdRaw] = useState<string | null>(
+    () => searchParams.get('s') || sessionStorage.getItem(SESSION_KEY),
   )
+
+  const setSessionId = useCallback((id: string | null) => {
+    setSessionIdRaw(id)
+    if (id) {
+      sessionStorage.setItem(SESSION_KEY, id)
+      setSearchParams({ s: id }, { replace: true })
+    } else {
+      sessionStorage.removeItem(SESSION_KEY)
+      setSearchParams({}, { replace: true })
+    }
+  }, [setSearchParams])
+
   const [appConfig, setAppConfig] = useState<AppConfig>({ title: 'App' })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [viewingSessionId, setViewingSessionId] = useState<string | null>(null)
@@ -74,12 +91,11 @@ export default function ChatContainer() {
     createSession(selectedAppId ?? undefined).then(({ session_id }) => {
       if (cancelled) return
       setSessionId(session_id)
-      sessionStorage.setItem(SESSION_KEY, session_id)
-    }).catch((err) => {
-      console.error('Failed to create session:', err)
+    }).catch(() => {
+      showToast('Failed to create session', 'error')
     })
     return () => { cancelled = true }
-  }, [sessionId, selectedAppId, appsLoaded, apps.length])
+  }, [sessionId, selectedAppId, appsLoaded, apps.length, setSessionId, showToast])
 
   const [hasHistory, setHasHistory] = useState<boolean | null>(null)
   const historyLoaded = useRef(false)
@@ -88,16 +104,25 @@ export default function ChatContainer() {
     historyLoaded.current = true
     loadSession(sessionId).then(history => {
       if (history.length > 0) {
-        setMessages(historyToMessages(history))
+        const msgs = historyToMessages(history)
+        setMessages(msgs)
         setHasHistory(true)
+
+        // Detect stale unanswered ask
+        const lastMsg = msgs[msgs.length - 1]
+        if (lastMsg && lastMsg.role === 'ask' && !lastMsg.answered) {
+          markAskAnswered(lastMsg.id, {})
+          showToast('Session was interrupted. Please start a new session.', 'info')
+          setSessionError(true)
+        }
       } else {
         setHasHistory(false)
       }
-    }).catch(err => {
-      console.error('Failed to load session history:', err)
+    }).catch(() => {
+      showToast('Failed to load session history', 'error')
       setHasHistory(false)
     })
-  }, [sessionId, setMessages])
+  }, [sessionId, setMessages, markAskAnswered, showToast])
 
   useSSE(sessionId, wrappedSSEEvent)
 
@@ -110,25 +135,26 @@ export default function ChatContainer() {
         const { session_id } = await startChat(message, sessionId ?? undefined)
         setSessionId(session_id)
       } catch (err: unknown) {
-        const is404 = err instanceof Error && err.message.includes('404')
-        if (is404) {
+        const status = (err as any)?.status
+        if (status === 404) {
           try {
             const { session_id: newId } = await createSession(selectedAppId ?? undefined)
             setSessionId(newId)
-            sessionStorage.setItem(SESSION_KEY, newId)
             historyLoaded.current = true
             const { session_id } = await startChat(message, newId)
             setSessionId(session_id)
             return
-          } catch (retryErr) {
-            console.error('Retry after new session failed:', retryErr)
+          } catch {
+            showToast('Failed to send message', 'error')
+            setIsLoading(false)
+            return
           }
         }
-        console.error('Failed to start chat:', err)
+        showToast('Failed to send message', 'error')
         setIsLoading(false)
       }
     },
-    [sessionId, selectedAppId, setIsLoading, hasPendingAsk],
+    [sessionId, selectedAppId, setIsLoading, hasPendingAsk, setSessionId, showToast],
   )
 
   const handleRetry = useCallback(async () => {
@@ -151,11 +177,23 @@ export default function ChatContainer() {
         await submitAnswers(sessionId, askId, answers)
         setIsLoading(true)
         markAskAnswered(askId, answers)
-      } catch (err) {
-        console.error('Failed to submit answers:', err)
+      } catch (err: unknown) {
+        const status = (err as any)?.status
+        if (status === 404 || status === 409) {
+          markAskAnswered(askId, answers) // unblock UI
+          showToast(
+            status === 404
+              ? 'Session was lost. Please start a new session.'
+              : 'Response timed out. Please start a new session.',
+            'error',
+          )
+          setSessionError(true)
+        } else {
+          showToast('Failed to submit answers', 'error')
+        }
       }
     },
-    [sessionId, markAskAnswered, setIsLoading],
+    [sessionId, markAskAnswered, setIsLoading, showToast],
   )
 
   const handleSelectSession = useCallback(
@@ -169,16 +207,16 @@ export default function ChatContainer() {
         const history = await loadSession(id)
         setViewedMessages(historyToMessages(history))
         setViewingSessionId(id)
-      } catch (err) {
-        console.error('Failed to load session:', err)
+        setSearchParams({ s: id }, { replace: true })
+      } catch {
+        showToast('Failed to load session', 'error')
       }
     },
-    [sessionId],
+    [sessionId, setSearchParams, showToast],
   )
 
   const handleNewSession = useCallback(async () => {
     setSessionId(null)
-    sessionStorage.removeItem(SESSION_KEY)
     setMessages([])
     setIsLoading(false)
     setHasHistory(false)
@@ -191,12 +229,15 @@ export default function ChatContainer() {
     if (apps.length > 1) {
       setSelectedAppId(null)
     }
-  }, [apps.length, setMessages, setIsLoading])
+  }, [apps.length, setMessages, setIsLoading, setSessionId])
 
   const handleBackToCurrent = useCallback(() => {
     setViewingSessionId(null)
     setViewedMessages([])
-  }, [])
+    if (sessionId) {
+      setSearchParams({ s: sessionId }, { replace: true })
+    }
+  }, [sessionId, setSearchParams])
 
   const isSessionLoading = hasHistory === null && sessionId !== null
   const showStartScreen = !isSessionLoading && hasHistory === false && messages.length === 0 && !isLoading && !isViewingPast
