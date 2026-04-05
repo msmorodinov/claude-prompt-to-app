@@ -32,7 +32,26 @@ body {
 
 .app {
   height: 100dvh;
-  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.app::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.app::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3f;
 }
 
 .app-header {
@@ -64,14 +83,11 @@ body {
 
 /* Chat Container */
 .chat-container {
-  height: 100%;
+  min-height: 100%;
   max-width: 800px;
   margin: 0 auto;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
 }
 
 .message-list {
@@ -80,23 +96,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.chat-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-container::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-.chat-container::-webkit-scrollbar-thumb:hover {
-  background: #3a3a3f;
 }
 
 /* Messages */
