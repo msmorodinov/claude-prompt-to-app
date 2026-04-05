@@ -263,16 +263,40 @@ async def submit_answers(request: Request) -> dict:
 
     session = sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        # Hydrate from DB so stale asks can be answered after server restart
+        db_meta = await get_session_meta(session_id)
+        if not db_meta:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if db_meta["user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Not your session")
+        session = SessionState(
+            session_id=session_id,
+            user_id=db_meta["user_id"],
+            app_id=db_meta["app_id"],
+            prompt_version_id=db_meta["prompt_version_id"],
+            sdk_session_id=db_meta.get("sdk_session_id"),
+        )
+        sessions._sessions[session_id] = session
 
     if session.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not your session")
 
-    if session.pending_ask_id != ask_id:
-        raise HTTPException(status_code=409, detail="No matching pending ask")
+    if session.pending_ask_id == ask_id:
+        # Live ask — resolve normally
+        session.resolve_ask(answers)
+        return {"status": "ok"}
 
-    session.resolve_ask(answers)
-    return {"status": "ok"}
+    # Stale ask (e.g. after server restart) — save answers and resume agent
+    if session.agent_running:
+        raise HTTPException(status_code=409, detail="Agent is already running")
+
+    answers_text = "; ".join(f"{k}: {v}" for k, v in answers.items())
+    resume_msg = f"The user answered the previous questions: {answers_text}. Continue."
+    session.add_to_history("user", {"answers": answers})
+    await save_message(session_id, "user", {"answers": answers})
+    session.agent_task = asyncio.create_task(run_agent(session, resume_msg))
+    _attach_done_callback(session)
+    return {"status": "ok", "resumed": True}
 
 
 @app.get("/apps")
