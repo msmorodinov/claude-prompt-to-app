@@ -193,13 +193,14 @@ describe('MessageList', () => {
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
   })
 
-  it('passes readOnly to AskMessage — hides Submit button', () => {
+  it('hides Submit button when ask is answered', () => {
     const messages: ChatMessage[] = [
       {
         role: 'ask',
         id: 'ask-1',
         questions: [{ type: 'free_text', id: 'q1', label: 'Name?' }],
-        answered: false,
+        answered: true,
+        answers: { q1: 'Alice' },
       },
     ]
     render(
@@ -208,13 +209,12 @@ describe('MessageList', () => {
         onAskSubmit={noop}
         scrollRef={makeScrollRef()}
         isLoading={false}
-        readOnly={true}
       />,
     )
     expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument()
   })
 
-  it('shows Submit button when readOnly is false', () => {
+  it('shows Submit button for unanswered ask', () => {
     const messages: ChatMessage[] = [
       {
         role: 'ask',
@@ -229,7 +229,6 @@ describe('MessageList', () => {
         onAskSubmit={noop}
         scrollRef={makeScrollRef()}
         isLoading={false}
-        readOnly={false}
       />,
     )
     expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument()

@@ -46,7 +46,6 @@ export default function SessionViewer({ sessionId }: Props) {
           onAskSubmit={noop}
           scrollRef={scrollRef}
           isLoading={isLoading}
-          readOnly
         />
       </div>
     </div>

@@ -32,8 +32,6 @@ export default function ChatContainer() {
 
   const [appConfig, setAppConfig] = useState<AppConfig>({ title: 'App' })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [viewingSessionId, setViewingSessionId] = useState<string | null>(null)
-  const [viewedMessages, setViewedMessages] = useState<ReturnType<typeof historyToMessages>>([])
 
   const [sessionError, setSessionError] = useState(false)
   const [sessionDone, setSessionDone] = useState(false)
@@ -43,10 +41,8 @@ export default function ChatContainer() {
   const [appsLoaded, setAppsLoaded] = useState(false)
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
 
-  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, handleSSEEvent, markAskAnswered, scrollRef } =
+  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, handleSSEEvent, markAskAnswered, resetChat, scrollRef } =
     useChat()
-
-  const isViewingPast = viewingSessionId !== null && viewingSessionId !== sessionId
 
   const wrappedSSEEvent = useCallback(
     (event: Parameters<typeof handleSSEEvent>[0]) => {
@@ -107,14 +103,6 @@ export default function ChatContainer() {
         const msgs = historyToMessages(history)
         setMessages(msgs)
         setHasHistory(true)
-
-        // Detect stale unanswered ask
-        const lastMsg = msgs[msgs.length - 1]
-        if (lastMsg && lastMsg.role === 'ask' && !lastMsg.answered) {
-          markAskAnswered(lastMsg.id, {})
-          showToast('Session was interrupted. Please start a new session.', 'info')
-          setSessionError(true)
-        }
       } else {
         setHasHistory(false)
       }
@@ -197,56 +185,42 @@ export default function ChatContainer() {
   )
 
   const handleSelectSession = useCallback(
-    async (id: string) => {
+    (id: string) => {
       if (id === sessionId) {
-        setViewingSessionId(null)
-        setViewedMessages([])
+        setSidebarOpen(false)
         return
       }
-      try {
-        const history = await loadSession(id)
-        setViewedMessages(historyToMessages(history))
-        setViewingSessionId(id)
-        setSearchParams({ s: id }, { replace: true })
-      } catch {
-        showToast('Failed to load session', 'error')
-      }
+      // Switch to this session — triggers history load + SSE reconnect
+      historyLoaded.current = false
+      resetChat()
+      setHasHistory(null)
+      setSessionError(false)
+      setSessionDone(false)
+      setSessionId(id)
+      setSidebarOpen(false)
     },
-    [sessionId, setSearchParams, showToast],
+    [sessionId, setSessionId, resetChat],
   )
 
   const handleNewSession = useCallback(async () => {
     setSessionId(null)
-    setMessages([])
-    setIsLoading(false)
+    resetChat()
     setHasHistory(false)
     setSessionError(false)
     setSessionDone(false)
-    setViewingSessionId(null)
-    setViewedMessages([])
     historyLoaded.current = false
     setSidebarOpen(false)
     if (apps.length > 1) {
       setSelectedAppId(null)
     }
-  }, [apps.length, setMessages, setIsLoading, setSessionId])
-
-  const handleBackToCurrent = useCallback(() => {
-    setViewingSessionId(null)
-    setViewedMessages([])
-    if (sessionId) {
-      setSearchParams({ s: sessionId }, { replace: true })
-    }
-  }, [sessionId, setSearchParams])
+  }, [apps.length, resetChat, setSessionId])
 
   const isSessionLoading = hasHistory === null && sessionId !== null
-  const showStartScreen = !isSessionLoading && hasHistory === false && messages.length === 0 && !isLoading && !isViewingPast
+  const showStartScreen = !isSessionLoading && hasHistory === false && messages.length === 0 && !isLoading
 
   const handleStart = useCallback(() => {
     handleSend('start')
   }, [handleSend])
-
-  const displayMessages = isViewingPast ? viewedMessages : messages
 
   function renderMainContent() {
     // Show AppSelector early when waiting for app choice (before session exists)
@@ -282,15 +256,14 @@ export default function ChatContainer() {
     return (
       <>
         <MessageList
-          messages={displayMessages}
+          messages={messages}
           onAskSubmit={handleAskSubmit}
           scrollRef={scrollRef}
-          isLoading={!isViewingPast && isLoading}
-          readOnly={isViewingPast}
+          isLoading={isLoading}
         />
-        {!isViewingPast && sessionDone && !sessionError && (
+        {sessionDone && !sessionError && (
           <div className="session-done-banner">
-            <span>Session complete</span>
+            <span>You can continue this session by sending a message</span>
             <button className="start-btn" onClick={handleNewSession}>New Session</button>
           </div>
         )}
@@ -301,7 +274,7 @@ export default function ChatContainer() {
   return (
     <div className="chat-container">
       <SessionSidebar
-        currentSessionId={isViewingPast ? viewingSessionId : sessionId}
+        currentSessionId={sessionId}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewSession}
         isOpen={sidebarOpen}
@@ -320,14 +293,7 @@ export default function ChatContainer() {
         <span className="user-identity">{getUserDisplayName()}</span>
       </header>
 
-      {isViewingPast && (
-        <div className="readonly-banner">
-          <span>Viewing past session</span>
-          <button onClick={handleBackToCurrent}>Back to current</button>
-        </div>
-      )}
-
-      {sessionError && !isViewingPast && (
+      {sessionError && (
         <div className="session-error-banner">
           <span>Session interrupted</span>
           <div className="session-error-actions">

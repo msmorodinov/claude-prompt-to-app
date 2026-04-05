@@ -133,46 +133,9 @@ test.describe('Session Sidebar', () => {
     await expect(page.locator('.sidebar-session-item')).toBeVisible({ timeout: 12000 })
     await page.locator('.sidebar-session-item').first().click()
 
-    // Should see readonly banner
-    await expect(page.locator('.readonly-banner')).toBeVisible()
-    await expect(page.locator('.readonly-banner')).toContainText('Viewing past session')
-
-    // Input area should NOT be visible
-    await expect(page.locator('.input-area')).not.toBeVisible()
-  })
-
-  test('back to current button returns to active session', async ({ page }) => {
-    await page.goto('/')
-
-    // Complete a session
-    await page.locator('.start-btn').click()
-    await page.waitForSelector('.ask-message', { timeout: 5000 })
-    await page.locator('.widget-free-text textarea').fill('Test')
-    await page.locator('.option').first().click()
-    await page.locator('.submit-btn').click()
-    await page.waitForSelector('.widget-slider-scale', { timeout: 5000 })
-    const tagInput = page.locator('.widget-tag-input input')
-    await tagInput.fill('x')
-    await tagInput.press('Enter')
-    await page.locator('.submit-btn').last().click()
-    await page.waitForSelector('.widget-final-result', { timeout: 5000 })
-
-    // Create new session
-    await page.locator('.sidebar-toggle').click()
-    await page.locator('.sidebar-new-btn').click()
-    await expect(page.locator('.start-screen')).toBeVisible()
-
-    // View old session
-    await page.locator('.sidebar-toggle').click()
-    await expect(page.locator('.sidebar-session-item')).toBeVisible({ timeout: 12000 })
-    await page.locator('.sidebar-session-item').first().click()
-    await expect(page.locator('.readonly-banner')).toBeVisible()
-
-    // Click back to current
-    await page.locator('.readonly-banner button').click()
-
-    // Banner should disappear, start screen should return
+    // Should switch to the old session — history messages visible, no readonly banner
+    await expect(page.locator('.message-list')).toBeVisible()
+    // Old sessions can be continued — no readonly restrictions
     await expect(page.locator('.readonly-banner')).not.toBeVisible()
-    await expect(page.locator('.start-screen')).toBeVisible()
   })
 })
