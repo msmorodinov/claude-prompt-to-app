@@ -8,10 +8,9 @@ interface Props {
   onAskSubmit: (askId: string, answers: Record<string, unknown>) => void
   scrollRef: React.RefObject<HTMLDivElement | null>
   isLoading: boolean
-  readOnly?: boolean
 }
 
-export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, readOnly }: Props) {
+export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading }: Props) {
   return (
     <div className="message-list">
       {messages.map((msg, i) => {
@@ -19,7 +18,7 @@ export default function MessageList({ messages, onAskSubmit, scrollRef, isLoadin
           case 'assistant':
             return <AssistantMessage key={i} message={msg} />
           case 'ask':
-            return <AskMessage key={i} message={msg} onSubmit={onAskSubmit} readOnly={readOnly} />
+            return <AskMessage key={i} message={msg} onSubmit={onAskSubmit} />
           case 'user':
             return <UserMessage key={i} message={msg} />
           case 'research':

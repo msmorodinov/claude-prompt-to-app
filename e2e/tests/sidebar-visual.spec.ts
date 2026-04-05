@@ -131,51 +131,17 @@ test.describe('Session Sidebar — Visual Inspection', () => {
     await expect(page.locator('.sidebar-session-item')).toBeVisible({ timeout: 12000 })
     await page.locator('.sidebar-session-item').first().click()
 
-    // Check read-only state
-    await page.screenshot({ path: 'test-results/06b-past-session-readonly.png', fullPage: true })
-    await expect(page.locator('.readonly-banner')).toBeVisible()
-    await expect(page.locator('.readonly-banner')).toContainText('Viewing past session')
-    await expect(page.locator('.readonly-banner button')).toHaveText('Back to current')
-
-    // No input area
-    await expect(page.locator('.input-area')).not.toBeVisible()
+    // Switching to past session — should show history, no readonly banner
+    await page.screenshot({ path: 'test-results/06b-past-session-switched.png', fullPage: true })
+    await expect(page.locator('.readonly-banner')).not.toBeVisible()
 
     // Check if messages are displayed — should have content from history
     const messageList = page.locator('.message-list')
     await page.waitForTimeout(500) // Give time for messages to render
     await page.screenshot({ path: 'test-results/06c-past-session-messages.png', fullPage: true })
     const msgCount = await messageList.locator('.assistant-message, .ask-message, .user-message').count()
-    console.log(`Messages in past session view: ${msgCount}`)
+    console.log(`Messages in switched session: ${msgCount}`)
     expect(msgCount).toBeGreaterThan(0)
-  })
-
-  test('7. back to current — returns to active session', async ({ page }) => {
-    // Complete session
-    await page.locator('.start-btn').click()
-    await page.waitForSelector('.ask-message', { timeout: 5000 })
-    await page.locator('.widget-free-text textarea').fill('Testing')
-    await page.locator('.option').first().click()
-    await page.locator('.submit-btn').click()
-    await page.waitForSelector('.widget-slider-scale', { timeout: 5000 })
-    const tagInput = page.locator('.widget-tag-input input')
-    await tagInput.fill('y')
-    await tagInput.press('Enter')
-    await page.locator('.submit-btn').last().click()
-    await page.waitForSelector('.widget-final-result', { timeout: 5000 })
-
-    // New session -> view old -> back
-    await page.locator('.sidebar-toggle').click()
-    await page.locator('.sidebar-new-btn').click()
-    await page.locator('.sidebar-toggle').click()
-    await expect(page.locator('.sidebar-session-item')).toBeVisible({ timeout: 12000 })
-    await page.locator('.sidebar-session-item').first().click()
-    await expect(page.locator('.readonly-banner')).toBeVisible()
-
-    // Click back
-    await page.locator('.readonly-banner button').click()
-    await page.screenshot({ path: 'test-results/07-back-to-current.png', fullPage: true })
-    await expect(page.locator('.readonly-banner')).not.toBeVisible()
-    await expect(page.locator('.start-screen')).toBeVisible()
   })
 
   test('8. mobile viewport — sidebar as drawer', async ({ page }) => {

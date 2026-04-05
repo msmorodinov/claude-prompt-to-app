@@ -919,34 +919,6 @@ body {
   font-size: 0.9rem;
 }
 
-/* Read-only banner */
-.readonly-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.readonly-banner button {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--accent);
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-family: var(--font-body);
-}
-
-.readonly-banner button:hover {
-  background: var(--surface-2);
-  border-color: var(--accent);
-}
-
 /* Session error banner */
 .session-error-banner {
   display: flex;

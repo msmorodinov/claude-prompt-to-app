@@ -226,6 +226,14 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         await db.execute("PRAGMA user_version = 4")
         await db.commit()
 
+    if version < 5:
+        if not await _column_exists(db, "sessions", "sdk_session_id"):
+            await db.execute(
+                "ALTER TABLE sessions ADD COLUMN sdk_session_id TEXT DEFAULT NULL"
+            )
+        await db.execute("PRAGMA user_version = 5")
+        await db.commit()
+
 
 # --- App CRUD ---
 
@@ -620,6 +628,39 @@ async def get_session_owner(
         )
         row = await cursor.fetchone()
         return row[0] if row else None
+    finally:
+        await db.close()
+
+
+async def get_session_meta(
+    session_id: str, db_path: str | Path = DB_PATH
+) -> dict[str, Any] | None:
+    """Return session metadata for hydration: user_id, app_id, prompt_version_id, sdk_session_id, status."""
+    db = await _get_db(db_path)
+    try:
+        cursor = await db.execute(
+            "SELECT user_id, app_id, prompt_version_id, sdk_session_id, status "
+            "FROM sessions WHERE id = ?",
+            (session_id,),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        await db.close()
+
+
+async def save_sdk_session_id(
+    session_id: str,
+    sdk_session_id: str,
+    db_path: str | Path = DB_PATH,
+) -> None:
+    db = await _get_db(db_path)
+    try:
+        await db.execute(
+            "UPDATE sessions SET sdk_session_id = ? WHERE id = ?",
+            (sdk_session_id, session_id),
+        )
+        await db.commit()
     finally:
         await db.close()
 

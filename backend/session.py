@@ -30,6 +30,7 @@ class SessionState:
     pending_ask_event: asyncio.Event = field(default_factory=asyncio.Event)
     pending_answers: dict[str, Any] = field(default_factory=dict)
     history: list[dict[str, Any]] = field(default_factory=list)
+    sdk_session_id: str | None = None
     agent_task: asyncio.Task[None] | None = field(default=None, repr=False)
     _event_seq: int = 0
     _recent_hashes: dict[str, float] = field(default_factory=dict)

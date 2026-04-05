@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
 from backend.admin_apps import router as admin_apps_router
-from backend.agent import run_agent, run_agent_with_context
+from backend.agent import run_agent
 from backend.validator import check_rate_limit, validate_prompt
 from backend.db import (
     get_active_apps,
@@ -24,6 +24,7 @@ from backend.db import (
     get_app_config_from_db,
     get_default_app,
     get_session,
+    get_session_meta,
     get_session_owner,
     get_sessions_by_user,
     init_db,
@@ -130,7 +131,20 @@ async def chat(request: Request) -> dict:
     if session_id:
         session = sessions.get(session_id)
         if not session:
-            raise HTTPException(status_code=404, detail="Session not found")
+            # Hydrate from DB (e.g. after server restart)
+            db_meta = await get_session_meta(session_id)
+            if not db_meta:
+                raise HTTPException(status_code=404, detail="Session not found")
+            if db_meta["user_id"] != user_id:
+                raise HTTPException(status_code=403, detail="Not your session")
+            session = SessionState(
+                session_id=session_id,
+                user_id=db_meta["user_id"],
+                app_id=db_meta["app_id"],
+                prompt_version_id=db_meta["prompt_version_id"],
+                sdk_session_id=db_meta.get("sdk_session_id"),
+            )
+            sessions._sessions[session_id] = session
         if session.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
     else:
@@ -180,7 +194,20 @@ async def retry_chat(request: Request) -> dict:
 
     session = sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        # Hydrate from DB (e.g. after server restart)
+        db_meta = await get_session_meta(session_id)
+        if not db_meta:
+            raise HTTPException(status_code=404, detail="Session not found")
+        if db_meta["user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Not your session")
+        session = SessionState(
+            session_id=session_id,
+            user_id=db_meta["user_id"],
+            app_id=db_meta["app_id"],
+            prompt_version_id=db_meta["prompt_version_id"],
+            sdk_session_id=db_meta.get("sdk_session_id"),
+        )
+        sessions._sessions[session_id] = session
     if session.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not your session")
     if session.agent_running:
@@ -196,7 +223,9 @@ async def retry_chat(request: Request) -> dict:
         except Exception:
             break
 
-    session.agent_task = asyncio.create_task(run_agent_with_context(session))
+    session.agent_task = asyncio.create_task(
+        run_agent(session, "Continue from where you left off. Don't repeat previous content.")
+    )
     _attach_done_callback(session)
 
     return {"session_id": session.session_id}
@@ -206,7 +235,18 @@ async def retry_chat(request: Request) -> dict:
 async def stream(session_id: str) -> StreamingResponse:
     session = sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        # Hydrate from DB so SSE can reconnect after server restart
+        db_meta = await get_session_meta(session_id)
+        if not db_meta:
+            raise HTTPException(status_code=404, detail="Session not found")
+        session = SessionState(
+            session_id=session_id,
+            user_id=db_meta["user_id"],
+            app_id=db_meta["app_id"],
+            prompt_version_id=db_meta["prompt_version_id"],
+            sdk_session_id=db_meta.get("sdk_session_id"),
+        )
+        sessions._sessions[session_id] = session
     return _sse_response(session)
 
 

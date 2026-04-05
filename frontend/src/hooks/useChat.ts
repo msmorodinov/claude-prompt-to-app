@@ -166,6 +166,12 @@ export function useChat() {
     [],
   )
 
+  const resetChat = useCallback(() => {
+    setMessages([])
+    setIsLoading(false)
+    setHasPendingAsk(false)
+  }, [])
+
   return {
     messages,
     setMessages,
@@ -174,6 +180,7 @@ export function useChat() {
     hasPendingAsk,
     handleSSEEvent,
     markAskAnswered,
+    resetChat,
     scrollRef,
   }
 }
