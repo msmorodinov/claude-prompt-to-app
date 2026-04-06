@@ -32,31 +32,11 @@ body {
 
 .app {
   height: 100dvh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-
-.app::-webkit-scrollbar {
-  width: 6px;
-}
-
-.app::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.app::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-.app::-webkit-scrollbar-thumb:hover {
-  background: #3a3a3f;
+  overflow: hidden;
 }
 
 .app-header {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 50;
   background: var(--bg);
   padding: 0.75rem 2rem;
@@ -81,13 +61,56 @@ body {
   margin-left: auto;
 }
 
-/* Chat Container */
-.chat-container {
-  min-height: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+.admin-link {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* App Layout — two-column desktop, single-column mobile */
+.app-layout {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.main-area {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.chat-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
 }
 
 .message-list {
@@ -96,6 +119,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Messages */
@@ -172,6 +198,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
   animation: fadeIn 0.4s ease;
 }
 
@@ -795,6 +824,7 @@ body {
   overflow: hidden;
 }
 
+/* Base sidebar styles (mobile-first: overlay mode) */
 .session-sidebar {
   position: fixed;
   top: 0;
@@ -829,6 +859,24 @@ body {
   color: var(--accent);
 }
 
+.sidebar-collapse {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sidebar-collapse:hover {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .sidebar-close {
   background: none;
   border: none;
@@ -841,6 +889,38 @@ body {
 
 .sidebar-close:hover {
   color: var(--text);
+}
+
+/* Desktop: persistent sidebar in flex layout */
+@media (min-width: 1024px) {
+  .sidebar-overlay {
+    display: none;
+  }
+
+  .session-sidebar {
+    position: static;
+    width: 280px;
+    flex-shrink: 0;
+    transform: none;
+    z-index: auto;
+    transition: width 0.2s ease, opacity 0.2s ease;
+  }
+
+  .app-layout.sidebar-collapsed .session-sidebar {
+    width: 0;
+    border-right: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* On desktop: show collapse chevron, hide close × */
+  .sidebar-collapse {
+    display: flex;
+  }
+
+  .sidebar-close {
+    display: none;
+  }
 }
 
 .sidebar-new-btn {
@@ -1148,10 +1228,26 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Responsive: tablet */
+/* Responsive: tablet & mobile — sidebar overlay mode */
 @media (max-width: 1023px) {
-  .chat-container {
-    max-width: 100%;
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  .main-area {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Mobile: show close ×, hide collapse chevron */
+  .sidebar-collapse {
+    display: none !important;
+  }
+
+  .sidebar-close {
+    display: block !important;
   }
 }
 
