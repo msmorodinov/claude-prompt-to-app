@@ -54,6 +54,7 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasPendingAsk, setHasPendingAsk] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = useCallback(() => {
@@ -80,6 +81,7 @@ export function useChat() {
         case 'ask_message':
           setIsLoading(false)
           setHasPendingAsk(true)
+          setIsPaused(false)
           appendMessage({
             role: 'ask',
             id: event.id,
@@ -130,6 +132,11 @@ export function useChat() {
           scrollToBottom()
           break
 
+        case 'ask_timeout':
+          setIsLoading(false)
+          setIsPaused(true)
+          break
+
         case 'done':
           setIsLoading(false)
           setHasPendingAsk(false)
@@ -170,6 +177,7 @@ export function useChat() {
     setMessages([])
     setIsLoading(false)
     setHasPendingAsk(false)
+    setIsPaused(false)
   }, [])
 
   return {
@@ -178,6 +186,7 @@ export function useChat() {
     isLoading,
     setIsLoading,
     hasPendingAsk,
+    isPaused,
     handleSSEEvent,
     markAskAnswered,
     resetChat,

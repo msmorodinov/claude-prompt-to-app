@@ -12,7 +12,7 @@ from backend.db import create_app, increment_message_count, save_message, update
 from backend.schemas import ASK_SCHEMA, SAVE_APP_SCHEMA, SHOW_SCHEMA, UPDATE_APP_SCHEMA
 from backend.session import SessionState
 
-ASK_TIMEOUT_SECONDS = 600
+ASK_TIMEOUT_SECONDS = 1800
 
 _SELECT_TYPES = frozenset({"single_select", "multi_select"})
 
@@ -62,6 +62,9 @@ def create_tools(session: SessionState, session_id: str, *, include_save_app: bo
             preamble = args.get("preamble")
             questions = _normalize_questions(args.get("questions", []))
 
+            if session.is_duplicate_ask(questions):
+                return _tool_response("Question already displayed, awaiting user response.")
+
             session.push_sse(
                 "ask_message",
                 {"id": ask_id, "preamble": preamble, "questions": questions},
@@ -79,7 +82,12 @@ def create_tools(session: SessionState, session_id: str, *, include_save_app: bo
                 )
             except asyncio.TimeoutError:
                 session.clear_ask()
-                return _tool_response("User did not respond in time.", is_error=True)
+                await session.set_status("waiting_input")
+                session.push_sse("ask_timeout", {"message": "Session paused — no response received"})
+                task = asyncio.current_task()
+                if task:
+                    task.cancel()
+                return _tool_response("Session paused.", is_error=True)
 
             await session.set_status("active")
 

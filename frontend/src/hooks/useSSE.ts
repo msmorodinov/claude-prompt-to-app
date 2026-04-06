@@ -13,6 +13,7 @@ const EVENT_TYPES = [
   'stream_delta',
   'done',
   'error',
+  'ask_timeout',
 ] as const
 
 const TERMINAL_EVENTS = new Set(['done', 'error'])

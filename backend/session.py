@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 DEDUP_WINDOW_SECONDS = 10.0
 DEDUP_CLEANUP_SECONDS = 60.0
+ASK_CONTENT_DEDUP_SECONDS = 300.0
 
 
 @dataclass
@@ -35,6 +36,8 @@ class SessionState:
     _event_seq: int = 0
     _recent_hashes: dict[str, float] = field(default_factory=dict)
     _admin_queues: list[asyncio.Queue[dict[str, Any]]] = field(default_factory=list)
+    _last_ask_content_hash: str | None = None
+    _last_ask_time: float = 0.0
 
     @property
     def agent_running(self) -> bool:
@@ -109,6 +112,21 @@ class SessionState:
     def clear_ask(self) -> None:
         self.pending_ask_id = None
         self.pending_answers = {}
+
+    def is_duplicate_ask(self, questions: list[dict[str, Any]]) -> bool:
+        """Check if the same ask content was sent recently (dedup window)."""
+        content_hash = hashlib.md5(
+            json.dumps(questions, sort_keys=True).encode()
+        ).hexdigest()
+        now = time.monotonic()
+        if (
+            self._last_ask_content_hash == content_hash
+            and (now - self._last_ask_time) < ASK_CONTENT_DEDUP_SECONDS
+        ):
+            return True
+        self._last_ask_content_hash = content_hash
+        self._last_ask_time = now
+        return False
 
     async def set_status(self, new_status: str) -> None:
         """Update in-memory status and persist to DB in one call."""
