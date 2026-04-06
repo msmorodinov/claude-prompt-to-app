@@ -7,6 +7,7 @@ interface Props {
   onNewSession: () => void
   isOpen: boolean
   onClose: () => void
+  onToggle: () => void
 }
 
 const POLL_INTERVAL = 10_000
@@ -17,6 +18,7 @@ export default function SessionSidebar({
   onNewSession,
   isOpen,
   onClose,
+  onToggle,
 }: Props) {
   const [sessions, setSessions] = useState<SessionSummary[]>([])
 
@@ -44,10 +46,17 @@ export default function SessionSidebar({
 
   return (
     <>
+      {/* Overlay only for mobile */}
       {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
       <aside className={`session-sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Sessions</h2>
+          {/* Desktop: collapse button; Mobile: close button */}
+          <button className="sidebar-collapse" onClick={onToggle} title="Collapse sidebar" aria-label="Collapse sidebar">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <polyline points="10,3 5,8 10,13" />
+            </svg>
+          </button>
           <button className="sidebar-close" onClick={onClose}>
             &times;
           </button>
@@ -62,7 +71,6 @@ export default function SessionSidebar({
               className={`sidebar-session-item ${currentSessionId === s.id ? 'active' : ''}`}
               onClick={() => {
                 onSelectSession(s.id)
-                onClose()
               }}
             >
               <div className="sidebar-session-title">
