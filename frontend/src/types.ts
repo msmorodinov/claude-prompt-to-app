@@ -208,6 +208,11 @@ export interface ErrorEvent {
   message: string
 }
 
+export interface AskTimeoutEvent {
+  type: 'ask_timeout'
+  message: string
+}
+
 export type SSEEvent =
   | AssistantMessageEvent
   | AskMessageEvent
@@ -217,6 +222,7 @@ export type SSEEvent =
   | StreamDeltaEvent
   | DoneEvent
   | ErrorEvent
+  | AskTimeoutEvent
 
 export interface ChatAssistantMessage {
   role: 'assistant'

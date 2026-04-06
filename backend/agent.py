@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from pathlib import Path
 
@@ -129,6 +130,9 @@ async def run_agent(session: SessionState, user_message: str) -> None:
 
         await session.set_status("done")
         session.push_sse("done", {})
+    except asyncio.CancelledError:
+        logger.info("Agent task cancelled (ask timeout)")
+        await session.set_status("waiting_input")
     except Exception as e:
         logger.exception("Agent error")
         await session.set_status("error")

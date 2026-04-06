@@ -41,7 +41,7 @@ export default function ChatContainer() {
   const [appsLoaded, setAppsLoaded] = useState(false)
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
 
-  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, handleSSEEvent, markAskAnswered, resetChat, scrollRef } =
+  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, isPaused, handleSSEEvent, markAskAnswered, resetChat, scrollRef } =
     useChat()
 
   const wrappedSSEEvent = useCallback(
@@ -260,6 +260,7 @@ export default function ChatContainer() {
           onAskSubmit={handleAskSubmit}
           scrollRef={scrollRef}
           isLoading={isLoading}
+          isPaused={isPaused}
         />
         {sessionDone && !sessionError && (
           <div className="session-done-banner">
