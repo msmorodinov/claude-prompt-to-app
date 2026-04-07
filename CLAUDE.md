@@ -40,7 +40,6 @@ Browser (React SPA)  <──SSE──>  FastAPI (Python)  <──subprocess─�
 ```
 forge-simple/
 ├── CLAUDE.md
-├── ARCHITECTURE.md
 ├── POSITIONING-WORKSHOP-SPEC.pdf
 ├── README.md
 │
@@ -57,6 +56,7 @@ forge-simple/
 │   ├── app-builder-prompt.md # App Builder meta-app prompt (seeded via migration v3)
 │   ├── prompt_config.py   # Parse frontmatter from prompt.md for backward compat
 │   ├── framework.md       # Framework description for agent
+│   ├── validator.py       # Rate limiting, prompt validation
 │   ├── requirements.txt
 │   └── tests/             # pytest: test_db, test_server, test_session, test_tools, test_schemas
 │
@@ -72,9 +72,13 @@ forge-simple/
 │       ├── api.ts                # fetch helpers: /chat, /answers, /sessions
 │       ├── api-admin.ts          # Admin API: /admin/sessions, stream, history
 │       ├── userId.ts             # Anonymous user ID (localStorage)
+│       ├── userDisplayName.ts    # Display name generation
+│       ├── relativeTime.ts       # Relative time formatting
 │       ├── hooks/
 │       │   ├── useSSE.ts         # SSE connection, reconnect, event dispatch
 │       │   └── useChat.ts        # Chat message state, scroll management
+│       ├── contexts/
+│       │   └── ToastContext.tsx   # Toast notification context provider
 │       ├── pages/
 │       │   ├── ChatPage.tsx      # Main chat page with AppSelector
 │       │   └── AdminPage.tsx     # Admin dashboard: sessions + app management
@@ -86,7 +90,8 @@ forge-simple/
 │       │   ├── AssistantMessage.tsx
 │       │   ├── AskMessage.tsx     # readOnly support
 │       │   ├── UserMessage.tsx
-│       │   ├── InputArea.tsx
+│       │   ├── MarkdownContent.tsx # Markdown renderer
+│       │   ├── Toast.tsx          # Toast notification component
 │       │   ├── WidgetRenderer.tsx # Dynamic dispatch: type -> component
 │       │   ├── display/          # show widgets (11 types)
 │       │   │   ├── TextWidget.tsx
@@ -114,6 +119,7 @@ forge-simple/
 │       │       ├── EnvironmentReference.tsx # Widget/tool catalog reference panel
 │       │       ├── VersionHistory.tsx      # App version timeline
 │       │       ├── VersionDiff.tsx         # Diff between versions
+│       │       ├── PromptHighlighter.tsx  # Syntax highlighting for prompts
 │       │       ├── SessionList.tsx         # List all sessions
 │       │       └── SessionViewer.tsx       # View session history (read-only)
 │       ├── __tests__/            # Vitest: widgets, hooks, components
@@ -131,7 +137,10 @@ forge-simple/
         ├── workshop-flow.spec.ts
         ├── responsive-widgets.spec.ts
         ├── multi-user-admin.spec.ts
-        └── real-backend.spec.ts
+        ├── real-backend.spec.ts
+        ├── admin-ui-live.spec.ts
+        ├── sidebar-visual.spec.ts
+        └── session-sidebar.spec.ts
 ```
 
 ## MCP Tools (3 tools)
