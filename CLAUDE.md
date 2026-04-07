@@ -40,7 +40,6 @@ Browser (React SPA)  <──SSE──>  FastAPI (Python)  <──subprocess─�
 ```
 forge-simple/
 ├── CLAUDE.md
-├── ARCHITECTURE.md
 ├── POSITIONING-WORKSHOP-SPEC.pdf
 ├── README.md
 │
