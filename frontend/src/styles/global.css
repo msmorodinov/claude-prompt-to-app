@@ -907,6 +907,10 @@ body {
   color: var(--text);
 }
 
+.sidebar-collapsed-icons {
+  display: none;
+}
+
 /* Desktop: persistent sidebar in flex layout */
 @media (min-width: 1024px) {
   .sidebar-overlay {
@@ -919,14 +923,44 @@ body {
     flex-shrink: 0;
     transform: none;
     z-index: auto;
-    transition: width 0.2s ease, opacity 0.2s ease;
+    transition: width 0.2s ease;
   }
 
   .app-layout.sidebar-collapsed .session-sidebar {
-    width: 0;
-    border-right: none;
-    opacity: 0;
-    pointer-events: none;
+    width: 48px;
+  }
+
+  .app-layout.sidebar-collapsed .sidebar-header,
+  .app-layout.sidebar-collapsed .sidebar-new-btn,
+  .app-layout.sidebar-collapsed .sidebar-sessions {
+    display: none;
+  }
+
+  .app-layout.sidebar-collapsed .sidebar-collapsed-icons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+  }
+
+  .sidebar-collapsed-icons button {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .sidebar-collapsed-icons button:hover {
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   /* On desktop: show collapse chevron, hide close × */
