@@ -89,6 +89,9 @@ async def _sse_generator(
                 await session.cleanup_dead_agent()
                 yield f"event: error\ndata: {json.dumps({'message': msg})}\n\n"
                 break
+            # No agent running and terminal status — nothing more to stream
+            if not session.agent_running and session.status in ("done", "error", "idle"):
+                break
             yield ": ping\n\n"
 
 

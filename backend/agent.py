@@ -129,12 +129,15 @@ async def run_agent(session: SessionState, user_message: str) -> None:
                     )
 
         await session.set_status("done")
+        session.agent_task = None
         session.push_sse("done", {})
     except asyncio.CancelledError:
         logger.info("Agent task cancelled (ask timeout)")
+        session.agent_task = None
         await session.set_status("waiting_input")
     except Exception as e:
         logger.exception("Agent error")
+        session.agent_task = None
         await session.set_status("error")
         session.push_sse("error", {"message": str(e)})
 
