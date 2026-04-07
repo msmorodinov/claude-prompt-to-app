@@ -572,6 +572,22 @@ body {
   background: var(--surface-2);
 }
 
+.custom-option input[type="text"] {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+
+.custom-option input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .widget-free-text textarea,
 .widget-free-text input[type='text'] {
   width: 100%;
