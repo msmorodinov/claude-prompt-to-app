@@ -61,6 +61,19 @@ export default function SessionSidebar({
             &times;
           </button>
         </div>
+        <div className="sidebar-collapsed-icons">
+          <button onClick={onToggle} title="Expand sidebar" aria-label="Expand sidebar">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <polyline points="6,3 11,8 6,13" />
+            </svg>
+          </button>
+          <button onClick={onNewSession} title="New session" aria-label="New session">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <line x1="8" y1="3" x2="8" y2="13" />
+              <line x1="3" y1="8" x2="13" y2="8" />
+            </svg>
+          </button>
+        </div>
         <button className="sidebar-new-btn" onClick={onNewSession}>
           + New Session
         </button>
