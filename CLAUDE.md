@@ -311,14 +311,14 @@ cd frontend && npm install && npm run dev -- --port 4920  # :4920 with proxy to 
 
 ## Local CI
 
-A pre-commit hook runs automatically via Claude Code hooks (`.claude/settings.json`). Before every `git commit`, it executes:
+Lefthook runs pre-commit checks automatically on every `git commit`. Checks run **in parallel**:
 
-1. `tsc -b --noEmit` — TypeScript type check
-2. `vitest run` — Frontend unit tests
-3. `pytest backend/tests/test_session.py` — Backend unit tests
+1. `tsc -b --noEmit` — TypeScript type check (only if .ts/.tsx changed)
+2. `vitest run` — Frontend unit tests (only if .ts/.tsx changed)
+3. `pytest` — Backend unit tests (only if .py changed)
+
+Config: `lefthook.yml`. Auto-installs via `npm install`.
 
 To run manually: `./scripts/check-ci.sh`
 
-Git pre-commit hook (same checks) installed via: `bash scripts/install-hooks.sh`
-
-E2E tests (Playwright) are NOT included in local checks — run them explicitly when touching UI flows.
+E2E tests (Playwright) are NOT included in pre-commit — run them explicitly when touching UI flows.
