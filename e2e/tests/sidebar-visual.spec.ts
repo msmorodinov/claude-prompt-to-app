@@ -28,7 +28,8 @@ test.describe('Session Sidebar — Visual Inspection', () => {
     await expect(page.locator('[data-testid="sidebar-header"] h2')).toHaveText('Sessions')
     await expect(page.locator('[data-testid="sidebar-new-btn"]')).toBeVisible()
     await expect(page.locator('[data-testid="sidebar-empty"]')).toHaveText('No sessions yet')
-    await expect(page.locator('[data-testid="sidebar-close"]')).toBeVisible()
+    // sidebar-close is hidden on desktop (display:none via CSS); only visible on mobile
+    await expect(page.locator('[data-testid="sidebar-close"]')).not.toBeVisible()
   })
 
   test('3. hamburger position — not overlapping header', async ({ page }) => {

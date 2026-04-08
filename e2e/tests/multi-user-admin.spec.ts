@@ -1,16 +1,19 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
 
-const MOCK_SERVER_URL = 'http://localhost:4911'
+const MOCK_SERVER_URL = 'http://localhost:4910'
 
 /**
  * Helper: create a session via API with a specific user_id.
  * Returns session_id.
  */
-async function createSessionAs(userId: string): Promise<string> {
-  const res = await fetch(`${MOCK_SERVER_URL}/sessions/create`, {
-    method: 'POST',
+async function createSessionAs(
+  request: APIRequestContext,
+  userId: string,
+): Promise<string> {
+  const res = await request.post(`${MOCK_SERVER_URL}/sessions/create`, {
     headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
   })
+  expect(res.ok()).toBeTruthy()
   const data = await res.json()
   return data.session_id
 }
@@ -19,15 +22,16 @@ async function createSessionAs(userId: string): Promise<string> {
  * Helper: start chat on a session via API.
  */
 async function startChatAs(
+  request: APIRequestContext,
   userId: string,
   sessionId: string,
   message = 'start',
 ): Promise<void> {
-  await fetch(`${MOCK_SERVER_URL}/chat`, {
-    method: 'POST',
+  const res = await request.post(`${MOCK_SERVER_URL}/chat`, {
     headers: { 'Content-Type': 'application/json', 'X-User-Id': userId },
-    body: JSON.stringify({ message, session_id: sessionId }),
+    data: { message, session_id: sessionId },
   })
+  expect(res.ok()).toBeTruthy()
 }
 
 /**
@@ -95,50 +99,55 @@ test.describe('Multi-user session isolation', () => {
     expect(request.headers()['x-user-id']).toBe('test-user-abc')
   })
 
-  test('user cannot access another user session via API', async () => {
+  test('user cannot access another user session via API', async ({ request }) => {
     // Create session as user-A
-    const sessionId = await createSessionAs('user-A')
+    const sessionId = await createSessionAs(request, 'user-A')
 
     // Try to chat as user-B on user-A's session
-    const res = await fetch(`${MOCK_SERVER_URL}/chat`, {
-      method: 'POST',
+    const res = await request.post(`${MOCK_SERVER_URL}/chat`, {
       headers: {
         'Content-Type': 'application/json',
         'X-User-Id': 'user-B',
       },
-      body: JSON.stringify({ message: 'hack', session_id: sessionId }),
+      data: { message: 'hack', session_id: sessionId },
     })
-    expect(res.status).toBe(403)
+    expect(res.status()).toBe(403)
   })
 
-  test('user cannot submit answers to another user session', async () => {
-    const sessionId = await createSessionAs('user-A')
-    await startChatAs('user-A', sessionId)
+  test('user cannot submit answers to another user session', async ({ request }) => {
+    const sessionId = await createSessionAs(request, 'user-A')
+    await startChatAs(request, 'user-A', sessionId)
 
     // Try to submit answers as user-B
-    const res = await fetch(`${MOCK_SERVER_URL}/answers`, {
-      method: 'POST',
+    const res = await request.post(`${MOCK_SERVER_URL}/answers`, {
       headers: {
         'Content-Type': 'application/json',
         'X-User-Id': 'user-B',
       },
-      body: JSON.stringify({
+      data: {
         session_id: sessionId,
         ask_id: 'mock-ask-1',
         answers: { company_desc: 'hacked' },
-      }),
+      },
     })
-    expect(res.status).toBe(403)
+    expect(res.status()).toBe(403)
   })
 })
 
 // ------- Admin dashboard tests -------
 
 test.describe('Admin dashboard', () => {
-  test('admin page renders with session list', async ({ page }) => {
-    // Create a session first so the list is not empty
-    await createSessionAs('admin-test-user')
+  let seededSessionId: string
 
+  test.beforeEach(async ({ request }) => {
+    // Seed a session with chat history so admin has data to display
+    seededSessionId = await createSessionAs(request, 'test-user')
+    await startChatAs(request, 'test-user', seededSessionId, 'Hello')
+    // Brief wait for mock agent to process
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  })
+
+  test('admin page renders with session list', async ({ page }) => {
     await page.goto('/admin')
 
     // Should have admin header
@@ -147,32 +156,26 @@ test.describe('Admin dashboard', () => {
     // Should have session list
     await expect(page.locator('[data-testid="session-list"]')).toBeVisible()
 
-    // Should show at least 1 session
-    await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible({
-      timeout: 10000,
-    })
+    // Should show at least 1 session (seeded in beforeEach)
+    await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible()
   })
 
   test('admin shows session status badges', async ({ page }) => {
-    await createSessionAs('status-test-user')
-
     await page.goto('/admin')
 
     const firstItem = page.locator('[data-testid="session-item"]').first()
-    await expect(firstItem).toBeVisible({ timeout: 10000 })
+    await expect(firstItem).toBeVisible()
 
     // Should have a status badge
     await expect(firstItem.locator('[data-testid="status-badge"]')).toBeVisible()
   })
 
   test('clicking a session opens viewer', async ({ page }) => {
-    const sessionId = await createSessionAs('viewer-test-user')
-
     await page.goto('/admin')
 
     // Wait for session list to load
     const sessionItem = page.locator('[data-testid="session-item"]').first()
-    await expect(sessionItem).toBeVisible({ timeout: 10000 })
+    await expect(sessionItem).toBeVisible()
 
     // Click the session
     await sessionItem.click()
@@ -211,9 +214,6 @@ test.describe('Admin dashboard', () => {
   test('admin viewer opens and shows session header', async ({
     browser,
   }) => {
-    // Create a session so admin has something to view
-    const sessionId = await createSessionAs('live-test-user')
-
     // Open admin page
     const adminCtx = await browser.newContext()
     const adminPage = await adminCtx.newPage()
@@ -221,7 +221,7 @@ test.describe('Admin dashboard', () => {
 
     // Click the session to open viewer
     const sessionItem = adminPage.locator('[data-testid="session-item"]').first()
-    await expect(sessionItem).toBeVisible({ timeout: 10000 })
+    await expect(sessionItem).toBeVisible()
     await sessionItem.click()
 
     // Session viewer should render with the session header
