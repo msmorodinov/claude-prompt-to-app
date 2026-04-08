@@ -11,7 +11,7 @@ export default function QuoteHighlight({ quote, attribution, source, note, comme
   const displayNote = note || comment
 
   return (
-    <div className="widget widget-quote-highlight">
+    <div className="widget widget-quote-highlight" data-testid="widget-quote-highlight">
       <blockquote>{quote}</blockquote>
       {displayAttribution && <cite>{displayAttribution}</cite>}
       {displayNote && <p className="note">{displayNote}</p>}

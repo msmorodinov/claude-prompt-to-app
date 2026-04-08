@@ -65,7 +65,7 @@ export default function SessionList({ selectedId, onSelect }: Props) {
   const statuses = Object.keys(statusCounts).sort()
 
   return (
-    <div className="session-list">
+    <div className="session-list" data-testid="session-list">
       <h2>Sessions ({sessions.length})</h2>
 
       {/* Search */}
@@ -101,13 +101,14 @@ export default function SessionList({ selectedId, onSelect }: Props) {
           <div
             key={s.id}
             className={`session-item ${selectedId === s.id ? 'selected' : ''} status-${s.status}`}
+            data-testid="session-item"
             onClick={() => onSelect(s.id)}
           >
             <div className="session-item-header">
               <span className="session-user" title={s.user_id}>
                 {s.user_display_name || s.user_id}
               </span>
-              <span className={`status-badge ${s.status}`}>{s.status}</span>
+              <span className={`status-badge ${s.status}`} data-testid="status-badge">{s.status}</span>
             </div>
             {s.title && (
               <div className="session-title">{s.title}</div>

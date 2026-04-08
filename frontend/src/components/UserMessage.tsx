@@ -6,7 +6,7 @@ interface Props {
 
 export default function UserMessage({ message }: Props) {
   return (
-    <div className="message user-message">
+    <div className="message user-message" data-testid="user-message">
       {Object.entries(message.answers).map(([key, val]) => (
         <div key={key} className="answer-item">
           <span className="answer-value">{String(val)}</span>

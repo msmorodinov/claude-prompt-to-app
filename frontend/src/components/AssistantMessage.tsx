@@ -8,7 +8,7 @@ interface Props {
 
 export default function AssistantMessage({ message }: Props) {
   return (
-    <div className="message assistant-message">
+    <div className="message assistant-message" data-testid="assistant-message">
       {message.blocks.map((block, i) => (
         <WidgetRenderer key={i} widget={block} />
       ))}

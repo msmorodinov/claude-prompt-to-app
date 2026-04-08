@@ -195,7 +195,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
 
   if (loadError) {
     return (
-      <div className="app-editor">
+      <div className="app-editor" data-testid="app-editor">
         <p style={{ color: 'var(--error)', padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>
           Error: {loadError}
         </p>
@@ -205,7 +205,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
 
   if (!detail) {
     return (
-      <div className="app-editor">
+      <div className="app-editor" data-testid="app-editor">
         <p style={{ color: 'var(--text-muted)', padding: '1.5rem', fontFamily: 'var(--font-mono)' }}>
           Loading...
         </p>
@@ -214,7 +214,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
   }
 
   return (
-    <div className="app-editor">
+    <div className="app-editor" data-testid="app-editor">
       {/* Header */}
       <div className="app-editor-header">
         <div className="app-editor-title-row">
@@ -227,12 +227,12 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
       </div>
 
       {saveError && (
-        <div className="app-form-error">{saveError}</div>
+        <div className="app-form-error" data-testid="app-form-error">{saveError}</div>
       )}
 
       {/* Prompt Editor — hidden when version history is open */}
       {!showVersionHistory && (
-        <div className="app-editor-prompt">
+        <div className="app-editor-prompt" data-testid="app-editor-prompt">
           <h3 className="app-editor-section-title">Prompt</h3>
           <PromptHighlighter
             value={editedBody}
@@ -269,14 +269,14 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
 
       {/* Environment Reference */}
       {showEnvRef && envData && (
-        <div className="app-editor-env-reference">
+        <div className="app-editor-env-reference" data-testid="app-editor-env-reference">
           <EnvironmentReference data={envData} />
         </div>
       )}
 
       {/* Version History */}
       {showVersionHistory && (
-        <div className="app-editor-version-history">
+        <div className="app-editor-version-history" data-testid="app-editor-version-history">
           <VersionHistory appId={appId} />
         </div>
       )}

@@ -23,7 +23,7 @@ export default function DataTable(props: Props) {
   }
 
   return (
-    <div className="widget widget-data-table">
+    <div className="widget widget-data-table" data-testid="widget-data-table">
       <div className="table-scroll-wrapper">
       <table>
         <thead>
