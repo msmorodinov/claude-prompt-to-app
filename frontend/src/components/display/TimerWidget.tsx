@@ -28,7 +28,7 @@ export default function TimerWidget({ seconds, label }: Props) {
   const secs = remaining % 60
 
   return (
-    <div className="widget widget-timer">
+    <div className="widget widget-timer" data-testid="widget-timer">
       {label && <div className="timer-label">{label}</div>}
       <div className="timer-display">
         {mins}:{secs.toString().padStart(2, '0')}

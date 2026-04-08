@@ -47,8 +47,8 @@ export default function SessionSidebar({
   return (
     <>
       {/* Overlay only for mobile */}
-      {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
-      <aside className={`session-sidebar ${isOpen ? 'open' : ''}`}>
+      {isOpen && <div className="sidebar-overlay" data-testid="sidebar-overlay" onClick={onClose} />}
+      <aside className={`session-sidebar ${isOpen ? 'open' : ''}`} data-testid="session-sidebar">
         <div className="sidebar-header">
           <h2>Sessions</h2>
           {/* Desktop: collapse button; Mobile: close button */}
@@ -57,7 +57,7 @@ export default function SessionSidebar({
               <polyline points="10,3 5,8 10,13" />
             </svg>
           </button>
-          <button className="sidebar-close" onClick={onClose}>
+          <button className="sidebar-close" data-testid="sidebar-close" onClick={onClose}>
             &times;
           </button>
         </div>
@@ -74,7 +74,7 @@ export default function SessionSidebar({
             </svg>
           </button>
         </div>
-        <button className="sidebar-new-btn" onClick={onNewSession}>
+        <button className="sidebar-new-btn" data-testid="sidebar-new-btn" onClick={onNewSession}>
           + New Session
         </button>
         <div className="sidebar-sessions">
@@ -82,14 +82,15 @@ export default function SessionSidebar({
             <div
               key={s.id}
               className={`sidebar-session-item ${currentSessionId === s.id ? 'active' : ''}`}
+              data-testid="sidebar-session-item"
               onClick={() => {
                 onSelectSession(s.id)
               }}
             >
-              <div className="sidebar-session-title">
+              <div className="sidebar-session-title" data-testid="sidebar-session-title">
                 {s.title || 'Untitled session'}
               </div>
-              <div className="sidebar-session-meta">
+              <div className="sidebar-session-meta" data-testid="sidebar-session-meta">
                 <span>{s.message_count} msgs</span>
                 <span>{formatDate(s.created_at)}</span>
               </div>
@@ -99,7 +100,7 @@ export default function SessionSidebar({
             </div>
           ))}
           {sessions.length === 0 && (
-            <div className="sidebar-empty">No sessions yet</div>
+            <div className="sidebar-empty" data-testid="sidebar-empty">No sessions yet</div>
           )}
         </div>
       </aside>

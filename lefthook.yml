@@ -4,11 +4,11 @@ pre-commit:
     tsc:
       root: frontend/
       run: npx tsc -b --noEmit
-      glob: "*.{ts,tsx}"
+      glob: "**/*.{ts,tsx}"
     vitest:
       root: frontend/
       run: npx vitest run --reporter=verbose
-      glob: "*.{ts,tsx}"
+      glob: "**/*.{ts,tsx}"
     pytest:
       run: python3 -m pytest backend/tests/test_session.py --noconftest -v
-      glob: "*.py"
+      glob: "**/*.py"

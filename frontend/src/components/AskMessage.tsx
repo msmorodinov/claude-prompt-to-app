@@ -137,13 +137,13 @@ export default function AskMessage({ message, onSubmit }: Props) {
   }
 
   return (
-    <div className={`message ask-message ${message.answered ? 'answered' : ''}`}>
+    <div className={`message ask-message ${message.answered ? 'answered' : ''}`} data-testid="ask-message">
       {message.preamble && <div className="preamble">{message.preamble}</div>}
       <div className="questions">
         {message.questions.map((q) => renderQuestion(q))}
       </div>
       {!message.answered && (
-        <button onClick={handleSubmit} className="submit-btn">
+        <button onClick={handleSubmit} className="submit-btn" data-testid="submit-btn">
           Submit
         </button>
       )}

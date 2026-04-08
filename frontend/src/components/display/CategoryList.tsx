@@ -56,7 +56,7 @@ export default function CategoryList(props: Props) {
   }
 
   return (
-    <div className="widget widget-category-list">
+    <div className="widget widget-category-list" data-testid="widget-category-list">
       {categories.map((cat, i) => (
         <div key={cat.label || i} className={`category${styleClass(cat.style)}`}>
           <h4>{cat.label}</h4>

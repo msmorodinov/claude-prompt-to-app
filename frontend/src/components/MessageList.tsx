@@ -13,7 +13,7 @@ interface Props {
 
 export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, isPaused }: Props) {
   return (
-    <div className="message-list">
+    <div className="message-list" data-testid="message-list">
       {messages.map((msg, i) => {
         switch (msg.role) {
           case 'assistant':

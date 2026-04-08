@@ -72,11 +72,12 @@ export default function AppList({ selectedId, onSelect }: Props) {
   }
 
   return (
-    <div className="app-list">
+    <div className="app-list" data-testid="app-list">
       <div className="app-list-header">
         <h2>Apps ({apps.length})</h2>
         <button
           className="btn-create-app"
+          data-testid="btn-create-app"
           onClick={handleToggleCreate}
         >
           {showCreate ? 'Cancel' : 'Create App'}
@@ -84,9 +85,10 @@ export default function AppList({ selectedId, onSelect }: Props) {
       </div>
 
       {showCreate && (
-        <div className="app-create-form">
+        <div className="app-create-form" data-testid="app-create-form">
           <input
             className="app-form-input"
+            data-testid="app-form-input"
             type="text"
             placeholder="App title"
             value={title}
@@ -97,13 +99,14 @@ export default function AppList({ selectedId, onSelect }: Props) {
             autoFocus
           />
           {title.trim() && (
-            <span className="app-form-slug-preview">
+            <span className="app-form-slug-preview" data-testid="app-form-slug-preview">
               {titleToSlug(title.trim())}
             </span>
           )}
-          {error && <div className="app-form-error">{error}</div>}
+          {error && <div className="app-form-error" data-testid="app-form-error">{error}</div>}
           <button
             className="btn-create-app-submit"
+            data-testid="btn-create-app-submit"
             onClick={handleCreate}
             disabled={creating}
           >
@@ -117,6 +120,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
           <div
             key={app.id}
             className={`app-list-item${selectedId === app.id ? ' selected' : ''}`}
+            data-testid="app-list-item"
             onClick={() => onSelect(app.id)}
           >
             <div className="app-item-header">

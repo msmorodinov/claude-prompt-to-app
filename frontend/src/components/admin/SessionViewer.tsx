@@ -35,7 +35,7 @@ export default function SessionViewer({ sessionId }: Props) {
   useSSE(sessionId, handleSSEEvent, { urlFactory: createAdminSSEUrl })
 
   return (
-    <div className="session-viewer">
+    <div className="session-viewer" data-testid="session-viewer">
       <div className="viewer-header">
         <h3>Session: {sessionId}</h3>
         {error && <span className="viewer-error">{error}</span>}

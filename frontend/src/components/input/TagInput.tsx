@@ -42,11 +42,11 @@ export default function TagInput({
   }
 
   return (
-    <div className="widget widget-tag-input">
+    <div className="widget widget-tag-input" data-testid="widget-tag-input">
       <label className="question-label">{label}</label>
       <div className="tags">
         {value.map((tag) => (
-          <span key={tag} className="tag">
+          <span key={tag} className="tag" data-testid="tag">
             {tag}
             {!disabled && (
               <button onClick={() => removeTag(tag)} className="tag-remove">

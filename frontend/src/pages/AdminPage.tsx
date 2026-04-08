@@ -115,8 +115,8 @@ export default function AdminPage() {
   }, [selectedAppId])
 
   return (
-    <div className="admin-page">
-      <header className="admin-header">
+    <div className="admin-page" data-testid="admin-page">
+      <header className="admin-header" data-testid="admin-header">
         <h1>Admin</h1>
         {/* Spacer pushes tabs right when no app context bar is shown */}
         <span className={`admin-version${tab === 'apps' && appInfo ? '' : ' admin-version--spacer'}`}>
@@ -136,6 +136,7 @@ export default function AdminPage() {
               <input
                 ref={renameInputRef}
                 className="admin-rename-input"
+                data-testid="admin-rename-input"
                 aria-label="Rename app"
                 value={renameValue}
                 onChange={e => setRenameValue(e.target.value)}
@@ -158,7 +159,7 @@ export default function AdminPage() {
                 }}
               />
             ) : (
-              <span className="admin-app-name">{appInfo.title}</span>
+              <span className="admin-app-name" data-testid="admin-app-name">{appInfo.title}</span>
             )}
 
             <span className={`status-badge ${appInfo.isActive ? 'status-badge--active' : 'status-badge--archived'}`}>
@@ -169,6 +170,7 @@ export default function AdminPage() {
             <div className="admin-menu-container" ref={menuRef}>
               <button
                 className="admin-header-btn admin-menu-trigger"
+                data-testid="admin-menu-trigger"
                 aria-haspopup="menu"
                 aria-expanded={showMenu}
                 onClick={() => setShowMenu(v => !v)}
@@ -176,7 +178,7 @@ export default function AdminPage() {
                 ⋯
               </button>
               {showMenu && (
-                <div className="admin-menu-dropdown" role="menu">
+                <div className="admin-menu-dropdown" role="menu" data-testid="admin-menu-dropdown">
                   {!showVersionHistory && (
                     <>
                       <div className="admin-menu-note">
@@ -195,6 +197,7 @@ export default function AdminPage() {
                       </div>
                       <button
                         className="admin-menu-item"
+                        data-testid="admin-menu-item"
                         disabled={!appInfo?.isDirty || appInfo?.isSaving}
                         onClick={() => { publishRef.current(); setShowMenu(false) }}
                       >
@@ -202,6 +205,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         className="admin-menu-item"
+                        data-testid="admin-menu-item"
                         disabled={!appInfo?.isDirty}
                         onClick={() => { discardRef.current(); setShowMenu(false) }}
                       >
@@ -212,12 +216,14 @@ export default function AdminPage() {
                   )}
                   <button
                     className={`admin-menu-item${showEnvRef ? ' active' : ''}`}
+                    data-testid="admin-menu-item"
                     onClick={() => { setShowEnvRef(v => !v); setShowMenu(false) }}
                   >
                     {showEnvRef ? '\u2713 ' : ''}Environment
                   </button>
                   <button
                     className={`admin-menu-item${showVersionHistory ? ' active' : ''}`}
+                    data-testid="admin-menu-item"
                     onClick={() => { setShowVersionHistory(v => !v); setShowMenu(false) }}
                   >
                     {showVersionHistory ? '\u2713 ' : ''}History
@@ -225,18 +231,21 @@ export default function AdminPage() {
                   <div className="admin-menu-sep" />
                   <button
                     className="admin-menu-item"
+                    data-testid="admin-menu-item"
                     onClick={handleRenameStart}
                   >
                     Rename
                   </button>
                   <button
                     className="admin-menu-item"
+                    data-testid="admin-menu-item"
                     onClick={handleEditWithAI}
                   >
                     Edit with AI
                   </button>
                   <button
                     className="admin-menu-item admin-menu-item--danger"
+                    data-testid="admin-menu-item"
                     onClick={() => { toggleActiveRef.current(); setShowMenu(false) }}
                   >
                     {appInfo.isActive ? 'Archive' : 'Activate'}
@@ -257,19 +266,21 @@ export default function AdminPage() {
         <nav className="admin-tabs">
           <button
             className={`admin-tab ${tab === 'sessions' ? 'active' : ''}`}
+            data-testid="admin-tab"
             onClick={() => setTab('sessions')}
           >
             Sessions
           </button>
           <button
             className={`admin-tab ${tab === 'apps' ? 'active' : ''}`}
+            data-testid="admin-tab"
             onClick={() => setTab('apps')}
           >
             Apps
           </button>
         </nav>
       </header>
-      <div className={`admin-layout${tab === 'apps' && selectedAppId ? ' admin-layout--has-detail' : ''}`}>
+      <div className={`admin-layout${tab === 'apps' && selectedAppId ? ' admin-layout--has-detail' : ''}`} data-testid="admin-layout">
         {tab === 'sessions' ? (
           <>
             <SessionList
@@ -282,7 +293,7 @@ export default function AdminPage() {
                 sessionId={selectedSessionId}
               />
             ) : (
-              <div className="admin-empty">Select a session to monitor</div>
+              <div className="admin-empty" data-testid="admin-empty">Select a session to monitor</div>
             )}
           </>
         ) : (
@@ -302,7 +313,7 @@ export default function AdminPage() {
                 onRegisterDiscard={fn => { discardRef.current = fn }}
               />
             ) : (
-              <div className="admin-empty">Select an app to edit</div>
+              <div className="admin-empty" data-testid="admin-empty">Select an app to edit</div>
             )}
           </>
         )}

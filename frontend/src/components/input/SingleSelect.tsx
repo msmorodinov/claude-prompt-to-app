@@ -26,11 +26,11 @@ export default function SingleSelect({
   const isCustomSelected = value !== undefined && !options.includes(value)
 
   return (
-    <div className="widget widget-single-select">
+    <div className="widget widget-single-select" data-testid="widget-single-select">
       <label className="question-label">{label}</label>
       <div className="options">
         {options.map((opt) => (
-          <label key={opt} className="option">
+          <label key={opt} className="option" data-testid="option">
             <input
               type="radio"
               name={id}
@@ -43,7 +43,7 @@ export default function SingleSelect({
           </label>
         ))}
         {allow_custom && (
-          <label className="option custom-option">
+          <label className="option custom-option" data-testid="option">
             <input
               type="radio"
               name={id}

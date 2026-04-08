@@ -33,7 +33,7 @@ export default function Matrix2x2({
   }
 
   return (
-    <div className="widget widget-matrix-2x2">
+    <div className="widget widget-matrix-2x2" data-testid="widget-matrix-2x2">
       <label className="question-label">{label}</label>
       <div className="matrix-items">
         {safeItems.map((item) => (

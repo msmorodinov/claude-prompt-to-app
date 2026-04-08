@@ -236,7 +236,7 @@ export default function ChatContainer() {
 
     if (isSessionLoading) {
       return (
-        <div className="start-screen">
+        <div data-testid="start-screen" className="start-screen">
           <p className="loading-text">Loading...</p>
         </div>
       )
@@ -244,10 +244,10 @@ export default function ChatContainer() {
 
     if (showStartScreen) {
       return (
-        <div className="start-screen">
+        <div data-testid="start-screen" className="start-screen">
           <h2>Ready to begin?</h2>
           {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
-          <button className="start-btn" onClick={handleStart} disabled={!sessionId}>
+          <button data-testid="start-btn" className="start-btn" onClick={handleStart} disabled={!sessionId}>
             Start
           </button>
         </div>
@@ -264,9 +264,9 @@ export default function ChatContainer() {
           isPaused={isPaused}
         />
         {sessionDone && !sessionError && (
-          <div className="session-done-banner">
+          <div data-testid="session-done-banner" className="session-done-banner">
             <span>You can continue this session by sending a message</span>
-            <button className="start-btn" onClick={handleNewSession}>New Session</button>
+            <button data-testid="start-btn" className="start-btn" onClick={handleNewSession}>New Session</button>
           </div>
         )}
       </>
@@ -274,7 +274,7 @@ export default function ChatContainer() {
   }
 
   return (
-    <div className={`app-layout${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
+    <div data-testid="chat-container" className={`app-layout${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
       <SessionSidebar
         currentSessionId={sessionId}
         onSelectSession={handleSelectSession}
@@ -284,9 +284,9 @@ export default function ChatContainer() {
         onToggle={() => setSidebarOpen(prev => !prev)}
       />
 
-      <div className="main-area">
-        <header className="app-header">
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(prev => !prev)} title="Session history" aria-label="Toggle session history">
+      <div data-testid="main-area" className="main-area">
+        <header data-testid="app-header" className="app-header">
+          <button data-testid="sidebar-toggle" className="sidebar-toggle" onClick={() => setSidebarOpen(prev => !prev)} title="Session history" aria-label="Toggle session history">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <line x1="3" y1="5" x2="15" y2="5" />
               <line x1="3" y1="9" x2="15" y2="9" />
@@ -308,7 +308,7 @@ export default function ChatContainer() {
           </div>
         )}
 
-        <div className="chat-content">
+        <div data-testid="chat-content" className="chat-content">
           {renderMainContent()}
         </div>
       </div>

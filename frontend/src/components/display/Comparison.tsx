@@ -20,7 +20,7 @@ export default function Comparison({ left, right, note, diff_note }: Props) {
   const displayNote = note ?? diff_note
 
   return (
-    <div className="widget widget-comparison">
+    <div className="widget widget-comparison" data-testid="widget-comparison">
       <div className="comparison-sides">
         <div className="side left">
           <div className="side-label">{l.label}</div>

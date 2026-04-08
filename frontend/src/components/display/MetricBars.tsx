@@ -12,7 +12,7 @@ export default function MetricBars({ metrics }: Props) {
   if (items.length === 0) return null
 
   return (
-    <div className="widget widget-metric-bars">
+    <div className="widget widget-metric-bars" data-testid="widget-metric-bars">
       {items.map((metric, i) => {
         const max = metric.max || 1
         const value = metric.value ?? 0

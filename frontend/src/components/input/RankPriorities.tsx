@@ -28,7 +28,7 @@ export default function RankPriorities({
   }
 
   return (
-    <div className="widget widget-rank-priorities">
+    <div className="widget widget-rank-priorities" data-testid="widget-rank-priorities">
       <label className="question-label">{label}</label>
       <ol className="rank-list">
         {value.map((item, i) => (

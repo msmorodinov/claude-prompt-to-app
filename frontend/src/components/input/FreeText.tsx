@@ -21,7 +21,7 @@ export default function FreeText({
   const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0
 
   return (
-    <div className="widget widget-free-text">
+    <div className="widget widget-free-text" data-testid="widget-free-text">
       <label className="question-label">{label}</label>
       {multiline ? (
         <textarea

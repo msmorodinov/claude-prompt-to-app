@@ -31,7 +31,7 @@ export default function MultiSelect({
   }
 
   return (
-    <div className="widget widget-multi-select">
+    <div className="widget widget-multi-select" data-testid="widget-multi-select">
       <label className="question-label">{label}</label>
       <div className="options">
         {options.map((opt) => (

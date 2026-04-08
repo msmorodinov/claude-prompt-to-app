@@ -23,10 +23,10 @@ export default function SliderScale({
   disabled,
 }: Props) {
   return (
-    <div className="widget widget-slider-scale">
+    <div className="widget widget-slider-scale" data-testid="widget-slider-scale">
       <label className="question-label">{label}</label>
       <div className="slider-container">
-        {min_label && <span className="slider-label-min">{min_label}</span>}
+        {min_label && <span className="slider-label-min" data-testid="slider-label-min">{min_label}</span>}
         <input
           type="range"
           min={min}
@@ -36,7 +36,7 @@ export default function SliderScale({
           onChange={(e) => onChange(Number(e.target.value))}
           disabled={disabled}
         />
-        {max_label && <span className="slider-label-max">{max_label}</span>}
+        {max_label && <span className="slider-label-max" data-testid="slider-label-max">{max_label}</span>}
       </div>
       <div className="slider-value">{value}</div>
     </div>

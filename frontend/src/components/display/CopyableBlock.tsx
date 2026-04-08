@@ -15,10 +15,10 @@ export default function CopyableBlock({ content, label }: Props) {
   }
 
   return (
-    <div className="widget widget-copyable">
+    <div className="widget widget-copyable" data-testid="widget-copyable">
       {label && <div className="copyable-label">{label}</div>}
-      <pre className="copyable-content">{content}</pre>
-      <button onClick={handleCopy} className="copy-btn">
+      <pre className="copyable-content" data-testid="copyable-content">{content}</pre>
+      <button onClick={handleCopy} className="copy-btn" data-testid="copy-btn">
         {copied ? 'Copied!' : 'Copy'}
       </button>
     </div>
