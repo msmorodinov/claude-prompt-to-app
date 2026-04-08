@@ -1,12 +1,11 @@
 /**
  * Live E2E tests for the Admin UI — apps tab, create form, ⋯ menu, panels, rename.
- * Runs against the real app at http://localhost:4920 (backend at :4910).
+ * Runs against the real app (uses playwright baseURL from config).
  */
 import { test, expect, type Page } from '@playwright/test'
 import * as path from 'path'
 import * as fs from 'fs'
 
-const BASE_URL = 'http://localhost:4920'
 const SCREENSHOT_DIR = path.resolve(__dirname, '../../e2e-screenshots')
 
 function screenshotPath(name: string) {
@@ -15,7 +14,7 @@ function screenshotPath(name: string) {
 }
 
 async function goToAdmin(page: Page) {
-  await page.goto(`${BASE_URL}/admin`)
+  await page.goto('/admin')
   await expect(page.locator('[data-testid="admin-page"]')).toBeVisible({ timeout: 10_000 })
 }
 
