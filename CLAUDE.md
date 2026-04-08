@@ -127,6 +127,10 @@ forge-simple/
 │           ├── global.css
 │           └── admin.css
 │
+├── scripts/
+│   ├── check-ci.sh        # Local CI parity checks (tsc + vitest + pytest)
+│   └── install-hooks.sh   # Install git pre-commit hook
+│
 └── e2e/                          # Playwright E2E tests
     ├── playwright.config.ts
     ├── fixtures/
@@ -304,3 +308,17 @@ cd backend && pip install -r requirements.txt && python server.py  # :4910
 # Frontend
 cd frontend && npm install && npm run dev -- --port 4920  # :4920 with proxy to backend
 ```
+
+## Local CI
+
+A pre-commit hook runs automatically via Claude Code hooks (`.claude/settings.json`). Before every `git commit`, it executes:
+
+1. `tsc -b --noEmit` — TypeScript type check
+2. `vitest run` — Frontend unit tests
+3. `pytest backend/tests/test_session.py` — Backend unit tests
+
+To run manually: `./scripts/check-ci.sh`
+
+Git pre-commit hook (same checks) installed via: `bash scripts/install-hooks.sh`
+
+E2E tests (Playwright) are NOT included in local checks — run them explicitly when touching UI flows.
