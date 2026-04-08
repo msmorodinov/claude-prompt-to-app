@@ -49,7 +49,7 @@ export default function SessionSidebar({
       {/* Overlay only for mobile */}
       {isOpen && <div className="sidebar-overlay" data-testid="sidebar-overlay" onClick={onClose} />}
       <aside className={`session-sidebar ${isOpen ? 'open' : ''}`} data-testid="session-sidebar">
-        <div className="sidebar-header">
+        <div data-testid="sidebar-header" className="sidebar-header">
           <h2>Sessions</h2>
           {/* Desktop: collapse button; Mobile: close button */}
           <button className="sidebar-collapse" onClick={onToggle} title="Collapse sidebar" aria-label="Collapse sidebar">

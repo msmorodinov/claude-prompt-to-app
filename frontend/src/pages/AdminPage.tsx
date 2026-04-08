@@ -245,7 +245,7 @@ export default function AdminPage() {
                   </button>
                   <button
                     className="admin-menu-item admin-menu-item--danger"
-                    data-testid="admin-menu-item"
+                    data-testid="admin-menu-item--danger"
                     onClick={() => { toggleActiveRef.current(); setShowMenu(false) }}
                   >
                     {appInfo.isActive ? 'Archive' : 'Activate'}
