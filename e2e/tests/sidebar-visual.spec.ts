@@ -20,7 +20,7 @@ test.describe('Session Sidebar — Visual Inspection', () => {
   })
 
   test('2. sidebar open — empty state', async ({ page }) => {
-    await page.locator('[data-testid="sidebar-toggle"]').click()
+    // On desktop (1280px+), sidebar is open by default — no toggle click needed
     await expect(page.locator('[data-testid="session-sidebar"]')).toHaveClass(/open/)
     await page.screenshot({ path: 'test-results/02-sidebar-empty.png', fullPage: true })
 
@@ -94,8 +94,7 @@ test.describe('Session Sidebar — Visual Inspection', () => {
     await page.locator('[data-testid="submit-btn"]').last().click()
     await page.waitForSelector('[data-testid="widget-final-result"]', { timeout: 5000 })
 
-    // Open sidebar
-    await page.locator('[data-testid="sidebar-toggle"]').click()
+    // Sidebar is already open on desktop — just wait for session to appear
     await expect(page.locator('[data-testid="sidebar-session-item"]')).toBeVisible({ timeout: 12000 })
     await page.screenshot({ path: 'test-results/05-sidebar-with-session.png', fullPage: true })
 
@@ -120,14 +119,12 @@ test.describe('Session Sidebar — Visual Inspection', () => {
     await page.locator('[data-testid="submit-btn"]').last().click()
     await page.waitForSelector('[data-testid="widget-final-result"]', { timeout: 5000 })
 
-    // New session
-    await page.locator('[data-testid="sidebar-toggle"]').click()
+    // New session — sidebar is already open on desktop, new-btn is visible
     await page.locator('[data-testid="sidebar-new-btn"]').click()
     await expect(page.locator('[data-testid="start-screen"]')).toBeVisible()
     await page.screenshot({ path: 'test-results/06a-new-session-start.png', fullPage: true })
 
-    // Click on old session
-    await page.locator('[data-testid="sidebar-toggle"]').click()
+    // Click on old session — sidebar is still open
     await expect(page.locator('[data-testid="sidebar-session-item"]')).toBeVisible({ timeout: 12000 })
     await page.locator('[data-testid="sidebar-session-item"]').first().click()
 
@@ -174,8 +171,7 @@ test.describe('Session Sidebar — Visual Inspection', () => {
     await page.locator('[data-testid="submit-btn"]').last().click()
     await page.waitForSelector('[data-testid="widget-final-result"]', { timeout: 5000 })
 
-    // Session 2
-    await page.locator('[data-testid="sidebar-toggle"]').click()
+    // Session 2 — sidebar is already open on desktop, new-btn is visible
     await page.locator('[data-testid="sidebar-new-btn"]').click()
     await page.locator('[data-testid="start-btn"]').click()
     await page.waitForSelector('[data-testid="ask-message"]', { timeout: 5000 })
@@ -189,8 +185,7 @@ test.describe('Session Sidebar — Visual Inspection', () => {
     await page.locator('[data-testid="submit-btn"]').last().click()
     await page.waitForSelector('[data-testid="widget-final-result"]', { timeout: 5000 })
 
-    // Open sidebar — should show both sessions
-    await page.locator('[data-testid="sidebar-toggle"]').click()
+    // Sidebar is already open on desktop — should show both sessions
     await expect(page.locator('[data-testid="sidebar-session-item"]')).toHaveCount(2, { timeout: 12000 })
     await page.screenshot({ path: 'test-results/09-multiple-sessions.png', fullPage: true })
   })
