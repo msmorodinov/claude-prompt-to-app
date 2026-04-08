@@ -17,6 +17,7 @@ const defaultProps = {
   onNewSession: vi.fn(),
   isOpen: true,
   onClose: vi.fn(),
+  onToggle: vi.fn(),
 }
 
 function makeSessions(overrides: Partial<SessionSummary>[] = []): SessionSummary[] {
@@ -78,7 +79,7 @@ describe('SessionSidebar', () => {
     expect(onSelect).toHaveBeenCalledWith('sess-abc')
   })
 
-  it('calls onClose when a session is clicked', async () => {
+  it('does not call onClose when a session is clicked', async () => {
     const onClose = vi.fn()
     mockListSessions.mockResolvedValue(
       makeSessions([{ title: 'Session X', message_count: 4 }]),
@@ -86,7 +87,7 @@ describe('SessionSidebar', () => {
     render(<SessionSidebar {...defaultProps} onClose={onClose} />)
     await waitFor(() => screen.getByText('Session X'))
     fireEvent.click(screen.getByText('Session X'))
-    expect(onClose).toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   it('calls onNewSession when "+ New Session" button is clicked', async () => {

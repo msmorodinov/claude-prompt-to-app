@@ -21,11 +21,17 @@ jobs:
       - name: Install frontend
         run: cd frontend && npm ci
 
-      - name: TypeScript check
-        run: cd frontend && npx tsc --noEmit
+      - name: TypeScript check (source + tests)
+        run: cd frontend && npx tsc -b --noEmit
 
       - name: Frontend tests
-        run: cd frontend && npx vitest run
+        run: |
+          cd frontend && npx vitest run --reporter=verbose 2>&1
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+            echo "::error::Vitest tests failed with exit code $exit_code"
+            exit $exit_code
+          fi
 
       - name: Backend tests
         run: python -m pytest backend/tests/test_session.py --noconftest -v
