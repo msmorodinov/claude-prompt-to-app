@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Session Sidebar', () => {
+  test.use({ viewport: { width: 375, height: 812 } })
+
   test.beforeEach(async ({ page }) => {
     // Clear localStorage to get fresh user ID
     await page.goto('/')

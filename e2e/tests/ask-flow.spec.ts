@@ -124,7 +124,7 @@ test.describe('Ask Flow', () => {
     await completeFullFlow(page)
 
     await expect(page.locator('.widget-final-result')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('.input-area')).toBeVisible()
+    await expect(page.locator('.session-done-banner')).toBeVisible()
   })
 
   test('ask form gets answered class after submit', async ({ page }) => {

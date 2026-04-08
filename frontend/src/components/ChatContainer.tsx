@@ -32,7 +32,7 @@ export default function ChatContainer() {
   }, [setSearchParams])
 
   const [appConfig, setAppConfig] = useState<AppConfig>({ title: 'App' })
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => !isMobile())
 
   const [sessionError, setSessionError] = useState(false)
   const [sessionDone, setSessionDone] = useState(false)
