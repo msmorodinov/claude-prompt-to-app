@@ -128,8 +128,7 @@ forge-simple/
 │           └── admin.css
 │
 ├── scripts/
-│   ├── check-ci.sh        # Local CI parity checks (tsc + vitest + pytest)
-│   └── install-hooks.sh   # Install git pre-commit hook
+│   └── check-ci.sh        # Local CI parity checks (tsc + vitest + pytest)
 │
 └── e2e/                          # Playwright E2E tests
     ├── playwright.config.ts
