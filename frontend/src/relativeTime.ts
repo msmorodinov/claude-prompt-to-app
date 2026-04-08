@@ -1,4 +1,3 @@
-/** Format a date string as a human-readable relative time. */
 export function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const minutes = Math.floor(diff / 60000)
