@@ -13,16 +13,20 @@ Fully remove App Builder from the database. Make it a system component that load
 
 ## Changes
 
-### 1. Database Migration (v4)
+### 1. Database Migration (v6)
 
-In `backend/db.py`:
+In `backend/db.py` (current max version is 5, so this is v6):
 
-1. Delete `apps` row where `slug = 'app-builder'`
-2. Delete related `app_versions` rows
-3. Set `app_id = NULL` on `sessions` that referenced App Builder
-4. Add `mode TEXT DEFAULT 'normal'` column to `sessions` table
-5. Set `mode = 'app-builder'` on sessions that had App Builder's `app_id` (before nullifying)
-6. Keep migration v3 code for idempotency (already-migrated DBs skip it)
+1. Get App Builder's `app_id`: `SELECT id FROM apps WHERE slug = 'app-builder'`
+2. Add `mode TEXT DEFAULT 'normal'` column to `sessions` table
+3. Set `mode = 'app-builder'` on sessions WHERE `app_id = <builder_id>`
+4. Set `app_id = NULL` on sessions WHERE `app_id = <builder_id>`
+5. Delete related `app_versions` rows
+6. Delete `apps` row where `slug = 'app-builder'`
+7. Set `PRAGMA user_version = 6`
+8. Keep migration v3 code for idempotency (already-migrated DBs skip it)
+
+Order matters: capture builder ID first, set `mode` before nullifying `app_id`.
 
 ### 2. SessionState Changes
 
@@ -32,17 +36,23 @@ In `backend/session.py`:
 - Values: `"normal"` (regular app session) or `"app-builder"` (system App Builder session)
 - Old sessions without `mode` column default to `"normal"`
 
+In `backend/db.py` — `save_session()`:
+
+- Accept and persist `mode` field to DB
+- Session reconstruction (`get_session_meta`, etc.) must read `mode` from DB row and pass to `SessionState`
+
 ### 3. Session Creation
 
 In `backend/server.py` — `POST /sessions/create`:
 
 - New optional parameter: `mode: str | None` (default `None`)
+- **Validate `mode`**: must be `None`, `"normal"`, or `"app-builder"` — return 422 otherwise
 - When `mode == "app-builder"`:
   - Skip `_resolve_app()` — no DB lookup
   - Set `app_id = None`, `prompt_version_id = None`
   - Store `mode = "app-builder"` in session
 - Validation: `edit_app_id` only allowed when `mode == "app-builder"`
-- When `mode` is absent/null: existing behavior (resolve app from DB)
+- When `mode` is absent/null: existing behavior (resolve app from DB, `mode = "normal"`)
 
 ### 4. Agent Changes
 
@@ -50,7 +60,9 @@ In `backend/agent.py`:
 
 - Remove `APP_BUILDER_SLUG` constant and `_is_app_builder()` function
 - Replace with `session.mode == "app-builder"` check
-- Read prompt from `Path(__file__).parent / "app-builder-prompt.md"` directly (not from DB version)
+- **Prompt loading**: Before calling `_get_prompt_for_session`, branch on `session.mode`:
+  - If `"app-builder"`: read `Path(__file__).parent / "app-builder-prompt.md"` directly, skip `_get_prompt_for_session` entirely (avoids fallback to legacy `prompt.md`)
+  - If `"normal"`: existing behavior via `_get_prompt_for_session`
 - Determine `include_save_app` / `include_update_app` via `session.mode`
 
 ### 5. Tools
@@ -88,7 +100,16 @@ In session sidebar / session viewer:
 In `GET /sessions` and `GET /sessions/{id}`:
 
 - Include `mode` field in response
-- For `mode == "app-builder"` sessions: return `app_title: "App Builder"` (hardcoded)
+- For `mode == "app-builder"` sessions: return `app_title: "App Builder"` (hardcoded in backend query/serialization)
+
+### 11. Frontend Types
+
+- Add `mode: string` to `SessionSummary` (api.ts) and `AdminSession` (api-admin.ts)
+- Session display logic in `SessionSidebar` and `SessionList`: `mode === "app-builder" ? "App Builder" : s.app_name`
+
+### 12. Known Limitations
+
+- `edit_app_id` is stored in `SessionState` but not persisted to DB. Edit-mode App Builder sessions lose their target on server restart. This is a pre-existing gap, not introduced by this change. Worth fixing separately.
 
 ## Testing
 
