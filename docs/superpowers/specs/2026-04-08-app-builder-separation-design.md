@@ -1,7 +1,8 @@
 # App Builder Separation from Admin Apps
 
 **Date:** 2026-04-08
-**Status:** DESIGN
+**Status:** DONE
+**Completed:** 2026-04-09
 
 ## Problem
 

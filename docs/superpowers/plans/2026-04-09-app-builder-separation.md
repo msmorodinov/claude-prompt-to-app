@@ -1,5 +1,8 @@
 # App Builder Separation Implementation Plan
 
+**Status:** DONE
+**Completed:** 2026-04-09
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove App Builder from the apps database table, making it a system component that loads from `.md` file at runtime. Admin UI shows only user-created apps.
