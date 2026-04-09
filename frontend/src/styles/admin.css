@@ -24,24 +24,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
-}
-
-.admin-version--spacer {
   margin-right: auto;
-}
-
-/* App context controls in header */
-.admin-app-context {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-right: auto;
-}
-
-.admin-app-name {
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  color: var(--text);
 }
 
 .status-badge--active {
@@ -1207,8 +1190,6 @@ mark.ref-not_found {
   color: var(--text-muted);
 }
 
-/* Back button — hidden on desktop, visible on mobile */
-.admin-header-back { display: none; }
 
 /* ── Mobile ────────────────────────────────────────────── */
 
@@ -1232,18 +1213,6 @@ mark.ref-not_found {
     flex-shrink: 0;
   }
 
-  .admin-header-back {
-    display: inline-flex;
-  }
-
-  .admin-app-context {
-    order: 10;
-    flex-basis: 100%;
-    margin-right: 0;
-    gap: 0.5rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
 
   /* ── 2. App List ↔ Editor — Master-detail toggle ──── */
   .admin-layout {

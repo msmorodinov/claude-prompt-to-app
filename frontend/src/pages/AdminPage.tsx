@@ -17,7 +17,7 @@ export default function AdminPage() {
     <div className="admin-page" data-testid="admin-page">
       <header className="admin-header" data-testid="admin-header">
         <h1>Admin</h1>
-        <span className="admin-version admin-version--spacer">
+        <span className="admin-version">
           v{__APP_VERSION__}
         </span>
 
