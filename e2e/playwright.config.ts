@@ -2,9 +2,10 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false,
   retries: 1,
   timeout: 15000,
+  workers: 1,
   use: {
     baseURL: 'http://localhost:4921',
     headless: true,

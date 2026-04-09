@@ -230,6 +230,18 @@ def _get_user_id(request: Request) -> str:
     return request.headers.get("x-user-id", "anonymous")
 
 
+@app.post("/test/reset")
+async def test_reset() -> dict:
+    """Reset all mock server state between tests."""
+    global _app_id_counter
+    _apps.clear()
+    _app_id_counter = 0
+    _session_meta.clear()
+    for sid in list(sessions._sessions.keys()):
+        sessions.remove(sid)
+    return {"status": "reset"}
+
+
 @app.post("/sessions/create")
 async def create_session(request: Request) -> dict:
     user_id = _get_user_id(request)
