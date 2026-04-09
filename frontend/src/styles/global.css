@@ -1423,3 +1423,14 @@ body {
     white-space: nowrap;
   }
 }
+
+.build-version {
+  position: fixed;
+  bottom: 4px;
+  right: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #555;
+  pointer-events: none;
+  z-index: 1;
+}

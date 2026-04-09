@@ -313,6 +313,7 @@ export default function ChatContainer() {
         <div data-testid="chat-content" className="chat-content">
           {renderMainContent()}
         </div>
+        <div className="build-version">v{__APP_VERSION__}-{__GIT_HASH__}</div>
       </div>
     </div>
   )
