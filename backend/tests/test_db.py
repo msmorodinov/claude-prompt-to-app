@@ -9,9 +9,11 @@ import pytest
 
 from backend.db import (
     create_app,
+    get_all_apps_admin,
     get_all_sessions_admin,
     get_app_by_id,
     get_session,
+    get_session_meta,
     get_sessions_by_user,
     init_db,
     save_message,
@@ -124,18 +126,17 @@ class TestDatabase:
 
 class TestAppCrud:
     @pytest.mark.asyncio
-    async def test_migration_seeds_app_builder(self, db_path):
+    async def test_migration_v6_removes_app_builder_from_apps(self, db_path):
+        """Migration v6 removes App Builder from the apps table (it's now a system mode)."""
         await init_db(db_path)
         import aiosqlite
 
         db = await aiosqlite.connect(str(db_path))
         db.row_factory = aiosqlite.Row
         try:
-            cursor = await db.execute("SELECT slug, is_active FROM apps WHERE slug = 'app-builder'")
+            cursor = await db.execute("SELECT slug FROM apps WHERE slug = 'app-builder'")
             row = await cursor.fetchone()
-            assert row is not None
-            assert row["slug"] == "app-builder"
-            assert row["is_active"] == 1
+            assert row is None, "app-builder should not be in apps table after migration v6"
         finally:
             await db.close()
 
@@ -201,3 +202,39 @@ class TestSessionAppName:
         assert len(our) == 1
         assert our[0]["app_name"] == "Admin App Title"
         assert our[0]["app_id"] == app_id
+
+
+class TestSessionMode:
+    @pytest.mark.asyncio
+    async def test_save_session_with_mode(self, tmp_path):
+        """save_session persists mode field."""
+        db_path = tmp_path / "test.db"
+        await init_db(db_path)
+        await save_session("s1", user_id="u1", mode="app-builder", db_path=db_path)
+        meta = await get_session_meta("s1", db_path=db_path)
+        assert meta is not None
+        assert meta["mode"] == "app-builder"
+
+    @pytest.mark.asyncio
+    async def test_save_session_default_mode(self, tmp_path):
+        """save_session defaults mode to 'normal'."""
+        db_path = tmp_path / "test.db"
+        await init_db(db_path)
+        await save_session("s2", user_id="u1", db_path=db_path)
+        meta = await get_session_meta("s2", db_path=db_path)
+        assert meta is not None
+        assert meta["mode"] == "normal"
+
+
+class TestMigrationV6:
+    @pytest.mark.asyncio
+    async def test_migration_v6_removes_app_builder(self, tmp_path):
+        """Migration v6 removes App Builder from apps, sets mode on its sessions."""
+        db_path = tmp_path / "test.db"
+        await init_db(db_path)
+        apps = await get_all_apps_admin(db_path=db_path)
+        slugs = [a["slug"] for a in apps]
+        assert "app-builder" not in slugs
+        await save_session("test-s", user_id="u1", db_path=db_path)
+        meta = await get_session_meta("test-s", db_path=db_path)
+        assert meta["mode"] == "normal"
