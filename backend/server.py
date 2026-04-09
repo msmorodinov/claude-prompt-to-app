@@ -215,8 +215,14 @@ async def retry_chat(request: Request) -> dict:
         sessions._sessions[session_id] = session
     if session.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not your session")
+    # Cancel stale agent (e.g. stuck waiting on ask after SSE disconnect)
     if session.agent_running:
-        raise HTTPException(status_code=409, detail="Agent is already running")
+        session.agent_task.cancel()
+        try:
+            await session.agent_task
+        except (asyncio.CancelledError, Exception):
+            pass
+        session.agent_task = None
 
     # Clean up zombie state
     if session.pending_ask_id:
