@@ -146,6 +146,7 @@ async def chat(request: Request) -> dict:
                 app_id=db_meta["app_id"],
                 prompt_version_id=db_meta["prompt_version_id"],
                 sdk_session_id=db_meta.get("sdk_session_id"),
+                mode=db_meta.get("mode", "normal"),
             )
             sessions._sessions[session_id] = session
         if session.user_id != user_id:
@@ -209,6 +210,7 @@ async def retry_chat(request: Request) -> dict:
             app_id=db_meta["app_id"],
             prompt_version_id=db_meta["prompt_version_id"],
             sdk_session_id=db_meta.get("sdk_session_id"),
+            mode=db_meta.get("mode", "normal"),
         )
         sessions._sessions[session_id] = session
     if session.user_id != user_id:
@@ -248,6 +250,7 @@ async def stream(session_id: str) -> StreamingResponse:
             app_id=db_meta["app_id"],
             prompt_version_id=db_meta["prompt_version_id"],
             sdk_session_id=db_meta.get("sdk_session_id"),
+            mode=db_meta.get("mode", "normal"),
         )
         sessions._sessions[session_id] = session
     return _sse_response(session)
@@ -278,6 +281,7 @@ async def submit_answers(request: Request) -> dict:
             app_id=db_meta["app_id"],
             prompt_version_id=db_meta["prompt_version_id"],
             sdk_session_id=db_meta.get("sdk_session_id"),
+            mode=db_meta.get("mode", "normal"),
         )
         sessions._sessions[session_id] = session
 
@@ -317,6 +321,12 @@ async def create_session(request: Request) -> dict:
         body = {}
     req_app_id = body.get("app_id") if body else None
     edit_app_id = body.get("edit_app_id") if body else None
+    req_mode = body.get("mode") if body else None
+
+    # Validate mode
+    if req_mode is not None and req_mode not in ("normal", "app-builder"):
+        raise HTTPException(status_code=422, detail="mode must be 'normal' or 'app-builder'")
+
     if edit_app_id is not None and not isinstance(edit_app_id, int):
         raise HTTPException(status_code=422, detail="edit_app_id must be an integer")
 
@@ -328,19 +338,26 @@ async def create_session(request: Request) -> dict:
         if not target["is_active"]:
             raise HTTPException(status_code=403, detail="Cannot edit an archived app")
 
-    app_id, prompt_version_id = await _resolve_app(req_app_id)
+    # Determine mode
+    mode = req_mode or "normal"
 
-    # edit_app_id only valid with the app-builder app
-    if edit_app_id is not None:
-        resolved = await get_app_by_id(app_id) if app_id else None
-        if not resolved or resolved.get("slug") != "app-builder":
-            raise HTTPException(status_code=400, detail="edit_app_id requires the app-builder app")
+    if mode == "app-builder":
+        # App Builder: no DB app lookup
+        app_id = None
+        prompt_version_id = None
+    else:
+        app_id, prompt_version_id = await _resolve_app(req_app_id)
+
+    # edit_app_id only valid with app-builder mode
+    if edit_app_id is not None and mode != "app-builder":
+        raise HTTPException(status_code=400, detail="edit_app_id requires mode='app-builder'")
 
     session = sessions.create(
         user_id=user_id,
         app_id=app_id,
         prompt_version_id=prompt_version_id,
         edit_app_id=edit_app_id,
+        mode=mode,
     )
     await save_session(
         session.session_id,
@@ -348,6 +365,7 @@ async def create_session(request: Request) -> dict:
         app_id=app_id,
         prompt_version_id=prompt_version_id,
         user_display_name=_get_display_name(request),
+        mode=mode,
     )
     return {"session_id": session.session_id}
 
@@ -355,7 +373,11 @@ async def create_session(request: Request) -> dict:
 @app.get("/sessions")
 async def list_sessions(request: Request) -> list:
     user_id = _get_user_id(request)
-    return await get_sessions_by_user(user_id)
+    rows = await get_sessions_by_user(user_id)
+    for row in rows:
+        if row.get("mode") == "app-builder" and not row.get("app_name"):
+            row["app_name"] = "App Builder"
+    return rows
 
 
 @app.get("/sessions/{session_id}")
@@ -393,6 +415,8 @@ async def admin_list_sessions() -> list:
         live = active_ids.get(row["id"])
         if live:
             row["status"] = live.status
+        if row.get("mode") == "app-builder" and not row.get("app_name"):
+            row["app_name"] = "App Builder"
     return db_sessions
 
 

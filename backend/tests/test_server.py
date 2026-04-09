@@ -166,3 +166,37 @@ class TestAnswersEndpoint:
             },
         )
         assert resp.status_code == 409
+
+
+class TestCreateSession:
+    @pytest.mark.asyncio
+    async def test_create_session_app_builder_mode(self, client):
+        """POST /sessions/create with mode='app-builder' creates builder session."""
+        resp = await client.post(
+            "/sessions/create",
+            json={"mode": "app-builder"},
+            headers={"X-User-Id": "test-user"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "session_id" in data
+
+    @pytest.mark.asyncio
+    async def test_create_session_invalid_mode(self, client):
+        """POST /sessions/create with invalid mode returns 422."""
+        resp = await client.post(
+            "/sessions/create",
+            json={"mode": "superuser"},
+            headers={"X-User-Id": "test-user"},
+        )
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_edit_app_id_requires_builder_mode(self, client):
+        """edit_app_id without mode='app-builder' returns 400."""
+        resp = await client.post(
+            "/sessions/create",
+            json={"edit_app_id": 1},
+            headers={"X-User-Id": "test-user"},
+        )
+        assert resp.status_code == 400
