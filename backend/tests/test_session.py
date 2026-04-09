@@ -141,6 +141,28 @@ class TestSessionState:
 
 
 class TestSessionManager:
+    def test_session_state_mode_default(self):
+        """SessionState defaults mode to 'normal'."""
+        s = SessionState()
+        assert s.mode == "normal"
+
+    def test_session_state_mode_app_builder(self):
+        """SessionState accepts mode='app-builder'."""
+        s = SessionState(mode="app-builder")
+        assert s.mode == "app-builder"
+
+    def test_session_manager_create_with_mode(self):
+        """SessionManager.create passes mode to SessionState."""
+        mgr = SessionManager()
+        s = mgr.create(mode="app-builder")
+        assert s.mode == "app-builder"
+
+    def test_session_manager_create_default_mode(self):
+        """SessionManager.create defaults mode to 'normal'."""
+        mgr = SessionManager()
+        s = mgr.create()
+        assert s.mode == "normal"
+
     def test_create_and_get(self):
         mgr = SessionManager()
         s = mgr.create()
