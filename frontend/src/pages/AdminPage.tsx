@@ -3,7 +3,7 @@ import SessionList from '../components/admin/SessionList'
 import SessionViewer from '../components/admin/SessionViewer'
 import AppList from '../components/admin/AppList'
 import AppEditor from '../components/admin/AppEditor'
-import { listApps, request } from '../api'
+import { request } from '../api'
 import { updateAdminApp } from '../api-admin'
 import '../styles/admin.css'
 
@@ -97,15 +97,9 @@ export default function AdminPage() {
     setShowMenu(false)
     setHeaderError(null)
     try {
-      const apps = await listApps()
-      const builder = apps.find(a => a.slug === 'app-builder')
-      if (!builder) {
-        setHeaderError('App Builder app not found. Is it active?')
-        return
-      }
       const data = await request<{ session_id: string }>('/sessions/create', {
         method: 'POST',
-        body: JSON.stringify({ app_id: builder.id, edit_app_id: selectedAppId }),
+        body: JSON.stringify({ mode: 'app-builder', edit_app_id: selectedAppId }),
       })
       sessionStorage.setItem('session_id', data.session_id)
       window.location.href = '/'
