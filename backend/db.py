@@ -234,6 +234,34 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         await db.execute("PRAGMA user_version = 5")
         await db.commit()
 
+    if version < 6:
+        if not await _column_exists(db, "sessions", "mode"):
+            await db.execute(
+                "ALTER TABLE sessions ADD COLUMN mode TEXT DEFAULT 'normal'"
+            )
+        cursor = await db.execute(
+            "SELECT id FROM apps WHERE slug = 'app-builder'"
+        )
+        builder_row = await cursor.fetchone()
+        if builder_row:
+            builder_id = builder_row[0]
+            await db.execute(
+                "UPDATE sessions SET mode = 'app-builder' WHERE app_id = ?",
+                (builder_id,),
+            )
+            await db.execute(
+                "UPDATE sessions SET app_id = NULL, prompt_version_id = NULL "
+                "WHERE mode = 'app-builder'",
+            )
+            await db.execute(
+                "DELETE FROM prompt_versions WHERE app_id = ?", (builder_id,)
+            )
+            await db.execute(
+                "DELETE FROM apps WHERE id = ?", (builder_id,)
+            )
+        await db.execute("PRAGMA user_version = 6")
+        await db.commit()
+
 
 # --- App CRUD ---
 
@@ -506,15 +534,16 @@ async def save_session(
     app_id: int | None = None,
     prompt_version_id: int | None = None,
     user_display_name: str | None = None,
+    mode: str = "normal",
     db_path: str | Path = DB_PATH,
 ) -> None:
     db = await _get_db(db_path)
     try:
         await db.execute(
             "INSERT OR REPLACE INTO sessions "
-            "(id, user_id, title, app_id, prompt_version_id, user_display_name) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (session_id, user_id, title, app_id, prompt_version_id, user_display_name),
+            "(id, user_id, title, app_id, prompt_version_id, user_display_name, mode) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (session_id, user_id, title, app_id, prompt_version_id, user_display_name, mode),
         )
         await db.commit()
     finally:
@@ -590,7 +619,7 @@ async def get_sessions_by_user(
     try:
         cursor = await db.execute(
             "SELECT s.id, s.created_at, s.title, s.status, s.message_count, "
-            "s.app_id, a.title as app_name "
+            "s.app_id, a.title as app_name, s.mode "
             "FROM sessions s LEFT JOIN apps a ON s.app_id = a.id "
             "WHERE s.user_id = ? ORDER BY s.created_at DESC",
             (user_id,),
@@ -608,7 +637,7 @@ async def get_all_sessions_admin(
     try:
         cursor = await db.execute(
             "SELECT s.id, s.user_id, s.status, s.message_count, s.created_at, s.title, "
-            "s.app_id, a.title as app_name, s.user_display_name "
+            "s.app_id, a.title as app_name, s.user_display_name, s.mode "
             "FROM sessions s LEFT JOIN apps a ON s.app_id = a.id "
             "ORDER BY s.created_at DESC"
         )
@@ -635,16 +664,21 @@ async def get_session_owner(
 async def get_session_meta(
     session_id: str, db_path: str | Path = DB_PATH
 ) -> dict[str, Any] | None:
-    """Return session metadata for hydration: user_id, app_id, prompt_version_id, sdk_session_id, status."""
+    """Return session metadata for hydration: user_id, app_id, prompt_version_id, sdk_session_id, status, mode."""
     db = await _get_db(db_path)
     try:
         cursor = await db.execute(
-            "SELECT user_id, app_id, prompt_version_id, sdk_session_id, status "
+            "SELECT user_id, app_id, prompt_version_id, sdk_session_id, status, mode "
             "FROM sessions WHERE id = ?",
             (session_id,),
         )
         row = await cursor.fetchone()
-        return dict(row) if row else None
+        if row is None:
+            return None
+        result = dict(row)
+        if result.get("mode") is None:
+            result["mode"] = "normal"
+        return result
     finally:
         await db.close()
 

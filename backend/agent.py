@@ -23,14 +23,7 @@ from backend.tools import create_tools
 logger = logging.getLogger(__name__)
 
 FRAMEWORK_PATH = Path(__file__).parent / "framework.md"
-APP_BUILDER_SLUG = "app-builder"
-
-
-async def _is_app_builder(app_id: int | None) -> bool:
-    if app_id is None:
-        return False
-    app = await get_app_by_id(app_id)
-    return app is not None and app["slug"] == APP_BUILDER_SLUG
+APP_BUILDER_PROMPT_PATH = Path(__file__).parent / "app-builder-prompt.md"
 
 
 async def _build_edit_context(edit_app_id: int | None) -> str:
@@ -72,11 +65,17 @@ async def _get_prompt_for_session(session: SessionState) -> str:
 
 async def run_agent(session: SessionState, user_message: str) -> None:
     framework = FRAMEWORK_PATH.read_text()
-    app_prompt = await _get_prompt_for_session(session)
-    system_prompt = f"{app_prompt}\n\n{framework}"
 
-    is_builder = await _is_app_builder(session.app_id)
+    is_builder = session.mode == "app-builder"
     is_edit_mode = is_builder and session.edit_app_id is not None
+
+    # Load prompt based on mode
+    if is_builder:
+        app_prompt = APP_BUILDER_PROMPT_PATH.read_text()
+    else:
+        app_prompt = await _get_prompt_for_session(session)
+
+    system_prompt = f"{app_prompt}\n\n{framework}"
 
     if is_edit_mode:
         system_prompt += await _build_edit_context(session.edit_app_id)

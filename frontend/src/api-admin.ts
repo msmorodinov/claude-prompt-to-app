@@ -15,6 +15,7 @@ export interface AdminSession {
   app_id: number | null
   app_name: string | null
   user_display_name: string | null
+  mode?: string
 }
 
 export async function fetchAdminSessions(): Promise<AdminSession[]> {
