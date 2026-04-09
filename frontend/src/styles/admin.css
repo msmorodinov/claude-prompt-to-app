@@ -24,24 +24,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
-}
-
-.admin-version--spacer {
   margin-right: auto;
-}
-
-/* App context controls in header */
-.admin-app-context {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-right: auto;
-}
-
-.admin-app-name {
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  color: var(--text);
 }
 
 .status-badge--active {
@@ -581,31 +564,21 @@
   font-family: var(--font-body);
 }
 
-.app-editor-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.app-editor-title-row {
+.app-editor-toolbar {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
-.app-editor-title-row h2 {
+.app-editor-title {
   font-family: var(--font-heading);
   font-size: 1.4rem;
   font-weight: 400;
   color: var(--accent);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin: 0;
 }
 
 .app-editor-slug {
@@ -1217,8 +1190,6 @@ mark.ref-not_found {
   color: var(--text-muted);
 }
 
-/* Back button — hidden on desktop, visible on mobile */
-.admin-header-back { display: none; }
 
 /* ── Mobile ────────────────────────────────────────────── */
 
@@ -1242,18 +1213,6 @@ mark.ref-not_found {
     flex-shrink: 0;
   }
 
-  .admin-header-back {
-    display: inline-flex;
-  }
-
-  .admin-app-context {
-    order: 10;
-    flex-basis: 100%;
-    margin-right: 0;
-    gap: 0.5rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
 
   /* ── 2. App List ↔ Editor — Master-detail toggle ──── */
   .admin-layout {
@@ -1297,13 +1256,13 @@ mark.ref-not_found {
     gap: 1rem;
   }
 
-  .app-editor-header {
+  .app-editor-toolbar {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
   }
 
-  .app-editor-title-row h2 {
+  .app-editor-title {
     font-size: 1.15rem;
   }
 
