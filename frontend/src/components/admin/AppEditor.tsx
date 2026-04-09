@@ -1,33 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { AdminAppDetail, EnvironmentInfo, ValidationReference } from '../../api-admin'
 import { errorMessage, fetchAdminApp, fetchEnvironment, updateAdminApp, validatePrompt } from '../../api-admin'
+import { request } from '../../api'
 import EnvironmentReference from './EnvironmentReference'
 import VersionHistory from './VersionHistory'
 import { PromptHighlighter } from './PromptHighlighter'
 
-interface AppInfo {
-  title: string
-  isActive: boolean
-  isDirty: boolean
-  isSaving: boolean
-  successFlash: boolean
-}
-
 interface Props {
   appId: number
-  showEnvRef: boolean
-  showVersionHistory: boolean
-  changeNote: string
-  onChangeNote: (note: string) => void
-  onAppInfo: (info: AppInfo) => void
-  onRegisterToggleActive: (fn: () => void) => void
-  onRegisterPublish: (fn: () => void) => void
-  onRegisterDiscard: (fn: () => void) => void
+  onReloadApp: () => void
 }
 
 const CHAR_MAX = (50_000).toLocaleString()
 
-export default function AppEditor({ appId, showEnvRef, showVersionHistory, changeNote, onChangeNote, onAppInfo, onRegisterToggleActive, onRegisterPublish, onRegisterDiscard }: Props) {
+export default function AppEditor({ appId, onReloadApp }: Props) {
   const [detail, setDetail] = useState<AdminAppDetail | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -46,6 +32,18 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
   const [isValidating, setIsValidating] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [validationSummary, setValidationSummary] = useState<{ total: number; clear: number; ambiguous: number; not_found: number } | null>(null)
+
+  // Toolbar state (moved from AdminPage)
+  const [showEnvRef, setShowEnvRef] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [changeNote, setChangeNote] = useState('')
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
+  const renameInputRef = useRef<HTMLInputElement>(null)
+  const skipBlurRef = useRef(false)
 
   const isDirty = editedBody !== originalBody
 
@@ -66,28 +64,25 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
     void loadDetail()
   }, [loadDetail])
 
-  // Report app info + editor state to parent
+  // Close menu on click outside
   useEffect(() => {
-    if (detail) {
-      onAppInfo({ title: detail.title, isActive: !!detail.is_active, isDirty, isSaving, successFlash })
+    if (!showMenu) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false)
+      }
     }
-  }, [detail, onAppInfo, isDirty, isSaving, successFlash])
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMenu])
 
-  // Register action callbacks with parent via refs (avoids re-registration on every render)
-  const actionsRef = useRef({ handleToggleActive, handlePublish, handleDiscard })
-  actionsRef.current = { handleToggleActive, handlePublish, handleDiscard }
-
+  // Focus rename input when entering rename mode
   useEffect(() => {
-    onRegisterToggleActive(() => actionsRef.current.handleToggleActive())
-  }, [onRegisterToggleActive])
-
-  useEffect(() => {
-    onRegisterPublish(() => actionsRef.current.handlePublish())
-  }, [onRegisterPublish])
-
-  useEffect(() => {
-    onRegisterDiscard(() => actionsRef.current.handleDiscard())
-  }, [onRegisterDiscard])
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus()
+      renameInputRef.current.select()
+    }
+  }, [isRenaming])
 
   // Cmd+S / Ctrl+S to publish
   const saveStateRef = useRef({ isDirty, isSaving })
@@ -99,13 +94,53 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
         e.preventDefault()
         const { isDirty: dirty, isSaving: saving } = saveStateRef.current
         if (dirty && !saving) {
-          void actionsRef.current.handlePublish()
+          void handlePublish()
         }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  function handleRenameStart() {
+    if (!detail) return
+    setRenameValue(detail.title)
+    setIsRenaming(true)
+    setShowMenu(false)
+  }
+
+  async function handleRenameSubmit() {
+    const trimmed = renameValue.trim()
+    if (!trimmed || !appId) {
+      setIsRenaming(false)
+      return
+    }
+    skipBlurRef.current = true
+    setSaveError(null)
+    try {
+      await updateAdminApp(appId, { title: trimmed })
+      onReloadApp()
+    } catch {
+      setSaveError('Failed to rename app')
+    }
+    setIsRenaming(false)
+  }
+
+  async function handleEditWithAI() {
+    if (!appId) return
+    setShowMenu(false)
+    setSaveError(null)
+    try {
+      const data = await request<{ session_id: string }>('/sessions/create', {
+        method: 'POST',
+        body: JSON.stringify({ mode: 'app-builder', edit_app_id: appId }),
+      })
+      sessionStorage.setItem('session_id', data.session_id)
+      window.location.href = '/'
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to start AI edit session')
+    }
+  }
 
   async function handleToggleActive() {
     if (!detail) return
@@ -129,7 +164,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
     try {
       await updateAdminApp(appId, { body: editedBody, change_note: changeNote })
       await loadDetail()
-      onChangeNote('')
+      setChangeNote('')
       setSuccessFlash(true)
       setTimeout(() => setSuccessFlash(false), 2500)
     } catch (err) {
@@ -141,7 +176,7 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
 
   function handleDiscard() {
     setEditedBody(originalBody)
-    onChangeNote('')
+    setChangeNote('')
   }
 
   function handleBodyChange(val: string) {
@@ -215,15 +250,69 @@ export default function AppEditor({ appId, showEnvRef, showVersionHistory, chang
 
   return (
     <div className="app-editor" data-testid="app-editor">
-      {/* Header */}
-      <div className="app-editor-header">
-        <div className="app-editor-title-row">
-          <h2>
-            {isDirty && <span className="unsaved-dot" title="Unsaved changes" />}
-            {detail.title}
-          </h2>
-          <span className="app-editor-slug">{detail.slug}</span>
+      {/* Toolbar */}
+      <div className="app-editor-toolbar">
+        {isRenaming ? (
+          <input
+            ref={renameInputRef}
+            className="admin-rename-input"
+            data-testid="admin-rename-input"
+            aria-label="Rename app"
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); void handleRenameSubmit() }
+              if (e.key === 'Escape') { skipBlurRef.current = true; setIsRenaming(false) }
+            }}
+            onBlur={() => {
+              if (skipBlurRef.current) { skipBlurRef.current = false; return }
+              void handleRenameSubmit()
+            }}
+          />
+        ) : (
+          <h2 className="app-editor-title" data-testid="admin-app-name">{detail.title}</h2>
+        )}
+        <span className="app-editor-slug">{detail.slug}</span>
+        <span className={`status-badge ${detail.is_active ? 'status-badge--active' : 'status-badge--archived'}`}>
+          {detail.is_active ? 'active' : 'archived'}
+        </span>
+
+        <div className="admin-menu-container" ref={menuRef}>
+          <button className="admin-header-btn admin-menu-trigger" data-testid="admin-menu-trigger"
+            aria-haspopup="menu" aria-expanded={showMenu} onClick={() => setShowMenu(v => !v)}>⋯</button>
+          {showMenu && (
+            <div className="admin-menu-dropdown" role="menu" data-testid="admin-menu-dropdown">
+              {!showVersionHistory && (
+                <>
+                  <div className="admin-menu-note">
+                    <input type="text" placeholder="Change note..." value={changeNote}
+                      onChange={e => setChangeNote(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && isDirty && !isSaving) { handlePublish(); setShowMenu(false) } }} />
+                  </div>
+                  <button className="admin-menu-item" data-testid="admin-menu-item"
+                    disabled={!isDirty || isSaving} onClick={() => { handlePublish(); setShowMenu(false) }}>
+                    {isSaving ? 'Publishing...' : 'Publish'}
+                  </button>
+                  <button className="admin-menu-item" data-testid="admin-menu-item"
+                    disabled={!isDirty} onClick={() => { handleDiscard(); setShowMenu(false) }}>Discard</button>
+                  <div className="admin-menu-sep" />
+                </>
+              )}
+              <button className={`admin-menu-item${showEnvRef ? ' active' : ''}`} data-testid="admin-menu-item"
+                onClick={() => { setShowEnvRef(v => !v); setShowMenu(false) }}>{showEnvRef ? '\u2713 ' : ''}Environment</button>
+              <button className={`admin-menu-item${showVersionHistory ? ' active' : ''}`} data-testid="admin-menu-item"
+                onClick={() => { setShowVersionHistory(v => !v); setShowMenu(false) }}>{showVersionHistory ? '\u2713 ' : ''}History</button>
+              <div className="admin-menu-sep" />
+              <button className="admin-menu-item" data-testid="admin-menu-item" onClick={handleRenameStart}>Rename</button>
+              <button className="admin-menu-item" data-testid="admin-menu-item" onClick={handleEditWithAI}>Edit with AI</button>
+              <button className="admin-menu-item admin-menu-item--danger" data-testid="admin-menu-item--danger"
+                onClick={() => { handleToggleActive(); setShowMenu(false) }}>{detail.is_active ? 'Archive' : 'Activate'}</button>
+            </div>
+          )}
         </div>
+
+        {isDirty && <span className="unsaved-dot" title="Unsaved changes" />}
+        {successFlash && <span className="success-flash">Published</span>}
       </div>
 
       {saveError && (
