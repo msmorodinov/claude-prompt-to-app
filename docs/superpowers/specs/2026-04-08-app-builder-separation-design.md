@@ -36,10 +36,17 @@ In `backend/session.py`:
 - Values: `"normal"` (regular app session) or `"app-builder"` (system App Builder session)
 - Old sessions without `mode` column default to `"normal"`
 
-In `backend/db.py` — `save_session()`:
+In `backend/db.py`:
 
-- Accept and persist `mode` field to DB
-- Session reconstruction (`get_session_meta`, etc.) must read `mode` from DB row and pass to `SessionState`
+- `save_session()`: add `mode: str = "normal"` parameter, include in INSERT column list and VALUES
+- `get_session_meta()`: add `mode` to SELECT, return in result dict
+- `get_sessions_by_user()`: add `s.mode` to SELECT
+- `get_all_sessions_admin()`: add `s.mode` to SELECT
+- Session reconstruction in `server.py`: read `db_meta["mode"]` and pass to `SessionState`
+
+In `backend/session.py` — `SessionManager.create()`:
+
+- Add `mode: str = "normal"` parameter, pass to `SessionState` constructor
 
 ### 3. Session Creation
 
@@ -114,7 +121,7 @@ In `GET /sessions` and `GET /sessions/{id}`:
 ## Testing
 
 ### Backend
-- `test_db.py`: migration v4 — App Builder deleted, sessions updated, mode column added
+- `test_db.py`: migration v6 — App Builder deleted, sessions updated, mode column added
 - `test_server.py`: `POST /sessions/create` with `mode: "app-builder"` + `edit_app_id`
 - `test_server.py`: `edit_app_id` without `mode: "app-builder"` returns 400
 - `test_session.py`: `SessionState.mode` field defaults and values
