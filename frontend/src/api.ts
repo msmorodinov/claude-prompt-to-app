@@ -70,6 +70,7 @@ export interface SessionSummary {
   message_count: number
   app_id: number | null
   app_name: string | null
+  mode?: string
 }
 
 export async function listSessions(): Promise<SessionSummary[]> {
