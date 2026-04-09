@@ -36,6 +36,7 @@ export default function ChatContainer() {
 
   const [sessionError, setSessionError] = useState(false)
   const [sessionDone, setSessionDone] = useState(false)
+  const [sseReconnectKey, setSseReconnectKey] = useState(0)
 
   // Multi-app state
   const [apps, setApps] = useState<AppInfo[]>([])
@@ -113,7 +114,7 @@ export default function ChatContainer() {
     })
   }, [sessionId, setMessages, markAskAnswered, showToast])
 
-  useSSE(sessionId, wrappedSSEEvent)
+  useSSE(sessionId, wrappedSSEEvent, { reconnectKey: sseReconnectKey })
 
   const handleSend = useCallback(
     async (message: string) => {
@@ -153,6 +154,7 @@ export default function ChatContainer() {
     setIsLoading(true)
     try {
       await retrySession(sessionId)
+      setSseReconnectKey((k) => k + 1)
     } catch {
       setIsLoading(false)
       setSessionError(true)

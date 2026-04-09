@@ -22,6 +22,8 @@ const BACKOFF_BASE_MS = 2000
 
 interface UseSSEOptions {
   urlFactory?: (sessionId: string) => string
+  /** Change this value to force a reconnect without changing sessionId */
+  reconnectKey?: number
 }
 
 export function useSSE(
@@ -34,6 +36,7 @@ export function useSSE(
   onEventRef.current = onEvent
   const urlFactoryRef = useRef(options?.urlFactory ?? createSSEUrl)
   urlFactoryRef.current = options?.urlFactory ?? createSSEUrl
+  const reconnectKey = options?.reconnectKey ?? 0
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -101,7 +104,7 @@ export function useSSE(
         eventSourceRef.current = null
       }
     }
-  }, [sessionId])
+  }, [sessionId, reconnectKey])
 
   return { disconnect }
 }

@@ -228,6 +228,7 @@ async def retry_chat(request: Request) -> dict:
         except Exception:
             break
 
+    await session.set_status("active")
     session.agent_task = asyncio.create_task(
         run_agent(session, "Continue from where you left off. Don't repeat previous content.")
     )
