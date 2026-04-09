@@ -221,9 +221,25 @@ sessions = SessionManager()
 # In-memory history store for mock server
 _session_meta: dict[str, dict] = {}  # session_id -> {title, message_count, history}
 
+# In-memory apps store for mock server
+_apps: list[dict] = []
+_app_id_counter = 0
+
 
 def _get_user_id(request: Request) -> str:
     return request.headers.get("x-user-id", "anonymous")
+
+
+@app.post("/test/reset")
+async def test_reset() -> dict:
+    """Reset all mock server state between tests."""
+    global _app_id_counter
+    _apps.clear()
+    _app_id_counter = 0
+    _session_meta.clear()
+    for sid in list(sessions._sessions.keys()):
+        sessions.remove(sid)
+    return {"status": "reset"}
 
 
 @app.post("/sessions/create")
@@ -347,7 +363,129 @@ async def answers(request: Request) -> dict:
     return {"status": "ok"}
 
 
-# --- Admin endpoints ---
+# --- Public app endpoints ---
+
+@app.get("/apps")
+async def list_public_apps() -> list:
+    return [a for a in _apps if a.get("is_active")]
+
+
+@app.get("/api/environment")
+async def environment() -> dict:
+    return {
+        "widgets": {
+            "display": ["text", "section_header", "data_table", "comparison",
+                        "category_list", "quote_highlight", "metric_bars",
+                        "copyable", "progress", "final_result", "timer"],
+            "input": ["single_select", "multi_select", "free_text",
+                      "rank_priorities", "slider_scale", "matrix_2x2", "tag_input"],
+        },
+        "tools": [
+            {"name": "show", "behavior": "fire-and-forget"},
+            {"name": "ask", "behavior": "blocking"},
+        ],
+    }
+
+
+# --- Admin app endpoints ---
+
+@app.get("/admin/apps")
+async def admin_list_apps() -> list:
+    return sorted(_apps, key=lambda a: a["created_at"], reverse=True)
+
+
+@app.post("/admin/apps", status_code=201)
+async def admin_create_app(request: Request) -> dict:
+    global _app_id_counter
+    body = await request.json()
+    slug = body.get("slug", "")
+    title = body.get("title", "")
+
+    if not slug or not title:
+        raise HTTPException(status_code=422, detail="slug and title required")
+
+    if any(a["slug"] == slug for a in _apps):
+        raise HTTPException(status_code=409, detail="Slug already exists")
+
+    _app_id_counter += 1
+    app_body = body.get("body", "")
+    now = "2026-01-01T00:00:00"
+
+    new_app: dict = {
+        "id": _app_id_counter,
+        "slug": slug,
+        "title": title,
+        "subtitle": body.get("subtitle", ""),
+        "is_active": bool(app_body),
+        "current_version_id": _app_id_counter * 100 if app_body else None,
+        "created_at": now,
+        "updated_at": now,
+        "version_count": 1 if app_body else 0,
+        "body": app_body,
+        "versions": [],
+    }
+
+    if app_body:
+        new_app["versions"].append({
+            "id": _app_id_counter * 100,
+            "app_id": _app_id_counter,
+            "version_number": 1,
+            "body": app_body,
+            "change_note": "Initial version",
+            "created_at": now,
+        })
+
+    _apps.append(new_app)
+    return new_app
+
+
+@app.get("/admin/apps/{app_id}")
+async def admin_get_app(app_id: int) -> dict:
+    for a in _apps:
+        if a["id"] == app_id:
+            result = {**a}
+            result["current_version"] = a["versions"][-1] if a["versions"] else None
+            return result
+    raise HTTPException(status_code=404, detail="App not found")
+
+
+@app.put("/admin/apps/{app_id}")
+async def admin_update_app(app_id: int, request: Request) -> dict:
+    body = await request.json()
+    for a in _apps:
+        if a["id"] == app_id:
+            if body.get("title") is not None:
+                a["title"] = body["title"]
+            if body.get("subtitle") is not None:
+                a["subtitle"] = body["subtitle"]
+            if body.get("is_active") is not None:
+                a["is_active"] = body["is_active"]
+            if body.get("body") is not None:
+                a["body"] = body["body"]
+                ver_id = (a["id"] * 100) + len(a["versions"]) + 1
+                a["versions"].append({
+                    "id": ver_id,
+                    "app_id": a["id"],
+                    "version_number": len(a["versions"]) + 1,
+                    "body": body["body"],
+                    "change_note": body.get("change_note", ""),
+                    "created_at": a["updated_at"],
+                })
+                a["current_version_id"] = ver_id
+                a["version_count"] = len(a["versions"])
+            return a
+    raise HTTPException(status_code=404, detail="App not found")
+
+
+@app.get("/admin/apps/{app_id}/versions")
+async def admin_app_versions(app_id: int) -> list:
+    for a in _apps:
+        if a["id"] == app_id:
+            return a["versions"]
+    raise HTTPException(status_code=404, detail="App not found")
+
+
+# --- Admin session endpoints ---
 
 @app.get("/admin/sessions")
 async def admin_list_sessions() -> list:
@@ -355,10 +493,10 @@ async def admin_list_sessions() -> list:
         {
             "id": s.session_id,
             "user_id": s.user_id,
-            "status": s.status,
-            "message_count": 0,
+            "status": _session_meta.get(s.session_id, {}).get("status", "idle"),
+            "message_count": _session_meta.get(s.session_id, {}).get("message_count", 0),
             "created_at": "2026-01-01T00:00:00",
-            "title": None,
+            "title": _session_meta.get(s.session_id, {}).get("title"),
         }
         for s in sessions.list_all()
     ]
@@ -393,7 +531,8 @@ async def admin_session_stream(session_id: str) -> EventSourceResponse:
 
 @app.get("/admin/sessions/{session_id}/history")
 async def admin_session_history(session_id: str) -> list:
-    return []
+    meta = _session_meta.get(session_id, {})
+    return meta.get("history", [])
 
 
 @app.get("/health")
@@ -404,6 +543,6 @@ async def health() -> dict:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=4911)
+    parser.add_argument("--port", type=int, default=4910)
     args = parser.parse_args()
     uvicorn.run(app, host="0.0.0.0", port=args.port)

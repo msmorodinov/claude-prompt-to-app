@@ -136,14 +136,9 @@ forge-simple/
     │   ├── mock_server.py        # Mock backend for testing
     │   └── mock-agent.py
     └── tests/
-        ├── ask-flow.spec.ts
-        ├── workshop-flow.spec.ts
-        ├── responsive-widgets.spec.ts
-        ├── multi-user-admin.spec.ts
-        ├── real-backend.spec.ts
-        ├── admin-ui-live.spec.ts
-        ├── sidebar-visual.spec.ts
-        └── session-sidebar.spec.ts
+        ├── ask-flow.spec.ts          # Chat flow: ask rounds, widgets, done
+        ├── multi-user-admin.spec.ts  # User isolation, admin, routing
+        └── admin-ui-live.spec.ts     # Admin app CRUD, menu, rename
 ```
 
 ## MCP Tools (3 tools)

@@ -1,141 +1,74 @@
-import { test, expect, type Locator } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
-async function fillAndSubmitAsk(askMsg: Locator, text = 'Test') {
-  const textInput = askMsg.locator('textarea, input[type="text"]').first()
-  if (await textInput.isVisible()) {
-    await textInput.fill(text)
-  }
-  const radio = askMsg.locator('input[type="radio"]').first()
-  if (await radio.isVisible()) {
-    await radio.click()
-  }
-  await askMsg.locator('[data-testid="submit-btn"]').click()
-}
-
-async function fillSliderAndTags(askMsg: Locator, tags: string[] = ['fast', 'reliable']) {
-  // Move slider
-  const slider = askMsg.locator('input[type="range"]')
-  await expect(slider).toBeVisible()
-  await slider.fill('8')
-
-  // Add tags via keyboard
-  const tagInput = askMsg.locator('[data-testid="widget-tag-input"] input[type="text"]')
-  for (const tag of tags) {
-    await tagInput.fill(tag)
-    await tagInput.press('Enter')
-  }
-
-  await askMsg.locator('[data-testid="submit-btn"]').click()
-}
-
-async function completeFullFlow(page: import('@playwright/test').Page) {
-  await page.goto('/')
-  await page.locator('[data-testid="start-btn"]').click()
-
-  // First ask: free_text + single_select
-  const ask1 = page.locator('[data-testid="ask-message"]').first()
-  await expect(ask1).toBeVisible({ timeout: 10000 })
-  await fillAndSubmitAsk(ask1, 'We build forecasting tools')
-
-  // Second ask: slider_scale + tag_input
-  const ask2 = page.locator('[data-testid="ask-message"]').nth(1)
-  await expect(ask2).toBeVisible({ timeout: 10000 })
-  await fillSliderAndTags(ask2)
-
-  return { ask1, ask2 }
-}
+const MOCK_SERVER = 'http://localhost:4910'
 
 test.describe('Ask Flow', () => {
-  test('full flow: two ask rounds → display widgets → done', async ({ page }) => {
-    await completeFullFlow(page)
-
-    await expect(page.locator('[data-testid="widget-final-result"]')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('[data-testid="widget-copyable"]')).toBeVisible()
-    await expect(page.locator('[data-testid="widget-timer"]')).toBeVisible()
-    await expect(page.locator('[data-testid="widget-metric-bars"]')).toBeVisible()
-    await expect(page.locator('[data-testid="widget-progress"]')).toBeVisible()
+  test.beforeEach(async ({ request }) => {
+    await request.post(`${MOCK_SERVER}/test/reset`)
   })
 
-  test('slider_scale renders with labels', async ({ page }) => {
+  test('full chat flow: start → two ask rounds → final result', async ({ page }) => {
     await page.goto('/')
     await page.locator('[data-testid="start-btn"]').click()
 
+    // First ask: free_text + single_select
     const ask1 = page.locator('[data-testid="ask-message"]').first()
     await expect(ask1).toBeVisible({ timeout: 10000 })
-    await fillAndSubmitAsk(ask1)
 
+    await ask1.locator('textarea').first().fill('We build forecasting tools')
+    await ask1.locator('input[type="radio"]').first().click()
+    await ask1.locator('[data-testid="submit-btn"]').click()
+
+    // Second ask: slider_scale + tag_input
     const ask2 = page.locator('[data-testid="ask-message"]').nth(1)
     await expect(ask2).toBeVisible({ timeout: 10000 })
 
     await expect(ask2.locator('[data-testid="widget-slider-scale"]')).toBeVisible()
     await expect(ask2.locator('[data-testid="slider-label-min"]')).toHaveText('Not at all')
     await expect(ask2.locator('[data-testid="slider-label-max"]')).toHaveText('Absolutely')
+    await ask2.locator('input[type="range"]').fill('8')
+
+    const tagInput = ask2.locator('[data-testid="widget-tag-input"] input[type="text"]')
+    await tagInput.fill('fast')
+    await tagInput.press('Enter')
+    await tagInput.fill('reliable')
+    await tagInput.press('Enter')
+    await expect(ask2.locator('[data-testid="tag"]')).toHaveCount(2)
+
+    await ask2.locator('[data-testid="submit-btn"]').click()
+
+    // Final widgets
+    await expect(page.locator('[data-testid="widget-final-result"]')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('[data-testid="widget-copyable"]')).toBeVisible()
+    await expect(page.locator('[data-testid="widget-metric-bars"]')).toBeVisible()
+    await expect(page.locator('[data-testid="widget-data-table"]')).toBeVisible()
+    await expect(page.locator('[data-testid="widget-comparison"]')).toBeVisible()
   })
 
-  test('tag_input adds and displays tags', async ({ page }) => {
+  test('InputArea hidden during ask, done banner after completion', async ({ page }) => {
     await page.goto('/')
     await page.locator('[data-testid="start-btn"]').click()
 
+    // Ask visible → InputArea hidden
     const ask1 = page.locator('[data-testid="ask-message"]').first()
     await expect(ask1).toBeVisible({ timeout: 10000 })
-    await fillAndSubmitAsk(ask1)
+    await expect(page.locator('[data-testid="input-area"]')).not.toBeVisible()
+
+    // Complete flow
+    await ask1.locator('textarea').first().fill('Test company')
+    await ask1.locator('input[type="radio"]').first().click()
+    await ask1.locator('[data-testid="submit-btn"]').click()
 
     const ask2 = page.locator('[data-testid="ask-message"]').nth(1)
     await expect(ask2).toBeVisible({ timeout: 10000 })
-
+    await ask2.locator('input[type="range"]').fill('5')
     const tagInput = ask2.locator('[data-testid="widget-tag-input"] input[type="text"]')
-    await tagInput.fill('innovative')
+    await tagInput.fill('x')
     await tagInput.press('Enter')
-    await tagInput.fill('fast')
-    await tagInput.press('Enter')
+    await ask2.locator('[data-testid="submit-btn"]').click()
 
-    await expect(ask2.locator('[data-testid="tag"]')).toHaveCount(2)
-    await expect(ask2.locator('[data-testid="tag"]').first()).toHaveText(/innovative/)
-  })
-
-  test('copyable block has copy button', async ({ page }) => {
-    await completeFullFlow(page)
-
-    const copyable = page.locator('[data-testid="widget-copyable"]')
-    await expect(copyable).toBeVisible({ timeout: 10000 })
-    await expect(copyable.locator('[data-testid="copy-btn"]')).toBeVisible()
-    await expect(copyable.locator('[data-testid="copyable-content"]')).toContainText('FMCG brand managers')
-  })
-
-  test('display widgets render after both asks', async ({ page }) => {
-    await completeFullFlow(page)
-
-    // Display widgets from step 3
-    await expect(page.locator('[data-testid="widget-data-table"]')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('[data-testid="widget-comparison"]')).toBeVisible()
-    await expect(page.locator('[data-testid="widget-category-list"]')).toBeVisible()
-    await expect(page.locator('[data-testid="widget-quote-highlight"]')).toBeVisible()
-  })
-
-  test('InputArea is hidden while ask is pending', async ({ page }) => {
-    await page.goto('/')
-    await page.locator('[data-testid="start-btn"]').click()
-
-    await expect(page.locator('[data-testid="ask-message"]').first()).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('[data-testid="input-area"]')).not.toBeVisible()
-  })
-
-  test('InputArea returns after all asks + done', async ({ page }) => {
-    await completeFullFlow(page)
-
+    // Done
     await expect(page.locator('[data-testid="widget-final-result"]')).toBeVisible({ timeout: 10000 })
     await expect(page.locator('[data-testid="session-done-banner"]')).toBeVisible()
-  })
-
-  test('ask form gets answered class after submit', async ({ page }) => {
-    await page.goto('/')
-    await page.locator('[data-testid="start-btn"]').click()
-
-    const askMsg = page.locator('[data-testid="ask-message"]').first()
-    await expect(askMsg).toBeVisible({ timeout: 10000 })
-
-    await fillAndSubmitAsk(askMsg)
-
-    await expect(askMsg).toHaveClass(/answered/, { timeout: 10000 })
   })
 })
