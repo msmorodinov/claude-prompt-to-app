@@ -661,6 +661,26 @@ async def get_session_owner(
         await db.close()
 
 
+async def delete_session(
+    session_id: str, user_id: str, db_path: str | Path = DB_PATH
+) -> bool:
+    """Delete session and its messages. Returns True if deleted, False if not found or wrong owner."""
+    db = await _get_db(db_path)
+    try:
+        cursor = await db.execute(
+            "SELECT user_id FROM sessions WHERE id = ?", (session_id,)
+        )
+        row = await cursor.fetchone()
+        if not row or row[0] != user_id:
+            return False
+        await db.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+        await db.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+        await db.commit()
+        return True
+    finally:
+        await db.close()
+
+
 async def get_session_meta(
     session_id: str, db_path: str | Path = DB_PATH
 ) -> dict[str, Any] | None:
