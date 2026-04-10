@@ -200,3 +200,39 @@ class TestCreateSession:
             headers={"X-User-Id": "test-user"},
         )
         assert resp.status_code == 400
+
+
+class TestDeleteSession:
+    @pytest.mark.asyncio
+    async def test_delete_session_success(self, client, session):
+        resp = await client.delete(
+            f"/sessions/{session.session_id}",
+            headers={"X-User-Id": session.user_id},
+        )
+        assert resp.status_code == 204
+
+    @pytest.mark.asyncio
+    async def test_delete_session_wrong_user(self, client, session):
+        resp = await client.delete(
+            f"/sessions/{session.session_id}",
+            headers={"X-User-Id": "other-user"},
+        )
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_delete_session_not_found(self, client):
+        resp = await client.delete(
+            "/sessions/nonexistent",
+            headers={"X-User-Id": "someone"},
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_delete_session_cleans_up_in_memory(self, client, session):
+        from backend.server import sessions as mgr
+        assert mgr.get(session.session_id) is not None
+        await client.delete(
+            f"/sessions/{session.session_id}",
+            headers={"X-User-Id": session.user_id},
+        )
+        assert mgr.get(session.session_id) is None
