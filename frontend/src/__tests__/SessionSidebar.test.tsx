@@ -15,6 +15,7 @@ const defaultProps = {
   currentSessionId: null,
   onSelectSession: vi.fn(),
   onNewSession: vi.fn(),
+  onDeleteSession: vi.fn(),
   isOpen: true,
   onClose: vi.fn(),
   onToggle: vi.fn(),

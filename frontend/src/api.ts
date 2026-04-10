@@ -77,6 +77,10 @@ export async function listSessions(): Promise<SessionSummary[]> {
   return request('/sessions')
 }
 
+export async function deleteSession(sessionId: string): Promise<void> {
+  await request(`/sessions/${sessionId}`, { method: 'DELETE' })
+}
+
 export interface AppConfig {
   title: string
   subtitle?: string
