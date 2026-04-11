@@ -61,14 +61,19 @@ export default function SystemStatus() {
     if (data) setLocalMode(data.auth.mode)
   }, [data?.auth.mode])
 
+  const [saveError, setSaveError] = useState<string | null>(null)
+
   const handleSaveMode = async () => {
     setSaving(true)
     setWarning(null)
+    setSaveError(null)
     try {
       const result = await setAuthMode(localMode, localMode === 'api_key' ? apiKeyInput : undefined)
       if (result.warning) setWarning(result.warning)
       await load()
       setApiKeyInput('')
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setSaving(false)
     }
@@ -76,9 +81,12 @@ export default function SystemStatus() {
 
   const handleTest = async () => {
     setTesting(true)
+    setSaveError(null)
     try {
       await testAuth()
       await load()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to test CLI')
     } finally {
       setTesting(false)
     }
@@ -160,6 +168,12 @@ export default function SystemStatus() {
         {warning && (
           <div className="system-warning" style={{ margin: '0.5rem 0' }}>
             {warning}
+          </div>
+        )}
+
+        {saveError && (
+          <div className="system-status-error" style={{ margin: '0.5rem 0' }}>
+            {saveError}
           </div>
         )}
 

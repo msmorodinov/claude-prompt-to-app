@@ -1,8 +1,6 @@
 """System configuration: auth mode, API key storage, auth env builder."""
 from pathlib import Path
 
-import aiosqlite
-
 from backend.db import DB_PATH, _get_db
 
 

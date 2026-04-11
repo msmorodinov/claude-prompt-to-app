@@ -659,14 +659,19 @@ async def system_status_admin() -> dict:
     active_count = sum(1 for s in all_live if s.status == "active")
     waiting_count = sum(1 for s in all_live if s.status == "waiting_input")
 
-    # Total sessions from DB
-    db_sessions = await get_all_sessions_admin()
-    total_count = len(db_sessions)
-    last_activity = None
-    if db_sessions:
-        last_activity = max(
-            (s.get("created_at", "") for s in db_sessions), default=None
+    # Total sessions from DB (lightweight aggregate query)
+    from backend.db import _get_db as _get_status_db
+
+    db = await _get_status_db()
+    try:
+        cursor = await db.execute(
+            "SELECT COUNT(*), MAX(created_at) FROM sessions"
         )
+        row = await cursor.fetchone()
+        total_count = row[0] if row else 0
+        last_activity = row[1] if row else None
+    finally:
+        await db.close()
 
     # MCP servers (reuse existing function)
     mcp = await mcp_servers()
