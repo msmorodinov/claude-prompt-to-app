@@ -273,47 +273,88 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
           <h2 className="app-editor-title" data-testid="admin-app-name">{detail.title}</h2>
         )}
         <span className="app-editor-slug">{detail.slug}</span>
-        <span className={`status-badge ${detail.is_active ? 'status-badge--active' : 'status-badge--archived'}`}>
-          {detail.is_active ? 'active' : 'archived'}
-        </span>
 
+        {/* Status: unsaved indicator OR status badge */}
+        {isDirty ? (
+          <span className="status-unsaved" data-testid="status-unsaved">
+            <span className="unsaved-dot" />
+            unsaved
+          </span>
+        ) : (
+          <>
+            {successFlash ? (
+              <span className="success-flash" data-testid="success-flash">✓ Published</span>
+            ) : (
+              <span className={`status-badge ${detail.is_active ? 'status-badge--active' : 'status-badge--archived'}`}>
+                {detail.is_active ? 'active' : 'archived'}
+              </span>
+            )}
+          </>
+        )}
+
+        {/* Contextual action buttons */}
+        <div className="toolbar-actions">
+          {isDirty ? (
+            <>
+              <button
+                className="toolbar-btn-secondary"
+                data-testid="toolbar-discard-btn"
+                onClick={handleDiscard}
+              >
+                Discard
+              </button>
+              <button
+                className="toolbar-btn-primary"
+                data-testid="toolbar-primary-btn"
+                disabled={isSaving}
+                onClick={handlePublish}
+              >
+                {isSaving ? 'Publishing...' : 'Publish'}
+              </button>
+            </>
+          ) : (
+            <button
+              className="toolbar-btn-primary"
+              data-testid="toolbar-primary-btn"
+              onClick={handleEditWithAI}
+            >
+              ✎ Edit with AI
+            </button>
+          )}
+        </div>
+
+        {/* Menu — rare actions only */}
         <div className="admin-menu-container" ref={menuRef}>
           <button className="admin-header-btn admin-menu-trigger" data-testid="admin-menu-trigger"
             aria-haspopup="menu" aria-expanded={showMenu} onClick={() => setShowMenu(v => !v)}>⋯</button>
           {showMenu && (
             <div className="admin-menu-dropdown" role="menu" data-testid="admin-menu-dropdown">
-              {!showVersionHistory && (
-                <>
-                  <div className="admin-menu-note">
-                    <input type="text" placeholder="Change note..." value={changeNote}
-                      onChange={e => setChangeNote(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter' && isDirty && !isSaving) { handlePublish(); setShowMenu(false) } }} />
-                  </div>
-                  <button className="admin-menu-item" data-testid="admin-menu-item"
-                    disabled={!isDirty || isSaving} onClick={() => { handlePublish(); setShowMenu(false) }}>
-                    {isSaving ? 'Publishing...' : 'Publish'}
-                  </button>
-                  <button className="admin-menu-item" data-testid="admin-menu-item"
-                    disabled={!isDirty} onClick={() => { handleDiscard(); setShowMenu(false) }}>Discard</button>
-                  <div className="admin-menu-sep" />
-                </>
-              )}
+              <button className="admin-menu-item" data-testid="admin-menu-item" onClick={handleRenameStart}>Rename</button>
               <button className={`admin-menu-item${showEnvRef ? ' active' : ''}`} data-testid="admin-menu-item"
                 onClick={() => { setShowEnvRef(v => !v); setShowMenu(false) }}>{showEnvRef ? '\u2713 ' : ''}Environment</button>
               <button className={`admin-menu-item${showVersionHistory ? ' active' : ''}`} data-testid="admin-menu-item"
                 onClick={() => { setShowVersionHistory(v => !v); setShowMenu(false) }}>{showVersionHistory ? '\u2713 ' : ''}History</button>
               <div className="admin-menu-sep" />
-              <button className="admin-menu-item" data-testid="admin-menu-item" onClick={handleRenameStart}>Rename</button>
-              <button className="admin-menu-item" data-testid="admin-menu-item" onClick={handleEditWithAI}>Edit with AI</button>
               <button className="admin-menu-item admin-menu-item--danger" data-testid="admin-menu-item--danger"
                 onClick={() => { handleToggleActive(); setShowMenu(false) }}>{detail.is_active ? 'Archive' : 'Activate'}</button>
             </div>
           )}
         </div>
-
-        {isDirty && <span className="unsaved-dot" title="Unsaved changes" />}
-        {successFlash && <span className="success-flash">Published</span>}
       </div>
+
+      {/* Change note bar — visible when dirty */}
+      {isDirty && (
+        <div className="change-note-bar" data-testid="change-note-bar">
+          <label>Note:</label>
+          <input
+            type="text"
+            placeholder="Optional change note..."
+            value={changeNote}
+            onChange={e => setChangeNote(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !isSaving) { void handlePublish() } }}
+          />
+        </div>
+      )}
 
       {saveError && (
         <div className="app-form-error" data-testid="app-form-error">{saveError}</div>
