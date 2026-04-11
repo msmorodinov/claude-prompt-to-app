@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -551,6 +552,58 @@ async def environment_info() -> dict:
             {"name": "WebFetch", "description": "Fetch URL content", "behavior": "Built-in"},
         ],
     }
+
+
+@app.get("/api/mcp-servers")
+async def mcp_servers() -> list[dict]:
+    """List active MCP servers from Claude Code CLI."""
+    claude_bin = shutil.which("claude")
+    if not claude_bin:
+        return []
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            claude_bin, "mcp", "list",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
+        return _parse_mcp_list(stdout.decode())
+    except (asyncio.TimeoutError, OSError):
+        return []
+
+
+def _parse_mcp_list(output: str) -> list[dict]:
+    """Parse `claude mcp list` output into structured data.
+
+    Each server line looks like:
+      name: command - ✓ Connected
+      name: command - ! Needs authentication
+    """
+    results: list[dict] = []
+    for line in output.strip().splitlines():
+        line = line.strip()
+        if not line or line.startswith("Checking"):
+            continue
+        # Split on " - " from the right to get status
+        parts = line.rsplit(" - ", 1)
+        if len(parts) != 2:
+            continue
+        left, status_raw = parts
+        # Split name: command on first ": "
+        name_cmd = left.split(": ", 1)
+        if len(name_cmd) != 2:
+            continue
+        name = name_cmd[0].strip()
+        command = name_cmd[1].strip()
+        # Parse status
+        if "✓" in status_raw or "Connected" in status_raw:
+            status = "connected"
+        elif "!" in status_raw or "Needs auth" in status_raw:
+            status = "needs_auth"
+        else:
+            status = "error"
+        results.append({"name": name, "command": command, "status": status})
+    return results
 
 
 @app.get("/config")

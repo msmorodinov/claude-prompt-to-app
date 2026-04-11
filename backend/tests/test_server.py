@@ -236,3 +236,59 @@ class TestDeleteSession:
             headers={"X-User-Id": session.user_id},
         )
         assert mgr.get(session.session_id) is None
+
+
+@pytest.mark.asyncio
+async def test_mcp_servers_endpoint(client):
+    """GET /api/mcp-servers returns parsed MCP server list."""
+    resp = await client.get("/api/mcp-servers")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    # Each entry has name, command, status
+    if len(data) > 0:
+        entry = data[0]
+        assert "name" in entry
+        assert "command" in entry
+        assert "status" in entry
+        assert entry["status"] in ("connected", "needs_auth", "error")
+
+
+from server import _parse_mcp_list
+
+
+def test_parse_mcp_list_connected():
+    output = "Checking MCP server health...\n\nclaude.ai Deepwiki: https://mcp.deepwiki.com/mcp - ✓ Connected\n"
+    result = _parse_mcp_list(output)
+    assert len(result) == 1
+    assert result[0] == {
+        "name": "claude.ai Deepwiki",
+        "command": "https://mcp.deepwiki.com/mcp",
+        "status": "connected",
+    }
+
+
+def test_parse_mcp_list_needs_auth():
+    output = "claude.ai Gmail: https://gmail.mcp.claude.com/mcp - ! Needs authentication\n"
+    result = _parse_mcp_list(output)
+    assert len(result) == 1
+    assert result[0]["status"] == "needs_auth"
+
+
+def test_parse_mcp_list_mixed():
+    output = (
+        "Checking MCP server health...\n\n"
+        "server1: cmd1 - ✓ Connected\n"
+        "server2: cmd2 - ! Needs authentication\n"
+        "server3: cmd3 - ✗ Failed\n"
+    )
+    result = _parse_mcp_list(output)
+    assert len(result) == 3
+    assert result[0]["status"] == "connected"
+    assert result[1]["status"] == "needs_auth"
+    assert result[2]["status"] == "error"
+
+
+def test_parse_mcp_list_empty():
+    assert _parse_mcp_list("") == []
+    assert _parse_mcp_list("Checking MCP server health...\n") == []
