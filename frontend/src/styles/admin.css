@@ -1583,3 +1583,86 @@ mark.ref-not_found {
     padding: 1rem;
   }
 }
+
+/* System Status - Phase 2 */
+.system-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 0.85rem;
+  color: var(--text-primary, #e0e0e0);
+  cursor: pointer;
+}
+
+.system-radio input[type="radio"] {
+  accent-color: var(--accent, #e8c46c);
+}
+
+.system-input {
+  flex: 1;
+  background: var(--bg, #08080a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  color: var(--text-primary, #e0e0e0);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.8rem;
+}
+
+.system-input:focus {
+  outline: none;
+  border-color: var(--accent, #e8c46c);
+}
+
+.system-btn-primary {
+  background: var(--accent, #e8c46c);
+  color: var(--bg, #08080a);
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.system-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.system-btn-secondary {
+  background: transparent;
+  color: var(--text-primary, #e0e0e0);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 0.35rem 0.7rem;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.system-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.system-btn-small {
+  background: transparent;
+  color: var(--text-muted, #888);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.system-warning {
+  background: rgba(250, 204, 21, 0.1);
+  border: 1px solid var(--warning, #facc15);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--warning, #facc15);
+}

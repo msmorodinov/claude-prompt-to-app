@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchSystemStatus } from '../../api-admin'
+import { fetchSystemStatus, setAuthMode, testAuth } from '../../api-admin'
 import type { SystemStatus as SystemStatusType } from '../../api-admin'
 
 function formatUptime(seconds: number): string {
@@ -34,6 +34,12 @@ export function getHeaderDotColor(data: SystemStatusType | null): string {
 export default function SystemStatus() {
   const [data, setData] = useState<SystemStatusType | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [localMode, setLocalMode] = useState<'max_oauth' | 'api_key'>('max_oauth')
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [warning, setWarning] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -51,19 +57,112 @@ export default function SystemStatus() {
     return () => clearInterval(interval)
   }, [load])
 
+  useEffect(() => {
+    if (data) setLocalMode(data.auth.mode)
+  }, [data?.auth.mode])
+
+  const handleSaveMode = async () => {
+    setSaving(true)
+    setWarning(null)
+    try {
+      const result = await setAuthMode(localMode, localMode === 'api_key' ? apiKeyInput : undefined)
+      if (result.warning) setWarning(result.warning)
+      await load()
+      setApiKeyInput('')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleTest = async () => {
+    setTesting(true)
+    try {
+      await testAuth()
+      await load()
+    } finally {
+      setTesting(false)
+    }
+  }
+
   if (error) return <div className="system-status-error">Error: {error}</div>
   if (!data) return <div className="system-status-loading">Loading...</div>
+
+  const modeChanged = localMode !== data.auth.mode
+  const showSave = modeChanged || (localMode === 'api_key' && apiKeyInput.length > 0)
 
   return (
     <div className="system-status">
       <div className="system-card">
         <h3 className="system-card-title">Authentication</h3>
+
         <div className="system-card-row">
           <span className="system-label">Mode</span>
-          <span className="system-value">
-            {data.auth.mode === 'max_oauth' ? 'Max Subscription' : 'API Key'}
+          <span className="system-value" style={{ display: 'flex', gap: '1rem' }}>
+            <label className="system-radio">
+              <input
+                type="radio"
+                name="auth-mode"
+                aria-label="Max Subscription"
+                value="max_oauth"
+                checked={localMode === 'max_oauth'}
+                onChange={() => setLocalMode('max_oauth')}
+              />
+              Max Subscription
+            </label>
+            <label className="system-radio">
+              <input
+                type="radio"
+                name="auth-mode"
+                aria-label="API Key"
+                value="api_key"
+                checked={localMode === 'api_key'}
+                onChange={() => setLocalMode('api_key')}
+              />
+              API Key
+            </label>
           </span>
         </div>
+
+        {localMode === 'api_key' && (
+          <div className="system-card-row">
+            <span className="system-label">API Key</span>
+            <span className="system-value" style={{ display: 'flex', gap: '0.4rem', flex: 1 }}>
+              <input
+                className="system-input"
+                type={showKey ? 'text' : 'password'}
+                placeholder={data.auth.has_credentials ? '••••••••• (stored)' : 'sk-ant-...'}
+                value={apiKeyInput}
+                onChange={e => setApiKeyInput(e.target.value)}
+              />
+              <button
+                className="system-btn-small"
+                onClick={() => setShowKey(v => !v)}
+              >
+                {showKey ? 'Hide' : 'Show'}
+              </button>
+            </span>
+          </div>
+        )}
+
+        {showSave && (
+          <div className="system-card-row">
+            <span className="system-label" />
+            <button
+              className="system-btn-primary"
+              disabled={saving}
+              onClick={handleSaveMode}
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        )}
+
+        {warning && (
+          <div className="system-warning" style={{ margin: '0.5rem 0' }}>
+            {warning}
+          </div>
+        )}
+
         <div className="system-card-row">
           <span className="system-label">Credentials</span>
           <span className="system-value">
@@ -73,6 +172,7 @@ export default function SystemStatus() {
             )}
           </span>
         </div>
+
         <div className="system-card-row">
           <span className="system-label">Last test</span>
           <span className="system-value">
@@ -80,6 +180,17 @@ export default function SystemStatus() {
               ? `${data.auth.last_test.ok ? '✓' : '✗'} ${data.auth.last_test.detail}`
               : 'Never tested'}
           </span>
+        </div>
+
+        <div className="system-card-row">
+          <span className="system-label" />
+          <button
+            className="system-btn-secondary"
+            disabled={testing}
+            onClick={handleTest}
+          >
+            {testing ? 'Testing...' : 'Test CLI'}
+          </button>
         </div>
       </div>
 

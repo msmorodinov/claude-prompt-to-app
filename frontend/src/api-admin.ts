@@ -231,3 +231,26 @@ export interface SystemStatus {
 export async function fetchSystemStatus(): Promise<SystemStatus> {
   return request('/admin/system-status')
 }
+
+export async function setAuthMode(
+  mode: 'api_key' | 'max_oauth',
+  apiKey?: string,
+): Promise<{ ok: boolean; mode: string; warning: string | null }> {
+  return request('/admin/auth/mode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode, api_key: apiKey }),
+  })
+}
+
+export async function testAuth(): Promise<{
+  ok: boolean
+  at: string
+  detail: string
+}> {
+  return request('/admin/auth/test', { method: 'POST' })
+}
+
+export async function deleteApiKey(): Promise<{ ok: boolean; mode: string }> {
+  return request('/admin/auth/api-key', { method: 'DELETE' })
+}

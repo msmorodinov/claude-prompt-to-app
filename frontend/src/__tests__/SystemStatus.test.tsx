@@ -20,6 +20,9 @@ const mockStatus = {
 
 vi.mock('../api-admin', () => ({
   fetchSystemStatus: vi.fn(() => Promise.resolve(mockStatus)),
+  setAuthMode: vi.fn(() => Promise.resolve({ ok: true, mode: 'api_key', warning: null })),
+  testAuth: vi.fn(() => Promise.resolve({ ok: true, at: '2026-04-11T15:00:00Z', detail: 'CLI accessible' })),
+  deleteApiKey: vi.fn(() => Promise.resolve({ ok: true, mode: 'max_oauth' })),
 }))
 
 describe('SystemStatus', () => {
@@ -70,6 +73,23 @@ describe('SystemStatus', () => {
     await waitFor(() => {
       expect(screen.getByText('Deepwiki')).toBeTruthy()
       expect(screen.getByText('Context7')).toBeTruthy()
+    })
+  })
+})
+
+describe('SystemStatus auth management', () => {
+  it('shows mode switcher', async () => {
+    render(<SystemStatus />)
+    await waitFor(() => {
+      expect(screen.getByLabelText('Max Subscription')).toBeTruthy()
+      expect(screen.getByLabelText('API Key')).toBeTruthy()
+    })
+  })
+
+  it('has test connection button', async () => {
+    render(<SystemStatus />)
+    await waitFor(() => {
+      expect(screen.getByText('Test CLI')).toBeTruthy()
     })
   })
 })
