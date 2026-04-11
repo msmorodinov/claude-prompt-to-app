@@ -195,3 +195,39 @@ export interface McpServer {
 export async function fetchMcpServers(): Promise<McpServer[]> {
   return request('/api/mcp-servers')
 }
+
+// --- System Status ---
+
+export interface AuthStatus {
+  mode: 'max_oauth' | 'api_key'
+  has_credentials: boolean
+  credentials_note: string | null
+  last_test: {
+    ok: boolean
+    at: string
+    detail: string
+  } | null
+}
+
+export interface SystemStatus {
+  auth: AuthStatus
+  cli: {
+    version: string | null
+    available: boolean
+  }
+  server: {
+    uptime_seconds: number
+    started_at: string
+  }
+  sessions: {
+    active: number
+    waiting_input: number
+    total: number
+    last_activity: string | null
+  }
+  mcp_servers: McpServer[]
+}
+
+export async function fetchSystemStatus(): Promise<SystemStatus> {
+  return request('/admin/system-status')
+}
