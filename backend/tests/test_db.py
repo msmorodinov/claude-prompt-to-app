@@ -9,6 +9,7 @@ import pytest
 
 from backend.db import (
     create_app,
+    delete_session,
     get_all_apps_admin,
     get_all_sessions_admin,
     get_app_by_id,
@@ -238,3 +239,42 @@ class TestMigrationV6:
         await save_session("test-s", user_id="u1", db_path=db_path)
         meta = await get_session_meta("test-s", db_path=db_path)
         assert meta["mode"] == "normal"
+
+
+class TestDeleteSession:
+    @pytest.mark.asyncio
+    async def test_delete_session_removes_session_and_messages(self, db_path):
+        await init_db(db_path)
+        await save_session("s1", user_id="user1", db_path=db_path)
+        await save_message("s1", "user", {"text": "hello"}, db_path=db_path)
+        await save_message("s1", "assistant", {"text": "hi"}, db_path=db_path)
+
+        deleted = await delete_session("s1", "user1", db_path=db_path)
+        assert deleted is True
+
+        # Session gone — get_session returns messages list, empty after delete
+        session = await get_session("s1", db_path=db_path)
+        assert session == []
+
+        # Messages gone too
+        rows = await get_sessions_by_user("user1", db_path=db_path)
+        assert len(rows) == 0
+
+    @pytest.mark.asyncio
+    async def test_delete_session_wrong_user(self, db_path):
+        await init_db(db_path)
+        await save_session("s1", user_id="user1", db_path=db_path)
+
+        deleted = await delete_session("s1", "user2", db_path=db_path)
+        assert deleted is False
+
+        # Session still exists — get_sessions_by_user should still return it
+        rows = await get_sessions_by_user("user1", db_path=db_path)
+        assert len(rows) == 1
+
+    @pytest.mark.asyncio
+    async def test_delete_session_not_found(self, db_path):
+        await init_db(db_path)
+
+        deleted = await delete_session("nonexistent", "user1", db_path=db_path)
+        assert deleted is False

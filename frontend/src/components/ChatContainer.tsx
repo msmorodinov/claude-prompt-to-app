@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { type AppConfig, type AppInfo, createSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
+import { type AppConfig, type AppInfo, createSession, deleteSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
 import { useToast } from '../contexts/ToastContext'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
@@ -218,6 +218,26 @@ export default function ChatContainer() {
     }
   }, [apps.length, resetChat, setSessionId])
 
+  const handleDeleteSession = useCallback(async (id: string) => {
+    try {
+      await deleteSession(id)
+    } catch {
+      showToast('Failed to delete session', 'error')
+      return
+    }
+    if (id === sessionId) {
+      setSessionId(null)
+      resetChat()
+      setHasHistory(false)
+      setSessionError(false)
+      setSessionDone(false)
+      historyLoaded.current = false
+      if (apps.length > 1) {
+        setSelectedAppId(null)
+      }
+    }
+  }, [sessionId, apps.length, resetChat, setSessionId, showToast])
+
   const isSessionLoading = hasHistory === null && sessionId !== null
   const showStartScreen = !isSessionLoading && hasHistory === false && messages.length === 0 && !isLoading
 
@@ -281,6 +301,7 @@ export default function ChatContainer() {
         currentSessionId={sessionId}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewSession}
+        onDeleteSession={handleDeleteSession}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onToggle={() => setSidebarOpen(prev => !prev)}

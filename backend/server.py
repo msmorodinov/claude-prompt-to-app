@@ -18,6 +18,7 @@ from backend.admin_apps import router as admin_apps_router
 from backend.agent import run_agent
 from backend.validator import check_rate_limit, validate_prompt
 from backend.db import (
+    delete_session,
     get_active_apps,
     get_all_sessions_admin,
     get_app_by_id,
@@ -385,6 +386,22 @@ async def list_sessions(request: Request) -> list:
         if row.get("mode") == "app-builder" and not row.get("app_name"):
             row["app_name"] = "App Builder"
     return rows
+
+
+@app.delete("/sessions/{session_id}", status_code=204)
+async def delete_session_endpoint(session_id: str, request: Request) -> None:
+    user_id = _get_user_id(request)
+    owner = await get_session_owner(session_id)
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if owner != user_id:
+        raise HTTPException(status_code=403, detail="Not your session")
+    # Cancel running agent if any
+    session = sessions.get(session_id)
+    if session and session.agent_running:
+        session.agent_task.cancel()
+    await delete_session(session_id, user_id)
+    sessions.remove(session_id)
 
 
 @app.get("/sessions/{session_id}")

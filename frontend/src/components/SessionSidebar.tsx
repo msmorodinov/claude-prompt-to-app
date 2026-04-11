@@ -5,6 +5,7 @@ interface Props {
   currentSessionId: string | null
   onSelectSession: (id: string) => void
   onNewSession: () => void
+  onDeleteSession: (id: string) => void
   isOpen: boolean
   onClose: () => void
   onToggle: () => void
@@ -16,11 +17,19 @@ export default function SessionSidebar({
   currentSessionId,
   onSelectSession,
   onNewSession,
+  onDeleteSession,
   isOpen,
   onClose,
   onToggle,
 }: Props) {
   const [sessions, setSessions] = useState<SessionSummary[]>([])
+
+  const handleDelete = (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation()
+    if (!window.confirm('Delete this session?')) return
+    onDeleteSession(sessionId)
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId))
+  }
 
   useEffect(() => {
     const load = () =>
@@ -89,6 +98,15 @@ export default function SessionSidebar({
             >
               <div className="sidebar-session-title" data-testid="sidebar-session-title">
                 {s.title || 'Untitled session'}
+                <button
+                  className="sidebar-session-delete"
+                  data-testid="sidebar-session-delete"
+                  onClick={(e) => handleDelete(e, s.id)}
+                  title="Delete session"
+                  aria-label="Delete session"
+                >
+                  &times;
+                </button>
               </div>
               <div className="sidebar-session-meta" data-testid="sidebar-session-meta">
                 <span>{s.message_count} msgs</span>
