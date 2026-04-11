@@ -293,8 +293,8 @@ export default function ChatContainer() {
         <div data-testid="start-screen" className="start-screen">
           <h2>Ready to begin?</h2>
           {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
-          <button data-testid="start-btn" className="start-btn" onClick={handleStart} disabled={!sessionId}>
-            Start
+          <button data-testid="start-btn" className="start-btn" onClick={handleStart} disabled={!sessionId || isLoading}>
+            {isLoading ? 'Starting...' : 'Start'}
           </button>
         </div>
       )
@@ -349,7 +349,7 @@ export default function ChatContainer() {
           <div className="session-error-banner">
             <span>Session interrupted</span>
             <div className="session-error-actions">
-              <button onClick={handleRetry}>Continue</button>
+              <button onClick={handleRetry} disabled={isLoading}>{isLoading ? 'Continuing...' : 'Continue'}</button>
               <button onClick={handleNewSession}>New Session</button>
             </div>
           </div>
