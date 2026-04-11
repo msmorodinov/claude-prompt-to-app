@@ -288,7 +288,6 @@ export default function ChatContainer() {
         {sessionDone && !sessionError && (
           <div data-testid="session-done-banner" className="session-done-banner">
             <span>You can continue this session by sending a message</span>
-            <button data-testid="start-btn" className="start-btn" onClick={handleNewSession}>New Session</button>
           </div>
         )}
       </>

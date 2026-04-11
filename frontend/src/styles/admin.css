@@ -591,6 +591,99 @@
   border: 1px solid var(--border);
 }
 
+/* ── Toolbar action buttons ────────────────────────── */
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.toolbar-btn-primary {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-btn-primary:hover {
+  opacity: 0.85;
+}
+
+.toolbar-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-btn-secondary {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.toolbar-btn-secondary:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.toolbar-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Change note bar ───────────────────────────────── */
+
+.change-note-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.change-note-bar label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.change-note-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  outline: none;
+}
+
+.change-note-bar input:focus {
+  border-bottom-color: var(--accent);
+}
+
+.change-note-bar input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
 .app-editor-section-title {
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -751,6 +844,20 @@ mark.ref-not_found {
 .validation-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.status-unsaved {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-warning);
+  white-space: nowrap;
+}
+
+.status-unsaved .unsaved-dot {
+  /* inherits existing .unsaved-dot styles */
 }
 
 .unsaved-dot {
@@ -1257,9 +1364,26 @@ mark.ref-not_found {
   }
 
   .app-editor-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .app-editor-toolbar .app-editor-slug {
+    display: none;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .change-note-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.5rem;
+  }
+
+  .change-note-bar label {
+    display: none;
   }
 
   .app-editor-title {
