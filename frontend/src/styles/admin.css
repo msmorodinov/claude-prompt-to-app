@@ -860,10 +860,35 @@ mark.ref-not_found {
   color: var(--error, #e85454);
 }
 
-.app-editor-env-reference,
 .app-editor-version-history {
   border-top: 1px solid var(--border);
   padding-top: 1rem;
+}
+
+/* ── Environment Reference Popup ── */
+
+.env-popup-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.env-popup {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 640px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 /* ── Version History ───────────────────────────────────── */
@@ -1260,7 +1285,7 @@ mark.ref-not_found {
   background: var(--success, #4ade80);
 }
 
-.env-mcp-dot--needs_auth {
+.env-mcp-dot--needs-auth {
   background: var(--warning, #facc15);
 }
 
@@ -1373,8 +1398,7 @@ mark.ref-not_found {
     max-height: none;
   }
 
-  /* ── 3. Environment/History — Full-screen overlay ──── */
-  .app-editor-env-reference,
+  /* ── 3. History — Full-screen overlay ──── */
   .app-editor-version-history {
     position: fixed;
     top: 0;

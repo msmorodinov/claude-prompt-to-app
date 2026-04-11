@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { AdminAppDetail, EnvironmentInfo, ValidationReference } from '../../api-admin'
-import { errorMessage, fetchAdminApp, fetchEnvironment, updateAdminApp, validatePrompt } from '../../api-admin'
+import type { AdminAppDetail, EnvironmentInfo, McpServer, ValidationReference } from '../../api-admin'
+import { errorMessage, fetchAdminApp, fetchEnvironment, fetchMcpServers, updateAdminApp, validatePrompt } from '../../api-admin'
 import { request } from '../../api'
 import EnvironmentReference from './EnvironmentReference'
 import VersionHistory from './VersionHistory'
@@ -26,6 +26,7 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
 
   // Environment data (loaded on demand)
   const [envData, setEnvData] = useState<EnvironmentInfo | null>(null)
+  const [mcpServers, setMcpServers] = useState<McpServer[]>([])
 
   // Validation
   const [validationRefs, setValidationRefs] = useState<ValidationReference[] | null>(null)
@@ -209,9 +210,10 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
   // Load env data when panel becomes visible
   useEffect(() => {
     if (showEnvRef && !envData) {
-      fetchEnvironment()
-        .then(setEnvData)
-        .catch((err) => setSaveError(errorMessage(err, 'Failed to load environment reference')))
+      fetchEnvironment().then(setEnvData).catch(() => {})
+    }
+    if (showEnvRef) {
+      fetchMcpServers().then(setMcpServers).catch(() => {})
     }
   }, [showEnvRef, envData])
 
@@ -402,8 +404,10 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
 
       {/* Environment Reference */}
       {showEnvRef && envData && (
-        <div className="app-editor-env-reference" data-testid="app-editor-env-reference">
-          <EnvironmentReference data={envData} />
+        <div className="env-popup-backdrop" data-testid="env-popup-backdrop" onClick={() => setShowEnvRef(false)}>
+          <div className="env-popup" data-testid="app-editor-env-reference" onClick={(e) => e.stopPropagation()}>
+            <EnvironmentReference data={envData} mcpServers={mcpServers} onClose={() => setShowEnvRef(false)} />
+          </div>
         </div>
       )}
 

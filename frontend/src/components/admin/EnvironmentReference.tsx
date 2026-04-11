@@ -67,8 +67,8 @@ function McpServerList({ servers }: { servers: McpServer[] }) {
     <div className="env-mcp-list">
       {servers.map((s) => (
         <div key={s.name} className="env-mcp-card">
-          <span className={`env-mcp-dot env-mcp-dot--${s.status}`} />
-          <span className="env-mcp-name">{s.name}</span>
+          <span className={`env-mcp-dot env-mcp-dot--${s.status.replace('_', '-')}`} />
+          <span className="env-mcp-name" title={s.command}>{s.name}</span>
           <span className="env-mcp-status">{STATUS_LABELS[s.status]}</span>
         </div>
       ))}
