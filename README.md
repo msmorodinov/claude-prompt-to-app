@@ -33,11 +33,23 @@ python3 run.py --mock    # Mock backend, no subscription needed
 
 ## Build Your Own App
 
-Fork this repo and replace one file — everything else is reusable:
+The framework supports **multiple apps** — each with its own prompt, versioning, and sessions. Create and manage apps through the admin UI at `/admin`.
 
-1. **Edit the prompt** — [`backend/prompt.md`](backend/prompt.md) defines personality, methodology, and tool usage
+### Quick way: Admin UI
+
+1. Open `http://localhost:4920/admin`
+2. Click "New App" — give it a slug, title, and prompt body
+3. Activate it — users can now select it on the main page
+
+### Quick way: App Builder
+
+Select the built-in **App Builder** app on the main page and describe what you want. Claude will generate the prompt and save it as a draft app via the `save_app` tool. Activate the draft in Admin.
+
+### Manual way: fork and edit
+
+1. **Write a prompt** — reference widgets by name to tell Claude when to use them
 2. **Optionally add widgets** — or reuse the existing 18 types
-3. **Run it** — `make mock` to test, `make dev` with real Claude
+3. **Run it** — `python3 run.py --mock` to test, `python3 run.py` with real Claude
 
 | Prompt idea | show widgets | ask widgets |
 |-------------|-------------|-------------|
@@ -46,11 +58,11 @@ Fork this repo and replace one file — everything else is reusable:
 | Business model canvas | category_list, copyable | tag_input, matrix_2x2 |
 | Sprint retrospective | metric_bars, text | rank_priorities, free_text |
 
-Same two tools. Same widget set. Different prompt → different product.
+Same tools. Same widget set. Different prompt → different product.
 
-### Writing Your Prompt
+### Writing a Prompt
 
-Your prompt lives in [`backend/prompt.md`](backend/prompt.md). Reference widgets by name to tell Claude when to use them:
+In your prompt, reference widgets by name:
 
 ```markdown
 Display research results via show with data_table.
@@ -58,14 +70,7 @@ Ask the user via ask with single_select for forced choices.
 Use quote_highlight when the user says something important.
 ```
 
-The framework guide ([`backend/framework.md`](backend/framework.md)) is automatically appended to your prompt. It contains widget selection rules and anti-patterns — edit it to match your app's needs.
-
-**Two files → one system prompt:**
-
-| File | Purpose |
-|------|---------|
-| `backend/prompt.md` | App personality, methodology, when to use which widget |
-| `backend/framework.md` | Widget selection guide, anti-patterns (appended automatically) |
+The framework guide ([`backend/framework.md`](backend/framework.md)) is automatically appended to every prompt. It contains widget selection rules and anti-patterns — edit it to match your needs.
 
 Claude also sees the full JSON schema for each widget (defined in `backend/schemas.py`), so it knows every field and type. Your prompt just needs to say *when* and *why* — not the exact JSON format.
 
@@ -78,12 +83,13 @@ Claude also sees the full JSON schema for each widget (defined in `backend/schem
 
 ## How It Works
 
-The entire app runs on two MCP tools:
+The app runs on three MCP tools:
 
 | Tool | Behavior | What it does |
 |------|----------|-------------|
 | `show(blocks)` | Fire-and-forget | Push display widgets to the browser |
 | `ask(questions)` | Blocking | Send input widgets, wait for user response |
+| `save_app(...)` | Fire-and-forget | Save a new app to DB (App Builder only) |
 
 <p align="center">
   <img src="docs/diagrams/show-vs-ask.svg" width="700" alt="show() vs ask() — the two tools" />

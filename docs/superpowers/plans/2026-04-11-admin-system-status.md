@@ -2,6 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status:** DONE
+**Completed:** 2026-04-11
+
 **Goal:** Add a "System" tab to admin showing runtime status (auth, CLI, sessions, MCP servers, uptime) and allow switching between Max OAuth and API key authentication.
 
 **Architecture:** New `system_config` KV table in SQLite for auth settings. New `backend/system_config.py` module for config CRUD + auth env builder. New `GET /admin/system-status` endpoint aggregating data from DB, in-memory sessions, and cached CLI info. Frontend adds `SystemStatus.tsx` component rendered in a new "System" tab. Phase 1 is read-only; Phase 2 adds auth management endpoints and UI.

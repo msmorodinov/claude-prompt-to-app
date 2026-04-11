@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchSystemStatus, setAuthMode, testAuth } from '../../api-admin'
+import { fetchSystemStatus, setAuthMode, testAuth, deleteApiKey } from '../../api-admin'
 import type { SystemStatus as SystemStatusType } from '../../api-admin'
 
 function formatUptime(seconds: number): string {
@@ -79,6 +79,18 @@ export default function SystemStatus() {
     }
   }
 
+  const handleDeleteKey = async () => {
+    setSaveError(null)
+    try {
+      await deleteApiKey()
+      setLocalMode('max_oauth')
+      setApiKeyInput('')
+      await load()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to remove key')
+    }
+  }
+
   const handleTest = async () => {
     setTesting(true)
     setSaveError(null)
@@ -99,8 +111,8 @@ export default function SystemStatus() {
   const showSave = modeChanged || (localMode === 'api_key' && apiKeyInput.length > 0)
 
   return (
-    <div className="system-status">
-      <div className="system-card">
+    <div className="system-status" data-testid="system-status">
+      <div className="system-card" data-testid="auth-card">
         <h3 className="system-card-title">Authentication</h3>
 
         <div className="system-card-row">
@@ -157,6 +169,7 @@ export default function SystemStatus() {
             <span className="system-label" />
             <button
               className="system-btn-primary"
+              data-testid="auth-mode-save"
               disabled={saving}
               onClick={handleSaveMode}
             >
@@ -196,10 +209,19 @@ export default function SystemStatus() {
           </span>
         </div>
 
-        <div className="system-card-row">
-          <span className="system-label" />
+        <div className="system-card-row" style={{ gap: '0.5rem', justifyContent: 'flex-end' }}>
+          {data.auth.mode === 'api_key' && data.auth.has_credentials && (
+            <button
+              className="system-btn-small"
+              data-testid="auth-remove-key"
+              onClick={handleDeleteKey}
+            >
+              Remove Key
+            </button>
+          )}
           <button
             className="system-btn-secondary"
+            data-testid="auth-test-btn"
             disabled={testing}
             onClick={handleTest}
           >
@@ -208,7 +230,7 @@ export default function SystemStatus() {
         </div>
       </div>
 
-      <div className="system-card">
+      <div className="system-card" data-testid="cli-card">
         <h3 className="system-card-title">Claude CLI</h3>
         <div className="system-card-row">
           <span className="system-label">Version</span>
@@ -223,7 +245,7 @@ export default function SystemStatus() {
         </div>
       </div>
 
-      <div className="system-card">
+      <div className="system-card" data-testid="sessions-card">
         <h3 className="system-card-title">Sessions</h3>
         <div className="system-card-row">
           <span className="system-label">Active</span>
@@ -247,7 +269,7 @@ export default function SystemStatus() {
         )}
       </div>
 
-      <div className="system-card">
+      <div className="system-card" data-testid="mcp-card">
         <h3 className="system-card-title">MCP Servers</h3>
         {data.mcp_servers.length === 0 ? (
           <div className="system-card-row">
@@ -266,7 +288,7 @@ export default function SystemStatus() {
         )}
       </div>
 
-      <div className="system-card">
+      <div className="system-card" data-testid="server-card">
         <h3 className="system-card-title">Server</h3>
         <div className="system-card-row">
           <span className="system-label">Uptime</span>

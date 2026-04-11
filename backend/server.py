@@ -30,6 +30,7 @@ from backend.db import (
     get_session,
     get_session_meta,
     get_session_owner,
+    get_session_stats,
     get_sessions_by_user,
     init_db,
     save_message,
@@ -660,18 +661,7 @@ async def system_status_admin() -> dict:
     waiting_count = sum(1 for s in all_live if s.status == "waiting_input")
 
     # Total sessions from DB (lightweight aggregate query)
-    from backend.db import _get_db as _get_status_db
-
-    db = await _get_status_db()
-    try:
-        cursor = await db.execute(
-            "SELECT COUNT(*), MAX(created_at) FROM sessions"
-        )
-        row = await cursor.fetchone()
-        total_count = row[0] if row else 0
-        last_activity = row[1] if row else None
-    finally:
-        await db.close()
+    total_count, last_activity = await get_session_stats()
 
     # MCP servers (reuse existing function)
     mcp = await mcp_servers()
