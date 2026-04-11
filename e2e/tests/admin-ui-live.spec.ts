@@ -48,7 +48,7 @@ test.describe('Admin Apps', () => {
     await expect(page.locator('[data-testid="app-editor"]')).toBeVisible({ timeout: 10000 })
   })
 
-  test('app editor menu shows expected items', async ({ page, request }) => {
+  test('app editor has contextual toolbar and menu', async ({ page, request }) => {
     await seedApp(request)
     await page.goto('/admin')
     await page.locator('[data-testid="admin-tab"]', { hasText: 'Apps' }).click()
@@ -56,17 +56,20 @@ test.describe('Admin Apps', () => {
     await page.locator('[data-testid="app-list-item"]').first().click()
     await expect(page.locator('[data-testid="app-editor"]')).toBeVisible({ timeout: 8000 })
 
-    // Open menu
+    // Clean state: "Edit with AI" is the primary button
+    await expect(page.locator('[data-testid="toolbar-primary-btn"]')).toHaveText(/edit with ai/i)
+
+    // Open menu — should have Rename, Environment, History, Archive but NOT Publish/Discard
     await page.locator('[data-testid="admin-menu-trigger"]').click()
     const dropdown = page.locator('[data-testid="admin-menu-dropdown"]')
     await expect(dropdown).toBeVisible()
-
-    // Verify key menu items exist
-    await expect(dropdown.locator('[data-testid="admin-menu-item"]', { hasText: 'Publish' })).toBeVisible()
+    await expect(dropdown.locator('[data-testid="admin-menu-item"]', { hasText: 'Rename' })).toBeVisible()
     await expect(dropdown.locator('[data-testid="admin-menu-item"]', { hasText: 'Environment' })).toBeVisible()
     await expect(dropdown.locator('[data-testid="admin-menu-item"]', { hasText: 'History' })).toBeVisible()
-    await expect(dropdown.locator('[data-testid="admin-menu-item"]', { hasText: 'Rename' })).toBeVisible()
     await expect(dropdown.locator('[data-testid="admin-menu-item--danger"]')).toBeVisible()
+    // Publish and Discard should NOT be in the menu
+    await expect(dropdown).not.toHaveText('Publish')
+    await expect(dropdown).not.toHaveText('Discard')
   })
 
   test('rename app inline', async ({ page, request }) => {
