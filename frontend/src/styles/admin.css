@@ -114,27 +114,6 @@
   margin: 0.3rem 0;
 }
 
-.admin-menu-note {
-  padding: 0.4rem 0.75rem;
-}
-
-.admin-menu-note input {
-  width: 100%;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-2);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  outline: 2px solid transparent;
-  transition: border-color 0.15s, outline-color 0.15s;
-}
-
-.admin-menu-note input:focus-visible {
-  border-color: var(--accent);
-  outline-color: var(--accent);
-}
 
 /* ── Inline Rename ─────────────────────────────────────── */
 
