@@ -88,13 +88,16 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
   const saveStateRef = useRef({ isDirty, isSaving })
   saveStateRef.current = { isDirty, isSaving }
 
+  const handlePublishRef = useRef(handlePublish)
+  handlePublishRef.current = handlePublish
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault()
         const { isDirty: dirty, isSaving: saving } = saveStateRef.current
         if (dirty && !saving) {
-          void handlePublish()
+          void handlePublishRef.current()
         }
       }
     }

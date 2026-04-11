@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import AppEditor from '../components/admin/AppEditor'
 
 // Mock api-admin
@@ -44,5 +44,24 @@ describe('AppEditor toolbar', () => {
     const dropdown = screen.getByTestId('admin-menu-dropdown')
     expect(dropdown).not.toHaveTextContent('Publish')
     expect(dropdown).not.toHaveTextContent('Discard')
+  })
+
+  it('shows Publish/Discard buttons and change note bar when dirty', async () => {
+    render(<AppEditor appId={1} onReloadApp={onReloadApp} />)
+    // Wait for load
+    const primaryBtn = await screen.findByTestId('toolbar-primary-btn')
+    expect(primaryBtn).toHaveTextContent(/edit with ai/i)
+
+    // Find the textarea rendered by PromptHighlighter and type to make dirty
+    const textarea = screen.getByPlaceholderText(/write your app/i)
+    fireEvent.change(textarea, { target: { value: 'prompt body extra text' } })
+
+    // Now should show Publish as primary
+    await waitFor(() => {
+      expect(screen.getByTestId('toolbar-primary-btn')).toHaveTextContent('Publish')
+    })
+    expect(screen.getByTestId('toolbar-discard-btn')).toBeVisible()
+    expect(screen.getByTestId('change-note-bar')).toBeVisible()
+    expect(screen.getByTestId('status-unsaved')).toBeVisible()
   })
 })
