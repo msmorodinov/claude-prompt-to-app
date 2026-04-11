@@ -1,4 +1,5 @@
 import type { DisplayWidget } from '../types'
+import ErrorBoundary from './ErrorBoundary'
 import TextWidget from './display/TextWidget'
 import SectionHeader from './display/SectionHeader'
 import DataTable from './display/DataTable'
@@ -15,7 +16,7 @@ interface Props {
   widget: DisplayWidget
 }
 
-export default function WidgetRenderer({ widget }: Props) {
+function WidgetInner({ widget }: Props) {
   const w = widget as any
   switch (w.type) {
     case 'text':
@@ -47,4 +48,12 @@ export default function WidgetRenderer({ widget }: Props) {
     default:
       return <pre className="widget widget-fallback">{JSON.stringify(widget, null, 2)}</pre>
   }
+}
+
+export default function WidgetRenderer({ widget }: Props) {
+  return (
+    <ErrorBoundary>
+      <WidgetInner widget={widget} />
+    </ErrorBoundary>
+  )
 }
