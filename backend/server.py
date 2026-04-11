@@ -566,8 +566,15 @@ async def mcp_servers() -> list[dict]:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
-        return _parse_mcp_list(stdout.decode())
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=15)
+        if proc.returncode != 0:
+            logger.warning(
+                "claude mcp list failed (rc=%d): %s",
+                proc.returncode,
+                stderr.decode("utf-8", errors="replace"),
+            )
+            return []
+        return _parse_mcp_list(stdout.decode("utf-8", errors="replace"))
     except (asyncio.TimeoutError, OSError):
         return []
 

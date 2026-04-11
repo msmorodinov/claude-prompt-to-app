@@ -8,6 +8,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from server import _parse_mcp_list
+
 
 class TestHealthEndpoint:
     @pytest.mark.asyncio
@@ -241,20 +243,17 @@ class TestDeleteSession:
 @pytest.mark.asyncio
 async def test_mcp_servers_endpoint(client):
     """GET /api/mcp-servers returns parsed MCP server list."""
-    resp = await client.get("/api/mcp-servers")
+    mock_proc = AsyncMock()
+    mock_proc.communicate.return_value = (b"server1: cmd1 - \xe2\x9c\x93 Connected\n", b"")
+    mock_proc.returncode = 0
+    with patch("server.asyncio.create_subprocess_exec", return_value=mock_proc), \
+         patch("server.shutil.which", return_value="/usr/bin/claude"):
+        resp = await client.get("/api/mcp-servers")
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, list)
-    # Each entry has name, command, status
-    if len(data) > 0:
-        entry = data[0]
-        assert "name" in entry
-        assert "command" in entry
-        assert "status" in entry
-        assert entry["status"] in ("connected", "needs_auth", "error")
-
-
-from server import _parse_mcp_list
+    assert len(data) == 1
+    assert data[0]["name"] == "server1"
+    assert data[0]["status"] == "connected"
 
 
 def test_parse_mcp_list_connected():
