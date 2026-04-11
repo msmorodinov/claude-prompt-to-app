@@ -117,7 +117,7 @@ export default function ChatContainer() {
     })
   }, [sessionId, setMessages, markAskAnswered, showToast])
 
-  useSSE(sessionId, wrappedSSEEvent, { reconnectKey: sseReconnectKey })
+  const { isReconnecting } = useSSE(sessionId, wrappedSSEEvent, { reconnectKey: sseReconnectKey })
 
   const handleSend = useCallback(
     async (message: string) => {
@@ -308,6 +308,7 @@ export default function ChatContainer() {
           scrollRef={scrollRef}
           isLoading={isLoading}
           isPaused={isPaused}
+          isReconnecting={isReconnecting}
         />
         {sessionDone && !sessionError && (
           <div data-testid="session-done-banner" className="session-done-banner">
