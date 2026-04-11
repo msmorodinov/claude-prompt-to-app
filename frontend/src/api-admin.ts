@@ -183,3 +183,15 @@ export interface EnvironmentInfo {
 export async function fetchEnvironment(): Promise<EnvironmentInfo> {
   return request('/api/environment')
 }
+
+// --- MCP Servers ---
+
+export interface McpServer {
+  name: string
+  command: string
+  status: 'connected' | 'needs_auth' | 'error'
+}
+
+export async function fetchMcpServers(): Promise<McpServer[]> {
+  return request('/api/mcp-servers')
+}

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import type { EnvironmentInfo, WidgetInfo } from '../../api-admin'
+import type { EnvironmentInfo, WidgetInfo, McpServer } from '../../api-admin'
 
 interface Props {
   data: EnvironmentInfo
+  mcpServers?: McpServer[]
   onClose?: () => void
 }
 
@@ -55,7 +56,27 @@ function WidgetList({ widgets }: { widgets: WidgetInfo[] }) {
   )
 }
 
-export default function EnvironmentReference({ data, onClose }: Props) {
+const STATUS_LABELS: Record<McpServer['status'], string> = {
+  connected: 'Connected',
+  needs_auth: 'Needs auth',
+  error: 'Error',
+}
+
+function McpServerList({ servers }: { servers: McpServer[] }) {
+  return (
+    <div className="env-mcp-list">
+      {servers.map((s) => (
+        <div key={s.name} className="env-mcp-card">
+          <span className={`env-mcp-dot env-mcp-dot--${s.status}`} />
+          <span className="env-mcp-name">{s.name}</span>
+          <span className="env-mcp-status">{STATUS_LABELS[s.status]}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function EnvironmentReference({ data, mcpServers = [], onClose }: Props) {
   return (
     <div className="env-reference">
       <div className="env-reference-header">
@@ -66,6 +87,10 @@ export default function EnvironmentReference({ data, onClose }: Props) {
           </button>
         )}
       </div>
+
+      <Section title={`MCP Servers (${mcpServers.length})`}>
+        <McpServerList servers={mcpServers} />
+      </Section>
 
       <Section title={`Display Widgets — show (${data.display_widgets.length})`}>
         <WidgetList widgets={data.display_widgets} />

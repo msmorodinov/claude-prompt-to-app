@@ -1229,6 +1229,58 @@ mark.ref-not_found {
   border-bottom: none;
 }
 
+/* ── MCP Servers ── */
+
+.env-mcp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.env-mcp-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.env-mcp-card:last-child {
+  border-bottom: none;
+}
+
+.env-mcp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.env-mcp-dot--connected {
+  background: var(--success, #4ade80);
+}
+
+.env-mcp-dot--needs_auth {
+  background: var(--warning, #facc15);
+}
+
+.env-mcp-dot--error {
+  background: var(--error, #e85454);
+}
+
+.env-mcp-name {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.env-mcp-status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
 .env-widget-type,
 .env-tool-name {
   font-family: var(--font-mono);
