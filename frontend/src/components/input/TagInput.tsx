@@ -66,6 +66,13 @@ export default function TagInput({
           disabled={max_tags !== undefined && value.length >= max_tags}
         />
       )}
+      {max_tags !== undefined && (
+        <p className="constraint-hint" data-testid="constraint-hint">
+          {value.length >= max_tags
+            ? `Maximum ${max_tags} tags reached`
+            : `${value.length} / ${max_tags} tags`}
+        </p>
+      )}
     </div>
   )
 }

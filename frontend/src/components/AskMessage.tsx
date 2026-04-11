@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { ChatAskMessage, InputQuestion } from '../types'
+import type { ChatAskMessage, InputQuestion, MultiSelectQuestion, TagInputQuestion } from '../types'
 import SingleSelect from './input/SingleSelect'
 import MultiSelect from './input/MultiSelect'
 import FreeText from './input/FreeText'
@@ -48,11 +48,71 @@ export default function AskMessage({ message, onSubmit }: Props) {
     return initial
   })
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
   const updateAnswer = useCallback((id: string, value: unknown) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))
+    setValidationErrors((prev) => {
+      if (!prev[id]) return prev
+      const { [id]: _, ...rest } = prev
+      return rest
+    })
   }, [])
 
+  const validateAnswers = (): Record<string, string> => {
+    const errors: Record<string, string> = {}
+    for (const q of message.questions) {
+      switch (q.type) {
+        case 'single_select': {
+          const val = answers[q.id]
+          if (val === undefined || val === null || val === '') {
+            errors[q.id] = 'Please select an option'
+          }
+          break
+        }
+        case 'multi_select': {
+          const val = (answers[q.id] as string[]) || []
+          const mq = q as MultiSelectQuestion
+          if (val.length === 0) {
+            errors[q.id] = 'Please select at least one option'
+          } else if (mq.min_select !== undefined && val.length < mq.min_select) {
+            errors[q.id] = `Select at least ${mq.min_select}`
+          } else if (mq.max_select !== undefined && val.length > mq.max_select) {
+            errors[q.id] = `Select at most ${mq.max_select}`
+          }
+          break
+        }
+        case 'free_text': {
+          const val = (answers[q.id] as string) || ''
+          if (!val.trim()) {
+            errors[q.id] = 'Please enter a response'
+          }
+          break
+        }
+        case 'tag_input': {
+          const val = (answers[q.id] as string[]) || []
+          const tq = q as TagInputQuestion
+          if (val.length === 0) {
+            errors[q.id] = 'Please add at least one tag'
+          } else if (tq.min_tags !== undefined && val.length < tq.min_tags) {
+            errors[q.id] = `Add at least ${tq.min_tags} tags`
+          }
+          break
+        }
+        // rank_priorities, slider_scale, matrix_2x2 always have valid defaults
+        default:
+          break
+      }
+    }
+    return errors
+  }
+
   const handleSubmit = () => {
+    const errors = validateAnswers()
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      return
+    }
     onSubmit(message.id, answers)
   }
 
@@ -62,7 +122,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'single_select':
         return (
           <SingleSelect
-            key={q.id}
             {...q}
             value={answers[q.id] as string | undefined}
             onChange={(v) => updateAnswer(q.id, v)}
@@ -72,7 +131,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'multi_select':
         return (
           <MultiSelect
-            key={q.id}
             {...q}
             value={(answers[q.id] as string[]) || []}
             onChange={(v) => updateAnswer(q.id, v)}
@@ -82,7 +140,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'free_text':
         return (
           <FreeText
-            key={q.id}
             {...q}
             value={(answers[q.id] as string) || ''}
             onChange={(v) => updateAnswer(q.id, v)}
@@ -92,7 +149,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'rank_priorities':
         return (
           <RankPriorities
-            key={q.id}
             {...q}
             value={(answers[q.id] as string[]) || []}
             onChange={(v) => updateAnswer(q.id, v)}
@@ -102,7 +158,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'slider_scale':
         return (
           <SliderScale
-            key={q.id}
             {...q}
             value={(answers[q.id] as number) ?? q.min}
             onChange={(v) => updateAnswer(q.id, v)}
@@ -112,7 +167,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'matrix_2x2':
         return (
           <Matrix2x2
-            key={q.id}
             {...q}
             value={
               (answers[q.id] as Record<string, { x: number; y: number }>) || {}
@@ -124,7 +178,6 @@ export default function AskMessage({ message, onSubmit }: Props) {
       case 'tag_input':
         return (
           <TagInput
-            key={q.id}
             {...q}
             value={(answers[q.id] as string[]) || []}
             onChange={(v) => updateAnswer(q.id, v)}
@@ -140,7 +193,16 @@ export default function AskMessage({ message, onSubmit }: Props) {
     <div className={`message ask-message ${message.answered ? 'answered' : ''}`} data-testid="ask-message">
       {message.preamble && <div className="preamble">{message.preamble}</div>}
       <div className="questions">
-        {message.questions.map((q) => renderQuestion(q))}
+        {message.questions.map((q) => (
+          <div key={q.id}>
+            {renderQuestion(q)}
+            {validationErrors[q.id] && (
+              <p className="validation-error" data-testid={`error-${q.id}`}>
+                {validationErrors[q.id]}
+              </p>
+            )}
+          </div>
+        ))}
       </div>
       {!message.answered && (
         <button onClick={handleSubmit} className="submit-btn" data-testid="submit-btn">

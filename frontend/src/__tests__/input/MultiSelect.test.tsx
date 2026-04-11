@@ -31,4 +31,35 @@ describe('MultiSelect', () => {
     fireEvent.click(checkboxes[0])
     expect(onChange).toHaveBeenCalledWith(['B'])
   })
+
+  it('disables unchecked checkboxes at max_select limit', () => {
+    render(<MultiSelect {...defaultProps} max_select={2} value={['A', 'B']} onChange={vi.fn()} />)
+    const checkboxes = screen.getAllByRole('checkbox')
+    // A and B are checked — should NOT be disabled
+    expect(checkboxes[0]).not.toBeDisabled()
+    expect(checkboxes[1]).not.toBeDisabled()
+    // C is unchecked and at max — should be disabled
+    expect(checkboxes[2]).toBeDisabled()
+  })
+
+  it('shows constraint hint when max_select defined', () => {
+    const { rerender } = render(
+      <MultiSelect {...defaultProps} max_select={2} value={[]} onChange={vi.fn()} />,
+    )
+    expect(screen.getByTestId('constraint-hint')).toHaveTextContent('Select up to 2')
+
+    rerender(
+      <MultiSelect {...defaultProps} max_select={2} value={['A', 'B']} onChange={vi.fn()} />,
+    )
+    expect(screen.getByTestId('constraint-hint')).toHaveTextContent('Maximum 2 selected')
+  })
+
+  it('blocks adding beyond max_select', () => {
+    const onChange = vi.fn()
+    render(<MultiSelect {...defaultProps} max_select={2} value={['A', 'B']} onChange={onChange} />)
+    const checkboxes = screen.getAllByRole('checkbox')
+    // Attempt to check C (which is disabled at max)
+    fireEvent.click(checkboxes[2])
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

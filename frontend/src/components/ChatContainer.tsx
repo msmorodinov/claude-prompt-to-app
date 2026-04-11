@@ -41,6 +41,7 @@ export default function ChatContainer() {
   // Multi-app state
   const [apps, setApps] = useState<AppInfo[]>([])
   const [appsLoaded, setAppsLoaded] = useState(false)
+  const [appsError, setAppsError] = useState(false)
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
 
   const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, isPaused, handleSSEEvent, markAskAnswered, resetChat, scrollRef } =
@@ -62,7 +63,9 @@ export default function ChatContainer() {
 
   // Load available apps on mount
   useEffect(() => {
-    listApps().then(a => { setApps(a); setAppsLoaded(true) }).catch(() => setAppsLoaded(true))
+    listApps()
+      .then(a => { setApps(a); setAppsLoaded(true); setAppsError(false) })
+      .catch(() => { setAppsLoaded(true); setAppsError(true) })
   }, [])
 
   // Auto-select when single app
@@ -246,6 +249,27 @@ export default function ChatContainer() {
   }, [handleSend])
 
   function renderMainContent() {
+    // Show error when apps fetch failed
+    if (appsError && apps.length === 0) {
+      return (
+        <div data-testid="start-screen" className="start-screen">
+          <p className="error-text">Failed to load apps</p>
+          <button
+            className="start-btn"
+            onClick={() => {
+              setAppsError(false)
+              setAppsLoaded(false)
+              listApps()
+                .then(a => { setApps(a); setAppsLoaded(true) })
+                .catch(() => { setAppsLoaded(true); setAppsError(true) })
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )
+    }
+
     // Show AppSelector early when waiting for app choice (before session exists)
     if (!sessionId && appsLoaded && apps.length > 1 && selectedAppId === null) {
       return (
