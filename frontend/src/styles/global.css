@@ -295,6 +295,20 @@ body {
   cursor: not-allowed;
 }
 
+.constraint-hint {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.validation-error {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--error);
+  margin-top: 0.25rem;
+}
+
 /* Stream text */
 .stream-text {
   white-space: normal;

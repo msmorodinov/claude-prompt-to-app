@@ -46,4 +46,32 @@ describe('TagInput', () => {
     fireEvent.click(removeButtons[0])
     expect(onChange).toHaveBeenCalledWith(['reliable'])
   })
+
+  it('shows limit message when at max_tags', () => {
+    render(
+      <TagInput
+        id="q1"
+        label="Tags"
+        value={['fast', 'reliable']}
+        max_tags={2}
+        onChange={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('constraint-hint')).toHaveTextContent(
+      'Maximum 2 tags reached',
+    )
+  })
+
+  it('shows count when max_tags defined and not at limit', () => {
+    render(
+      <TagInput
+        id="q1"
+        label="Tags"
+        value={['fast']}
+        max_tags={5}
+        onChange={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('constraint-hint')).toHaveTextContent('1 / 5 tags')
+  })
 })
