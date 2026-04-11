@@ -572,6 +572,52 @@ body {
   background: var(--surface-2);
 }
 
+.option input[type='radio'],
+.option input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.option input[type='radio'] {
+  border-radius: 50%;
+}
+
+.option input[type='checkbox'] {
+  border-radius: 4px;
+}
+
+.option input[type='radio']:checked,
+.option input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.option input[type='radio']:checked::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg);
+  margin: 3px;
+}
+
+.option input[type='checkbox']:checked::after {
+  content: '✓';
+  display: block;
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 14px;
+}
+
 .custom-option input[type="text"] {
   flex: 1;
   padding: 0.5rem 0.75rem;
@@ -808,6 +854,15 @@ body {
 
 .answer-item {
   font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.answer-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 /* Session Sidebar */

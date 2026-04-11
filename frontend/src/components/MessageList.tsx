@@ -20,8 +20,17 @@ export default function MessageList({ messages, onAskSubmit, scrollRef, isLoadin
             return <AssistantMessage key={i} message={msg} />
           case 'ask':
             return <AskMessage key={i} message={msg} onSubmit={onAskSubmit} />
-          case 'user':
-            return <UserMessage key={i} message={msg} />
+          case 'user': {
+            // Find preceding ask message to get question labels
+            let questions: import('../types').InputQuestion[] | undefined
+            for (let j = i - 1; j >= 0; j--) {
+              if (messages[j].role === 'ask') {
+                questions = (messages[j] as import('../types').ChatAskMessage).questions
+                break
+              }
+            }
+            return <UserMessage key={i} message={msg} questions={questions} />
+          }
           case 'research':
             return (
               <div key={i} className={`message research-message ${msg.done ? 'done' : 'loading'}`}>

@@ -189,7 +189,7 @@ describe('MessageList', () => {
       />,
     )
     expect(screen.getByText('Welcome')).toBeInTheDocument()
-    expect(screen.getByText('Your company?')).toBeInTheDocument()
+    expect(screen.getAllByText('Your company?').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
   })
 
