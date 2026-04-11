@@ -84,6 +84,12 @@ async def init_db(db_path: str | Path = DB_PATH) -> None:
                 FOREIGN KEY (session_id) REFERENCES sessions(id)
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS system_config (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
         await db.commit()
         await _migrate(db)
     finally:
@@ -737,5 +743,20 @@ async def get_session(
             }
             for row in rows
         ]
+    finally:
+        await db.close()
+
+
+async def get_session_stats(
+    db_path: str | Path = DB_PATH,
+) -> tuple[int, str | None]:
+    """Return (total_count, last_activity) for all sessions."""
+    db = await _get_db(db_path)
+    try:
+        cursor = await db.execute(
+            "SELECT COUNT(*), MAX(created_at) FROM sessions"
+        )
+        row = await cursor.fetchone()
+        return (row[0], row[1]) if row else (0, None)
     finally:
         await db.close()

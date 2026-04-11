@@ -51,6 +51,7 @@ forge-simple/
 │   ├── tools.py           # MCP tools: show + ask (with asyncio.Event)
 │   ├── schemas.py         # JSON schemas for all widget types
 │   ├── session.py         # Session state (pending events, answers, app_id, version_id)
+│   ├── system_config.py   # System config: auth mode, API key storage
 │   ├── db.py              # SQLite: sessions, apps, versions CRUD + versioning
 │   ├── prompt.md          # System prompt with YAML frontmatter (legacy, replaced by apps DB)
 │   ├── app-builder-prompt.md # App Builder system prompt (loaded from file at runtime, not in DB)
@@ -122,7 +123,8 @@ forge-simple/
 │       │       ├── VersionDiff.tsx         # Diff between versions
 │       │       ├── PromptHighlighter.tsx  # Syntax highlighting for prompts
 │       │       ├── SessionList.tsx         # List all sessions
-│       │       └── SessionViewer.tsx       # View session history (read-only)
+│       │       ├── SessionViewer.tsx       # View session history (read-only)
+│       │       └── SystemStatus.tsx        # System status & auth management tab
 │       ├── __tests__/            # Vitest: widgets, hooks, components
 │       └── styles/
 │           ├── global.css
@@ -237,6 +239,14 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 | `GET` | `/admin/sessions` | All sessions with status (admin) |
 | `GET` | `/admin/sessions/{id}/stream` | Read-only SSE stream (admin) |
 | `GET` | `/admin/sessions/{id}/history` | Full message history (admin) |
+
+### System Status & Auth (Admin)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/system-status` | Aggregated system status (auth, CLI, sessions, MCP) |
+| `POST` | `/admin/auth/mode` | Switch auth mode (api_key / max_oauth) |
+| `POST` | `/admin/auth/test` | Test CLI availability |
+| `DELETE` | `/admin/auth/api-key` | Remove API key, reset to max_oauth |
 
 ## Design
 

@@ -2,9 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status:** DONE
+**Completed:** 2026-04-08
+
 **Goal:** Ensure Claude catches the same errors locally that CI catches, by adding project-level Claude Code hooks that run type-check and tests before every commit.
 
-**Architecture:** Add a project-scoped `.claude/settings.json` with a `PreToolUse` hook on `Bash` that detects `git commit` commands and runs the CI check suite first. Also add a convenience `check-ci` script that runs all checks in sequence — usable both by hooks and manually.
+**Architecture:** Project-scoped `.claude/settings.json` PreToolUse hook parses JSON stdin via `jq`, detects `git commit` commands, runs `check-ci.sh` (tsc + vitest + pytest). Git pre-commit hook provides same protection for human commits.
 
 **Tech Stack:** Claude Code hooks (settings.json), Bash scripts
 

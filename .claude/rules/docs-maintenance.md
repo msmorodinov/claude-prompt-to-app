@@ -19,7 +19,7 @@ Do NOT update for:
 - `docs/CONTRIBUTING.md` — update when development workflow changes
 - `docs/RUNBOOK.md` — update when deployment or operations procedures change
 - `docs/CODEMAPS/` — regenerate periodically via `/update-codemaps`
-- `docs/plans/` — historical archive, do not modify past plans
+- `docs/superpowers/plans/` — plan archive; update `Status:` per plan-lifecycle.md after merge
 
 ## When NOT to update docs
 
