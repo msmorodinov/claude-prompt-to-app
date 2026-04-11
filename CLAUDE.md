@@ -90,6 +90,7 @@ forge-simple/
 │       │   ├── AssistantMessage.tsx
 │       │   ├── AskMessage.tsx     # readOnly support
 │       │   ├── UserMessage.tsx
+│       │   ├── ErrorBoundary.tsx    # Error boundary for widget crash isolation
 │       │   ├── MarkdownContent.tsx # Markdown renderer
 │       │   ├── Toast.tsx          # Toast notification component
 │       │   ├── WidgetRenderer.tsx # Dynamic dispatch: type -> component
