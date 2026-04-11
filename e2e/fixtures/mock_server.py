@@ -387,6 +387,14 @@ async def environment() -> dict:
     }
 
 
+@app.get("/api/mcp-servers")
+async def mcp_servers() -> list:
+    return [
+        {"name": "test-server", "command": "npx test-mcp", "status": "connected"},
+        {"name": "auth-server", "command": "https://auth.example.com/mcp", "status": "needs_auth"},
+    ]
+
+
 # --- Admin app endpoints ---
 
 @app.get("/admin/apps")

@@ -53,7 +53,7 @@ forge-simple/
 │   ├── session.py         # Session state (pending events, answers, app_id, version_id)
 │   ├── db.py              # SQLite: sessions, apps, versions CRUD + versioning
 │   ├── prompt.md          # System prompt with YAML frontmatter (legacy, replaced by apps DB)
-│   ├── app-builder-prompt.md # App Builder meta-app prompt (seeded via migration v3)
+│   ├── app-builder-prompt.md # App Builder system prompt (loaded from file at runtime, not in DB)
 │   ├── prompt_config.py   # Parse frontmatter from prompt.md for backward compat
 │   ├── framework.md       # Framework description for agent
 │   ├── validator.py       # Rate limiting, prompt validation
@@ -155,7 +155,7 @@ forge-simple/
 - Widget types: single_select, multi_select, free_text, rank_priorities, slider_scale, matrix_2x2, tag_input
 
 ### `save_app` — save new app to database (App Builder only)
-- Only available when running the `app-builder` app
+- Only available when session `mode == "app-builder"` (system App Builder, loaded from file)
 - Creates a new app as inactive draft (admin must activate)
 - Parameters: `slug`, `title`, `subtitle` (optional), `body` (prompt markdown)
 - Validates slug format, title, body length
@@ -215,6 +215,7 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 | `GET` | `/sessions` | List user's sessions (with status, app_id, version_id) |
 | `GET` | `/sessions/{id}` | Load specific session history |
 | `GET` | `/api/environment` | Widget and tool catalog for prompt authors |
+| `GET` | `/api/mcp-servers` | List active MCP servers from Claude CLI |
 | `GET` | `/health` | Health check |
 
 ### App Management (Admin)
