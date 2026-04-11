@@ -309,6 +309,12 @@ body {
   margin-top: 0.25rem;
 }
 
+.error-text {
+  color: var(--error);
+  font-family: var(--font-body);
+  margin-bottom: 1rem;
+}
+
 /* Stream text */
 .stream-text {
   white-space: normal;
