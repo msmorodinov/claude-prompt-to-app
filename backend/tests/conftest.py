@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from backend.db import init_db, save_session
+from backend.db import DB_PATH, init_db, save_session
 from backend.server import app, sessions
 from backend.session import SessionState
 
@@ -44,3 +44,11 @@ async def session():
 def mock_session():
     """Standalone SessionState for unit tests (not registered in server)."""
     return SessionState()
+
+
+@pytest_asyncio.fixture
+async def tmp_db(tmp_path):
+    """Temporary SQLite database for isolated unit tests."""
+    db_path = tmp_path / "test.db"
+    await init_db(db_path)
+    yield db_path

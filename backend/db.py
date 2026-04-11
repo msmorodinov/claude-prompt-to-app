@@ -84,6 +84,12 @@ async def init_db(db_path: str | Path = DB_PATH) -> None:
                 FOREIGN KEY (session_id) REFERENCES sessions(id)
             )
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS system_config (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
         await db.commit()
         await _migrate(db)
     finally:
