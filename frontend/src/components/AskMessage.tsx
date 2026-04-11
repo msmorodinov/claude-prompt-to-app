@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { ChatAskMessage, InputQuestion, MultiSelectQuestion, TagInputQuestion } from '../types'
+import ErrorBoundary from './ErrorBoundary'
 import SingleSelect from './input/SingleSelect'
 import MultiSelect from './input/MultiSelect'
 import FreeText from './input/FreeText'
@@ -10,7 +11,7 @@ import TagInput from './input/TagInput'
 
 interface Props {
   message: ChatAskMessage
-  onSubmit: (askId: string, answers: Record<string, unknown>) => void
+  onSubmit: (askId: string, answers: Record<string, unknown>) => void | Promise<void>
 }
 
 export default function AskMessage({ message, onSubmit }: Props) {
@@ -49,6 +50,7 @@ export default function AskMessage({ message, onSubmit }: Props) {
   })
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const updateAnswer = useCallback((id: string, value: unknown) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -107,13 +109,21 @@ export default function AskMessage({ message, onSubmit }: Props) {
     return errors
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return
     const errors = validateAnswers()
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors)
       return
     }
-    onSubmit(message.id, answers)
+    setIsSubmitting(true)
+    try {
+      await onSubmit(message.id, answers)
+    } catch {
+      // parent handles errors; just re-enable the button
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const renderQuestion = (q: InputQuestion) => {
@@ -195,7 +205,9 @@ export default function AskMessage({ message, onSubmit }: Props) {
       <div className="questions">
         {message.questions.map((q) => (
           <div key={q.id}>
-            {renderQuestion(q)}
+            <ErrorBoundary>
+              {renderQuestion(q)}
+            </ErrorBoundary>
             {validationErrors[q.id] && (
               <p className="validation-error" data-testid={`error-${q.id}`}>
                 {validationErrors[q.id]}
@@ -205,8 +217,13 @@ export default function AskMessage({ message, onSubmit }: Props) {
         ))}
       </div>
       {!message.answered && (
-        <button onClick={handleSubmit} className="submit-btn" data-testid="submit-btn">
-          Submit
+        <button
+          onClick={handleSubmit}
+          className="submit-btn"
+          data-testid="submit-btn"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit'}
         </button>
       )}
     </div>

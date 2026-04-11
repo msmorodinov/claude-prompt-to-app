@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import AskMessage from '../components/AskMessage'
 import type { ChatAskMessage } from '../types'
 
@@ -96,6 +97,55 @@ describe('AskMessage validation', () => {
     // Now select an option — error should clear
     fireEvent.click(screen.getByLabelText('A'))
     expect(screen.queryByTestId('error-q1')).not.toBeInTheDocument()
+  })
+
+  it('disables submit button during submission', async () => {
+    let resolveSubmit: () => void
+    const submitPromise = new Promise<void>((resolve) => { resolveSubmit = resolve })
+    const onSubmit = vi.fn(() => submitPromise)
+
+    const message: ChatAskMessage = {
+      role: 'ask',
+      id: 'ask-submit-test',
+      questions: [{ type: 'free_text', id: 'q1', label: 'Name' }],
+      answered: false,
+    }
+
+    render(<AskMessage message={message} onSubmit={onSubmit} />)
+
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'test answer')
+
+    const submitBtn = screen.getByTestId('submit-btn')
+    expect(submitBtn).not.toBeDisabled()
+
+    await userEvent.click(submitBtn)
+    expect(submitBtn).toBeDisabled()
+
+    await act(async () => { resolveSubmit!() })
+  })
+
+  it('re-enables submit button after submission error', async () => {
+    const error = new Error('Network error')
+    const onSubmit = vi.fn(() => Promise.reject(error))
+
+    const message: ChatAskMessage = {
+      role: 'ask',
+      id: 'ask-err-test',
+      questions: [{ type: 'free_text', id: 'q1', label: 'Name' }],
+      answered: false,
+    }
+
+    render(<AskMessage message={message} onSubmit={onSubmit} />)
+
+    const input = screen.getByRole('textbox')
+    await userEvent.type(input, 'test answer')
+
+    await userEvent.click(screen.getByTestId('submit-btn'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('submit-btn')).not.toBeDisabled()
+    })
   })
 
   it('blocks submit when multi_select below min_select', () => {
