@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SSEEvent } from '../types'
 import { createSSEUrl } from '../api'
 
@@ -38,6 +38,8 @@ export function useSSE(
   urlFactoryRef.current = options?.urlFactory ?? createSSEUrl
   const reconnectKey = options?.reconnectKey ?? 0
 
+  const [isReconnecting, setIsReconnecting] = useState(false)
+
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
@@ -65,8 +67,9 @@ export function useSSE(
           if (TERMINAL_EVENTS.has(eventType)) {
             receivedTerminal = true
           }
-          // Reset retry counter on any data event
+          // Reset retry counter and reconnecting state on any data event
           retryCount = 0
+          setIsReconnecting(false)
           try {
             const data = JSON.parse(e.data)
             onEventRef.current({ type: eventType, ...data } as SSEEvent)
@@ -77,19 +80,19 @@ export function useSSE(
       }
 
       es.onerror = () => {
-        if (es.readyState === EventSource.CLOSED) {
-          es.close()
-          eventSourceRef.current = null
+        es.close()
+        eventSourceRef.current = null
 
-          if (receivedTerminal || cancelled) return
+        if (receivedTerminal || cancelled) return
 
-          if (retryCount < MAX_RETRIES) {
-            const delay = BACKOFF_BASE_MS * Math.pow(2, retryCount)
-            retryCount++
-            retryTimer = setTimeout(connect, delay)
-          } else {
-            onEventRef.current({ type: 'error', message: 'Connection lost' } as SSEEvent)
-          }
+        if (retryCount < MAX_RETRIES) {
+          setIsReconnecting(true)
+          const delay = BACKOFF_BASE_MS * Math.pow(2, retryCount)
+          retryCount++
+          retryTimer = setTimeout(connect, delay)
+        } else {
+          setIsReconnecting(false)
+          onEventRef.current({ type: 'error', message: 'Connection lost' } as SSEEvent)
         }
       }
     }
@@ -98,6 +101,7 @@ export function useSSE(
 
     return () => {
       cancelled = true
+      setIsReconnecting(false)
       if (retryTimer) clearTimeout(retryTimer)
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
@@ -106,5 +110,5 @@ export function useSSE(
     }
   }, [sessionId, reconnectKey])
 
-  return { disconnect }
+  return { disconnect, isReconnecting }
 }
