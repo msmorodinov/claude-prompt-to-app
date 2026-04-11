@@ -308,3 +308,48 @@ class TestSystemStatus:
         assert isinstance(data["server"]["uptime_seconds"], (int, float))
         assert isinstance(data["sessions"]["active"], int)
         assert isinstance(data["sessions"]["total"], int)
+
+
+class TestAuthManagement:
+    @pytest.mark.asyncio
+    async def test_set_api_key_mode(self, client):
+        resp = await client.post(
+            "/admin/auth/mode",
+            json={"mode": "api_key", "api_key": "sk-ant-test123"},
+        )
+        assert resp.status_code == 200
+        status = await client.get("/admin/system-status")
+        assert status.json()["auth"]["mode"] == "api_key"
+
+    @pytest.mark.asyncio
+    async def test_set_max_oauth_mode(self, client):
+        await client.post(
+            "/admin/auth/mode",
+            json={"mode": "api_key", "api_key": "sk-ant-test123"},
+        )
+        resp = await client.post(
+            "/admin/auth/mode",
+            json={"mode": "max_oauth"},
+        )
+        assert resp.status_code == 200
+        status = await client.get("/admin/system-status")
+        assert status.json()["auth"]["mode"] == "max_oauth"
+
+    @pytest.mark.asyncio
+    async def test_api_key_mode_requires_key(self, client):
+        resp = await client.post(
+            "/admin/auth/mode",
+            json={"mode": "api_key"},
+        )
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_delete_api_key(self, client):
+        await client.post(
+            "/admin/auth/mode",
+            json={"mode": "api_key", "api_key": "sk-ant-test123"},
+        )
+        resp = await client.delete("/admin/auth/api-key")
+        assert resp.status_code == 200
+        status = await client.get("/admin/system-status")
+        assert status.json()["auth"]["mode"] == "max_oauth"

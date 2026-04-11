@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
 from backend.admin_apps import router as admin_apps_router
-from backend.system_config import get_system_config
+from backend.system_config import get_system_config, set_auth_mode, delete_api_key
 from backend.agent import run_agent
 from backend.validator import check_rate_limit, validate_prompt
 from backend.db import (
@@ -696,6 +696,73 @@ async def system_status_admin() -> dict:
         },
         "mcp_servers": mcp,
     }
+
+
+@app.post("/admin/auth/mode")
+async def admin_set_auth_mode(request: Request) -> dict:
+    """Switch auth mode. If api_key mode, api_key is required."""
+    body = await request.json()
+    mode = body.get("mode")
+    api_key = body.get("api_key")
+
+    if mode not in ("api_key", "max_oauth"):
+        raise HTTPException(status_code=422, detail="Invalid mode")
+    if mode == "api_key" and not api_key:
+        raise HTTPException(status_code=422, detail="api_key required for api_key mode")
+
+    await set_auth_mode(mode, api_key)
+
+    # Warn about active sessions
+    active = [s for s in sessions.list_all() if s.status in ("active", "waiting_input")]
+    warning = None
+    if active:
+        warning = f"{len(active)} active session(s) will keep using previous auth until they complete."
+
+    return {"ok": True, "mode": mode, "warning": warning}
+
+
+@app.delete("/admin/auth/api-key")
+async def admin_delete_api_key() -> dict:
+    """Remove API key and reset to max_oauth."""
+    await delete_api_key()
+    return {"ok": True, "mode": "max_oauth"}
+
+
+@app.post("/admin/auth/test")
+async def admin_test_auth() -> dict:
+    """Test CLI availability. Does not spend quota."""
+    global _last_auth_test
+
+    claude_bin = shutil.which("claude")
+    if not claude_bin:
+        _last_auth_test = {
+            "ok": False,
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "detail": "Claude CLI not found",
+        }
+        return _last_auth_test
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            claude_bin, "--version",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
+        ok = proc.returncode == 0
+        _last_auth_test = {
+            "ok": ok,
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "detail": "CLI accessible" if ok else "CLI returned error",
+        }
+    except (asyncio.TimeoutError, OSError) as exc:
+        _last_auth_test = {
+            "ok": False,
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "detail": f"CLI error: {exc}",
+        }
+
+    return _last_auth_test
 
 
 @app.get("/health")
