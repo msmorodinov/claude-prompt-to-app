@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import WidgetRenderer from '../components/WidgetRenderer'
 import type { DisplayWidget } from '../types'
 
@@ -59,5 +59,18 @@ describe('WidgetRenderer', () => {
     expect(pre).toBeInTheDocument()
     expect(pre!.textContent).toContain('unknown_type')
     expect(pre!.textContent).toContain('bar')
+  })
+
+  it('renders error fallback when widget throws', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    // Use unknown type to trigger widget rendering error
+    const badWidget = {
+      type: 'unknown_crash_widget' as any,
+      // This will cause JSON.stringify to fail
+      data: { toJSON: () => { throw new Error('Widget render error') } },
+    } as any
+    const { container } = render(<WidgetRenderer widget={badWidget} />)
+    expect(container.querySelector('[data-testid="widget-error"]')).toBeInTheDocument()
+    spy.mockRestore()
   })
 })

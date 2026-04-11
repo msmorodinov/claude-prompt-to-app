@@ -42,6 +42,15 @@ class MockEventSource {
     }
   }
 
+  __simulateError(readyState?: number) {
+    if (readyState !== undefined) {
+      this.readyState = readyState
+    }
+    if (this.onerror) {
+      this.onerror()
+    }
+  }
+
   close() {
     this.readyState = MockEventSource.CLOSED
   }

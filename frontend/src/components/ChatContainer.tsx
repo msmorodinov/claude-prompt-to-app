@@ -117,7 +117,7 @@ export default function ChatContainer() {
     })
   }, [sessionId, setMessages, markAskAnswered, showToast])
 
-  useSSE(sessionId, wrappedSSEEvent, { reconnectKey: sseReconnectKey })
+  const { isReconnecting } = useSSE(sessionId, wrappedSSEEvent, { reconnectKey: sseReconnectKey })
 
   const handleSend = useCallback(
     async (message: string) => {
@@ -293,8 +293,8 @@ export default function ChatContainer() {
         <div data-testid="start-screen" className="start-screen">
           <h2>Ready to begin?</h2>
           {appConfig.subtitle && <p className="start-subtitle">{appConfig.subtitle}</p>}
-          <button data-testid="start-btn" className="start-btn" onClick={handleStart} disabled={!sessionId}>
-            Start
+          <button data-testid="start-btn" className="start-btn" onClick={handleStart} disabled={!sessionId || isLoading}>
+            {isLoading ? 'Starting...' : 'Start'}
           </button>
         </div>
       )
@@ -308,6 +308,7 @@ export default function ChatContainer() {
           scrollRef={scrollRef}
           isLoading={isLoading}
           isPaused={isPaused}
+          isReconnecting={isReconnecting}
         />
         {sessionDone && !sessionError && (
           <div data-testid="session-done-banner" className="session-done-banner">
@@ -348,7 +349,7 @@ export default function ChatContainer() {
           <div className="session-error-banner">
             <span>Session interrupted</span>
             <div className="session-error-actions">
-              <button onClick={handleRetry}>Continue</button>
+              <button onClick={handleRetry} disabled={isLoading}>{isLoading ? 'Continuing...' : 'Continue'}</button>
               <button onClick={handleNewSession}>New Session</button>
             </div>
           </div>

@@ -9,9 +9,10 @@ interface Props {
   scrollRef: React.RefObject<HTMLDivElement | null>
   isLoading: boolean
   isPaused?: boolean
+  isReconnecting?: boolean
 }
 
-export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, isPaused }: Props) {
+export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, isPaused, isReconnecting }: Props) {
   return (
     <div className="message-list" data-testid="message-list">
       {messages.map((msg, i) => {
@@ -40,7 +41,13 @@ export default function MessageList({ messages, onAskSubmit, scrollRef, isLoadin
             )
         }
       })}
-      {isLoading && (
+      {isReconnecting && (
+        <div className="message research-message loading" data-testid="reconnecting-banner">
+          <span className="research-indicator">◎</span>
+          <span>Reconnecting...</span>
+        </div>
+      )}
+      {isLoading && !isReconnecting && (
         <div className="message research-message loading">
           <span className="research-indicator">◎</span>
           <span>Thinking...</span>
