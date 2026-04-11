@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import shutil
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
 from backend.admin_apps import router as admin_apps_router
+from backend.system_config import get_system_config
 from backend.agent import run_agent
 from backend.validator import check_rate_limit, validate_prompt
 from backend.db import (
@@ -44,8 +46,29 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    global _SERVER_START_TIME, _CLI_VERSION_CACHE, _CLI_AVAILABLE
+    _SERVER_START_TIME = time.time()
+    claude_bin = shutil.which("claude")
+    _CLI_AVAILABLE = claude_bin is not None
+    if claude_bin:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                claude_bin, "--version",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
+            if proc.returncode == 0:
+                _CLI_VERSION_CACHE = stdout.decode().strip()
+        except (asyncio.TimeoutError, OSError):
+            pass
     yield
 
+
+_SERVER_START_TIME: float = 0.0
+_CLI_VERSION_CACHE: str | None = None
+_CLI_AVAILABLE: bool = False
+_last_auth_test: dict | None = None
 
 app = FastAPI(title="Prompt-to-App", lifespan=lifespan)
 app.include_router(admin_apps_router)
@@ -616,6 +639,63 @@ def _parse_mcp_list(output: str) -> list[dict]:
 @app.get("/config")
 async def config(app_id: int | None = None) -> dict:
     return await get_app_config_from_db(app_id)
+
+
+@app.get("/admin/system-status")
+async def system_status_admin() -> dict:
+    """Aggregated system status for admin dashboard."""
+    config = await get_system_config()
+
+    # Auth info
+    if config["auth_mode"] == "api_key":
+        has_credentials = bool(config.get("api_key"))
+        credentials_note = None
+    else:
+        has_credentials = True
+        credentials_note = "Managed by CLI"
+
+    # Session counts from in-memory state
+    all_live = sessions.list_all()
+    active_count = sum(1 for s in all_live if s.status == "active")
+    waiting_count = sum(1 for s in all_live if s.status == "waiting_input")
+
+    # Total sessions from DB
+    db_sessions = await get_all_sessions_admin()
+    total_count = len(db_sessions)
+    last_activity = None
+    if db_sessions:
+        last_activity = max(
+            (s.get("created_at", "") for s in db_sessions), default=None
+        )
+
+    # MCP servers (reuse existing function)
+    mcp = await mcp_servers()
+
+    return {
+        "auth": {
+            "mode": config["auth_mode"],
+            "has_credentials": has_credentials,
+            "credentials_note": credentials_note,
+            "last_test": _last_auth_test,
+        },
+        "cli": {
+            "version": _CLI_VERSION_CACHE,
+            "available": _CLI_AVAILABLE,
+        },
+        "server": {
+            "uptime_seconds": int(time.time() - _SERVER_START_TIME),
+            "started_at": time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime(_SERVER_START_TIME)
+            ),
+        },
+        "sessions": {
+            "active": active_count,
+            "waiting_input": waiting_count,
+            "total": total_count,
+            "last_activity": last_activity,
+        },
+        "mcp_servers": mcp,
+    }
 
 
 @app.get("/health")

@@ -291,3 +291,20 @@ def test_parse_mcp_list_mixed():
 def test_parse_mcp_list_empty():
     assert _parse_mcp_list("") == []
     assert _parse_mcp_list("Checking MCP server health...\n") == []
+
+
+class TestSystemStatus:
+    @pytest.mark.asyncio
+    async def test_returns_all_fields(self, client):
+        resp = await client.get("/admin/system-status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "auth" in data
+        assert "cli" in data
+        assert "server" in data
+        assert "sessions" in data
+        assert data["auth"]["mode"] == "max_oauth"
+        assert data["auth"]["has_credentials"] is True
+        assert isinstance(data["server"]["uptime_seconds"], (int, float))
+        assert isinstance(data["sessions"]["active"], int)
+        assert isinstance(data["sessions"]["total"], int)

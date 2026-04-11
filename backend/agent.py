@@ -18,6 +18,7 @@ from claude_agent_sdk import (
 from backend.db import get_app_by_id, get_prompt_body_by_version, save_sdk_session_id
 from backend.prompt_config import load_prompt
 from backend.session import SessionState
+from backend.system_config import get_auth_env
 from backend.tools import create_tools
 
 logger = logging.getLogger(__name__)
@@ -111,6 +112,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         system_prompt=system_prompt,
         permission_mode="acceptEdits",
         resume=session.sdk_session_id,  # None on first call, UUID on resume
+        env=await get_auth_env(),
     )
 
     await session.set_status("active")
