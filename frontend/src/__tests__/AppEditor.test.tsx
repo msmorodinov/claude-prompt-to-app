@@ -15,6 +15,7 @@ vi.mock('../api-admin', () => ({
   }),
   updateAdminApp: vi.fn().mockResolvedValue({ id: 1, slug: 'test-app', current_version_id: 2 }),
   fetchEnvironment: vi.fn().mockResolvedValue({ tools: [], widgets: [] }),
+  fetchMcpServers: vi.fn().mockResolvedValue([]),
   validatePrompt: vi.fn(),
   errorMessage: vi.fn((_e: unknown, fallback: string) => fallback),
 }))

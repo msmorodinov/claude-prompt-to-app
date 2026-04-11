@@ -589,7 +589,7 @@ def _parse_mcp_list(output: str) -> list[dict]:
     results: list[dict] = []
     for line in output.strip().splitlines():
         line = line.strip()
-        if not line or line.startswith("Checking"):
+        if not line or line.startswith("Checking MCP server health"):
             continue
         # Split on " - " from the right to get status
         parts = line.rsplit(" - ", 1)

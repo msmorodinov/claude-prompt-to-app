@@ -209,13 +209,16 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
 
   // Load env data when panel becomes visible
   useEffect(() => {
-    if (showEnvRef && !envData) {
-      fetchEnvironment().then(setEnvData).catch(() => {})
+    if (!showEnvRef) return
+    if (!envData) {
+      fetchEnvironment()
+        .then(setEnvData)
+        .catch((e) => setSaveError(errorMessage(e, 'Failed to load environment')))
     }
-    if (showEnvRef) {
-      fetchMcpServers().then(setMcpServers).catch(() => {})
-    }
-  }, [showEnvRef, envData])
+    fetchMcpServers()
+      .then(setMcpServers)
+      .catch((e) => setSaveError(errorMessage(e, 'Failed to load MCP servers')))
+  }, [showEnvRef])
 
   async function handleValidate() {
     setIsValidating(true)
