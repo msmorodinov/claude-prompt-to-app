@@ -66,6 +66,7 @@ cd "$PROJECT_DIR/frontend"
 rm -rf dist.bak
 [ -d dist ] && mv dist dist.bak
 mv "$BUILD_TMP" dist
+chmod 755 dist
 log "Frontend swapped"
 
 cd "$PROJECT_DIR"
