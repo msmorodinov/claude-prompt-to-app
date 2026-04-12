@@ -76,13 +76,13 @@ export default function ChatContainer() {
     }
   }, [apps, selectedAppId])
 
-  // Load config when app is selected
+  // Load config when app is selected or session loaded from URL
   useEffect(() => {
-    loadConfig(selectedAppId ?? undefined).then(config => {
+    loadConfig(selectedAppId ?? undefined, sessionId ?? undefined).then(config => {
       setAppConfig(config)
       document.title = config.title
     })
-  }, [selectedAppId])
+  }, [selectedAppId, sessionId])
 
   // Create session when needed (deferred until app selected for multi-app)
   useEffect(() => {

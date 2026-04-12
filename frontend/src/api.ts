@@ -111,10 +111,13 @@ export async function listApps(): Promise<AppInfo[]> {
   }
 }
 
-export async function loadConfig(appId?: number): Promise<AppConfig> {
-  const params = appId != null ? `?app_id=${appId}` : ''
+export async function loadConfig(appId?: number, sessionId?: string): Promise<AppConfig> {
+  const query = new URLSearchParams()
+  if (appId != null) query.set('app_id', String(appId))
+  if (sessionId) query.set('session_id', sessionId)
+  const qs = query.toString()
   try {
-    return await request(`/config${params}`)
+    return await request(`/config${qs ? `?${qs}` : ''}`)
   } catch {
     return { title: 'App' }
   }

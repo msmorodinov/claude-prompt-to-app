@@ -639,7 +639,12 @@ def _parse_mcp_list(output: str) -> list[dict]:
 
 
 @app.get("/config")
-async def config(app_id: int | None = None) -> dict:
+async def config(app_id: int | None = None, session_id: str | None = None) -> dict:
+    # If session_id provided, resolve app_id from session metadata
+    if app_id is None and session_id is not None:
+        meta = await get_session_meta(session_id)
+        if meta and meta.get("app_id"):
+            app_id = meta["app_id"]
     return await get_app_config_from_db(app_id)
 
 
