@@ -142,6 +142,11 @@ async def run_agent(session: SessionState, user_message: str) -> None:
                     await save_sdk_session_id(
                         session.session_id, message.session_id
                     )
+                    if message.usage:
+                        session.push_sse("token_usage", {
+                            "input_tokens": message.usage.get("input_tokens", 0),
+                            "output_tokens": message.usage.get("output_tokens", 0),
+                        })
 
         await session.set_status("done")
         session.agent_task = None

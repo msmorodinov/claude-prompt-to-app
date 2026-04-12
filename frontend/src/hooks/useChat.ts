@@ -50,11 +50,17 @@ function cleanupMessages(messages: ChatMessage[]): ChatMessage[] {
   })
 }
 
+export interface TokenUsage {
+  input: number
+  output: number
+}
+
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasPendingAsk, setHasPendingAsk] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage>({ input: 0, output: 0 })
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = useCallback(() => {
@@ -143,6 +149,13 @@ export function useChat() {
           setMessages(cleanupMessages)
           break
 
+        case 'token_usage':
+          setTokenUsage((prev) => ({
+            input: prev.input + event.input_tokens,
+            output: prev.output + event.output_tokens,
+          }))
+          break
+
         case 'error':
           setIsLoading(false)
           setHasPendingAsk(false)
@@ -178,6 +191,7 @@ export function useChat() {
     setIsLoading(false)
     setHasPendingAsk(false)
     setIsPaused(false)
+    setTokenUsage({ input: 0, output: 0 })
   }, [])
 
   return {
@@ -187,6 +201,7 @@ export function useChat() {
     setIsLoading,
     hasPendingAsk,
     isPaused,
+    tokenUsage,
     handleSSEEvent,
     markAskAnswered,
     resetChat,

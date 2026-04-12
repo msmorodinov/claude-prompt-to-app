@@ -14,6 +14,7 @@ const EVENT_TYPES = [
   'done',
   'error',
   'ask_timeout',
+  'token_usage',
 ] as const
 
 const TERMINAL_EVENTS = new Set(['done', 'error'])

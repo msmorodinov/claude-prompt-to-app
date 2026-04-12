@@ -213,6 +213,12 @@ export interface AskTimeoutEvent {
   message: string
 }
 
+export interface TokenUsageEvent {
+  type: 'token_usage'
+  input_tokens: number
+  output_tokens: number
+}
+
 export type SSEEvent =
   | AssistantMessageEvent
   | AskMessageEvent
@@ -223,6 +229,7 @@ export type SSEEvent =
   | DoneEvent
   | ErrorEvent
   | AskTimeoutEvent
+  | TokenUsageEvent
 
 export interface ChatAssistantMessage {
   role: 'assistant'
