@@ -7,6 +7,7 @@ import { useSSE } from '../hooks/useSSE'
 import { getUserDisplayName } from '../userDisplayName'
 import AppSelector from './AppSelector'
 import MessageList from './MessageList'
+import TokenCounter from './TokenCounter'
 import SessionSidebar from './SessionSidebar'
 
 const SESSION_KEY = 'session_id'
@@ -44,7 +45,7 @@ export default function ChatContainer() {
   const [appsError, setAppsError] = useState(false)
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null)
 
-  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, isPaused, handleSSEEvent, markAskAnswered, resetChat, scrollRef } =
+  const { messages, setMessages, isLoading, setIsLoading, hasPendingAsk, isPaused, tokenUsage, handleSSEEvent, markAskAnswered, resetChat, scrollRef } =
     useChat()
 
   const wrappedSSEEvent = useCallback(
@@ -358,7 +359,10 @@ export default function ChatContainer() {
         <div data-testid="chat-content" className="chat-content">
           {renderMainContent()}
         </div>
-        <div className="build-version">v{__APP_VERSION__}-{__GIT_HASH__}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
+          <TokenCounter usage={tokenUsage} />
+          <span className="build-version" style={{ margin: 0 }}>v{__APP_VERSION__}-{__GIT_HASH__}</span>
+        </div>
       </div>
     </div>
   )
