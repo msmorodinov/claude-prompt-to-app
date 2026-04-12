@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 
@@ -25,6 +26,17 @@ logger = logging.getLogger(__name__)
 
 FRAMEWORK_PATH = Path(__file__).parent / "framework.md"
 APP_BUILDER_PROMPT_PATH = Path(__file__).parent / "app-builder-prompt.md"
+CLAUDE_CONFIG_PATH = Path.home() / ".claude.json"
+
+
+def _get_user_mcp_tool_patterns() -> list[str]:
+    """Read ~/.claude.json and return allowed-tool patterns for user MCP servers."""
+    try:
+        config = json.loads(CLAUDE_CONFIG_PATH.read_text())
+        servers = config.get("mcpServers", {})
+        return [f"mcp__{name}__*" for name in servers]
+    except (OSError, json.JSONDecodeError, KeyError):
+        return []
 
 
 async def _build_edit_context(edit_app_id: int | None) -> str:
@@ -104,6 +116,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         allowed.append("mcp__app__save_app")
     if is_edit_mode:
         allowed.append("mcp__app__update_app")
+    allowed.extend(_get_user_mcp_tool_patterns())
 
     options = ClaudeAgentOptions(
         mcp_servers={"app": server},
@@ -113,6 +126,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         permission_mode="acceptEdits",
         resume=session.sdk_session_id,  # None on first call, UUID on resume
         env=await get_auth_env(),
+        setting_sources=["user"],  # Load user MCP servers from ~/.claude.json
     )
 
     await session.set_status("active")
