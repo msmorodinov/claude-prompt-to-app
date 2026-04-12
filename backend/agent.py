@@ -137,6 +137,13 @@ async def run_agent(session: SessionState, user_message: str) -> None:
             async for message in client.receive_response():
                 if isinstance(message, AssistantMessage):
                     _process_assistant_message(session, message)
+                    # Early save: capture session_id before ResultMessage
+                    if message.session_id and not session.sdk_session_id:
+                        session.sdk_session_id = message.session_id
+                        await save_sdk_session_id(
+                            session.session_id, message.session_id
+                        )
+                        logger.info("sdk_session_id captured early: %s", message.session_id)
                 elif isinstance(message, ResultMessage):
                     session.sdk_session_id = message.session_id
                     await save_sdk_session_id(
