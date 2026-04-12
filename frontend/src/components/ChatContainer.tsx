@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { type AppConfig, type AppInfo, createSession, deleteSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
+import { ApiError, type AppConfig, type AppInfo, createSession, deleteSession, listApps, loadConfig, loadSession, retrySession, startChat, submitAnswers } from '../api'
 import { useToast } from '../contexts/ToastContext'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
@@ -128,7 +128,7 @@ export default function ChatContainer() {
         const { session_id } = await startChat(message, sessionId ?? undefined)
         setSessionId(session_id)
       } catch (err: unknown) {
-        const status = (err as any)?.status
+        const status = err instanceof ApiError ? err.status : undefined
         if (status === 404) {
           try {
             const { session_id: newId } = await createSession(selectedAppId ?? undefined)
@@ -172,7 +172,7 @@ export default function ChatContainer() {
         setIsLoading(true)
         markAskAnswered(askId, answers)
       } catch (err: unknown) {
-        const status = (err as any)?.status
+        const status = err instanceof ApiError ? err.status : undefined
         if (status === 404 || status === 409) {
           markAskAnswered(askId, answers) // unblock UI
           showToast(
