@@ -80,6 +80,7 @@ app.add_middleware(
         "http://localhost:4920",
         "http://localhost:4921",
         "http://100.96.19.118:4920",
+        "https://prompt2app.novaco.io",
     ],
     allow_credentials=True,
     allow_methods=["*"],

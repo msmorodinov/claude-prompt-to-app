@@ -157,8 +157,27 @@ class TestAnswersEndpoint:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_answers_wrong_ask_id(self, client, session):
+    async def test_answers_stale_ask_resumes_agent(self, client, session):
+        """Mismatched ask_id with no running agent → resume session (stale ask)."""
         session.start_ask("ask-001")
+        resp = await client.post(
+            "/answers",
+            json={
+                "session_id": session.session_id,
+                "ask_id": "wrong-id",
+                "answers": {"q1": "answer"},
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json().get("resumed") is True
+
+    @pytest.mark.asyncio
+    async def test_answers_wrong_ask_id_agent_running(self, client, session):
+        """Mismatched ask_id with running agent → 409."""
+        session.start_ask("ask-001")
+        # Simulate a running agent task
+        loop = asyncio.get_event_loop()
+        session.agent_task = loop.create_future()
         resp = await client.post(
             "/answers",
             json={
@@ -168,6 +187,10 @@ class TestAnswersEndpoint:
             },
         )
         assert resp.status_code == 409
+        # Cleanup: cancel the future so it doesn't leak
+        session.agent_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await session.agent_task
 
 
 class TestCreateSession:
@@ -353,3 +376,17 @@ class TestAuthManagement:
         assert resp.status_code == 200
         status = await client.get("/admin/system-status")
         assert status.json()["auth"]["mode"] == "max_oauth"
+
+
+class TestCorsConfig:
+    """CORS must include production origin to prevent deploy-drift regression."""
+
+    def test_production_origin_in_cors(self):
+        from backend.server import app
+
+        cors_mw = next(
+            m for m in app.user_middleware
+            if m.cls.__name__ == "CORSMiddleware"
+        )
+        origins = cors_mw.kwargs["allow_origins"]
+        assert "https://prompt2app.novaco.io" in origins
