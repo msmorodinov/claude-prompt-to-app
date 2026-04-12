@@ -17,34 +17,33 @@ interface Props {
 }
 
 function WidgetInner({ widget }: Props) {
-  const w = widget as any
-  switch (w.type) {
+  switch (widget.type) {
     case 'text':
-      return <TextWidget {...w} />
+      return <TextWidget {...widget} />
     case 'section_header':
-      return <SectionHeader {...w} />
+      return <SectionHeader {...widget} />
     case 'data_table':
     case 'competitor_table':
-      return <DataTable {...w} />
+      return <DataTable {...widget} />
     case 'comparison':
     case 'comparison_card':
-      return <Comparison {...w} />
+      return <Comparison {...widget} />
     case 'category_list':
     case 'alignment_map':
-      return <CategoryList {...w} />
+      return <CategoryList {...widget} />
     case 'quote_highlight':
-      return <QuoteHighlight {...w} />
+      return <QuoteHighlight {...widget} />
     case 'metric_bars':
     case 'strength_meter':
-      return <MetricBars {...w} />
+      return <MetricBars {...widget} />
     case 'copyable':
-      return <CopyableBlock {...w} />
+      return <CopyableBlock {...widget} />
     case 'progress':
-      return <ProgressBar {...w} />
+      return <ProgressBar {...widget} />
     case 'final_result':
-      return <FinalResult {...w} />
+      return <FinalResult {...widget} />
     case 'timer':
-      return <TimerWidget {...w} />
+      return <TimerWidget {...widget} />
     default:
       return <pre className="widget widget-fallback">{JSON.stringify(widget, null, 2)}</pre>
   }

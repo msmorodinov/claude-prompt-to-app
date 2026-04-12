@@ -3,6 +3,15 @@ import { getUserDisplayName } from './userDisplayName'
 
 const BASE_URL = ''
 
+export class ApiError extends Error {
+  readonly status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
@@ -14,9 +23,10 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
     },
   })
   if (!res.ok) {
-    const err = new Error(`${options?.method ?? 'GET'} ${path} failed: ${res.status}`)
-    ;(err as any).status = res.status
-    throw err
+    throw new ApiError(
+      `${options?.method ?? 'GET'} ${path} failed: ${res.status}`,
+      res.status,
+    )
   }
   return res.json()
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
+  ApiError,
   request,
   startChat,
   submitAnswers,
@@ -74,6 +75,17 @@ describe('request()', () => {
     const [, options] = mockFetch.mock.calls[0]
     expect(options.headers['Content-Type']).toBe('application/json')
     expect(options.headers['X-Custom']).toBe('yes')
+  })
+
+  it('throws ApiError with status property on non-ok response', async () => {
+    mockFetch.mockResolvedValue(makeResponse(null, false, 409))
+    try {
+      await request('/conflict')
+      expect.fail('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError)
+      expect((err as ApiError).status).toBe(409)
+    }
   })
 })
 

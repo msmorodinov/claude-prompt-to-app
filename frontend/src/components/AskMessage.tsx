@@ -42,7 +42,7 @@ export default function AskMessage({ message, onSubmit }: Props) {
           initial[q.id] = []
           break
         default:
-          initial[(q as any).id ?? 'unknown'] = null
+          initial[(q as InputQuestion).id] = null
           break
       }
     }
@@ -195,7 +195,7 @@ export default function AskMessage({ message, onSubmit }: Props) {
           />
         )
       default:
-        return <pre key={(q as any).id ?? 'unknown'} className="widget widget-fallback">{JSON.stringify(q, null, 2)}</pre>
+        return <pre key={(q as InputQuestion).id} className="widget widget-fallback">{JSON.stringify(q, null, 2)}</pre>
     }
   }
 

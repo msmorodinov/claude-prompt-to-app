@@ -10,7 +10,7 @@ export interface SectionHeaderWidget {
 }
 
 export interface DataTableWidget {
-  type: 'data_table'
+  type: 'data_table' | 'competitor_table'
   columns?: string[]
   rows?: string[][]
   caption?: string
@@ -18,7 +18,7 @@ export interface DataTableWidget {
 }
 
 export interface ComparisonWidget {
-  type: 'comparison'
+  type: 'comparison' | 'comparison_card'
   left: { label: string; content: string }
   right: { label: string; content: string }
   note?: string
@@ -26,7 +26,7 @@ export interface ComparisonWidget {
 }
 
 export interface CategoryListWidget {
-  type: 'category_list'
+  type: 'category_list' | 'alignment_map'
   categories: Array<{
     label: string
     items: string[]
@@ -44,7 +44,7 @@ export interface QuoteHighlightWidget {
 }
 
 export interface MetricBarsWidget {
-  type: 'metric_bars'
+  type: 'metric_bars' | 'strength_meter'
   metrics: Array<{
     label: string
     value: number
