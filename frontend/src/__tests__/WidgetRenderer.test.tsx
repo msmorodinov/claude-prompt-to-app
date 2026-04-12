@@ -61,6 +61,26 @@ describe('WidgetRenderer', () => {
     expect(pre!.textContent).toContain('bar')
   })
 
+  it('renders competitor_table as DataTable', () => {
+    const widget = {
+      type: 'competitor_table',
+      columns: ['Name', 'Price'],
+      rows: [['A', '$10']],
+    } as DisplayWidget
+    render(<WidgetRenderer widget={widget} />)
+    expect(screen.getByText('Name')).toBeInTheDocument()
+  })
+
+  it('renders comparison_card as Comparison', () => {
+    const widget = {
+      type: 'comparison_card',
+      left: { label: 'Before', content: 'Old' },
+      right: { label: 'After', content: 'New' },
+    } as DisplayWidget
+    render(<WidgetRenderer widget={widget} />)
+    expect(screen.getByText('Before')).toBeInTheDocument()
+  })
+
   it('renders error fallback when widget throws', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     // Use unknown type to trigger widget rendering error
