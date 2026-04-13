@@ -4,7 +4,7 @@ import { ApiError, type AppConfig, type AppInfo, createSession, deleteSession, l
 import { useToast } from '../contexts/ToastContext'
 import { historyToMessages, useChat } from '../hooks/useChat'
 import { useSSE } from '../hooks/useSSE'
-import { getUserDisplayName } from '../userDisplayName'
+import { useAuth } from '../contexts/AuthContext'
 import AppSelector from './AppSelector'
 import MessageList from './MessageList'
 import TokenCounter from './TokenCounter'
@@ -16,6 +16,7 @@ const isMobile = () => window.matchMedia('(max-width: 1023px)').matches
 export default function ChatContainer() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { showToast } = useToast()
+  const { user } = useAuth()
 
   const [sessionId, setSessionIdRaw] = useState<string | null>(
     () => searchParams.get('s') || sessionStorage.getItem(SESSION_KEY),
@@ -342,8 +343,8 @@ export default function ChatContainer() {
             </svg>
           </button>
           <h1 title={`v${__APP_VERSION__}`}>{appConfig.title}</h1>
-          <span className="user-identity">{getUserDisplayName()}</span>
-          <a href="/admin" className="admin-link">Admin</a>
+          <span className="user-identity">{user?.email}</span>
+          {user?.is_admin && <a href="/admin" className="admin-link">Admin</a>}
         </header>
 
         {sessionError && (

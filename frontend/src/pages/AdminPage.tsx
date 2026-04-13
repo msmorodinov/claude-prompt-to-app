@@ -4,11 +4,12 @@ import SessionViewer from '../components/admin/SessionViewer'
 import AppList from '../components/admin/AppList'
 import AppEditor from '../components/admin/AppEditor'
 import SystemStatus, { getHeaderDotColor } from '../components/admin/SystemStatus'
+import UserList from '../components/admin/UserList'
 import { fetchSystemStatus } from '../api-admin'
 import type { SystemStatus as SystemStatusType } from '../api-admin'
 import '../styles/admin.css'
 
-type AdminTab = 'sessions' | 'apps' | 'system'
+type AdminTab = 'sessions' | 'apps' | 'users' | 'system'
 
 export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('sessions')
@@ -60,6 +61,13 @@ export default function AdminPage() {
             Apps
           </button>
           <button
+            className={`admin-tab ${tab === 'users' ? 'active' : ''}`}
+            data-testid="admin-tab"
+            onClick={() => setTab('users')}
+          >
+            Users
+          </button>
+          <button
             className={`admin-tab ${tab === 'system' ? 'active' : ''}`}
             data-testid="admin-tab"
             onClick={() => setTab('system')}
@@ -68,7 +76,7 @@ export default function AdminPage() {
           </button>
         </nav>
       </header>
-      <div className={`admin-layout${tab === 'apps' && selectedAppId ? ' admin-layout--has-detail' : ''}${tab === 'system' ? ' admin-layout--full' : ''}`} data-testid="admin-layout">
+      <div className={`admin-layout${tab === 'apps' && selectedAppId ? ' admin-layout--has-detail' : ''}${tab === 'system' || tab === 'users' ? ' admin-layout--full' : ''}`} data-testid="admin-layout">
         {tab === 'sessions' ? (
           <>
             <SessionList
@@ -97,6 +105,8 @@ export default function AdminPage() {
               <div className="admin-empty" data-testid="admin-empty">Select an app to edit</div>
             )}
           </>
+        ) : tab === 'users' ? (
+          <UserList />
         ) : (
           <SystemStatus />
         )}

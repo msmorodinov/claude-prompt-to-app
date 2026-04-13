@@ -2,6 +2,10 @@ import { renderHook, act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useSSE } from '../hooks/useSSE'
 
+vi.mock('../contexts/AuthContext', () => ({
+  getAuthToken: () => 'test-token',
+}))
+
 describe('useSSE', () => {
   it('does not connect when sessionId is null', () => {
     delete (globalThis as any).__lastEventSource
@@ -15,7 +19,7 @@ describe('useSSE', () => {
     const handler = vi.fn()
     renderHook(() => useSSE('test-session', handler))
     const es = (globalThis as any).__lastEventSource
-    expect(es.url).toBe('/stream?session_id=test-session')
+    expect(es.url).toBe('/stream?session_id=test-session&token=test-token')
   })
 
   it('parses and dispatches SSE events', () => {

@@ -32,7 +32,8 @@ Browser (React SPA)  <──SSE──>  FastAPI (Python)  <──subprocess─�
 | Backend | Python 3.11+, FastAPI, uvicorn, claude-agent-sdk |
 | Frontend | React 19 + Vite + TypeScript |
 | Database | SQLite (aiosqlite) — session history |
-| Auth | Claude Max subscription via OAuth (NO API key) |
+| User Auth | Email + PIN registration, Bearer token in localStorage |
+| Agent Auth | Claude Max subscription via OAuth (NO API key) |
 | Deploy | localhost (Beelink/Proxmox via Tailscale) |
 
 ## Project Structure
@@ -48,6 +49,7 @@ forge-simple/
 │   ├── server.py          # FastAPI app, SSE, /answers, session + app endpoints
 │   ├── admin_apps.py      # Admin API router: CRUD apps, manage versions
 │   ├── agent.py           # Claude SDK client, agent lifecycle (loads app version)
+│   ├── auth.py            # User auth: email+PIN, token management, FastAPI deps
 │   ├── tools.py           # MCP tools: show + ask (with asyncio.Event)
 │   ├── schemas.py         # JSON schemas for all widget types
 │   ├── session.py         # Session state (pending events, answers, app_id, version_id)
@@ -72,17 +74,19 @@ forge-simple/
 │       ├── types.ts              # SSE events, widget types, answers
 │       ├── api.ts                # fetch helpers: /chat, /answers, /sessions
 │       ├── api-admin.ts          # Admin API: /admin/sessions, stream, history
-│       ├── userId.ts             # Anonymous user ID (localStorage)
-│       ├── userDisplayName.ts    # Display name generation
+│       ├── userId.ts             # (legacy) Anonymous user ID — replaced by auth token
+│       ├── userDisplayName.ts    # Display name generation (legacy)
 │       ├── relativeTime.ts       # Relative time formatting
 │       ├── hooks/
 │       │   ├── useSSE.ts         # SSE connection, reconnect, event dispatch
 │       │   └── useChat.ts        # Chat message state, scroll management
 │       ├── contexts/
+│       │   ├── AuthContext.tsx    # Auth provider, useAuth hook, getAuthToken
 │       │   └── ToastContext.tsx   # Toast notification context provider
 │       ├── pages/
 │       │   ├── ChatPage.tsx      # Main chat page with AppSelector
-│       │   └── AdminPage.tsx     # Admin dashboard: sessions + app management
+│       │   ├── LoginPage.tsx     # Email + PIN login/registration form
+│       │   └── AdminPage.tsx     # Admin dashboard: sessions + apps + users
 │       ├── components/
 │       │   ├── AppSelector.tsx    # Select/switch app before starting session
 │       │   ├── ChatContainer.tsx  # Chat + SessionSidebar + read-only mode
@@ -122,6 +126,7 @@ forge-simple/
 │       │       ├── VersionHistory.tsx      # App version timeline
 │       │       ├── VersionDiff.tsx         # Diff between versions
 │       │       ├── PromptHighlighter.tsx  # Syntax highlighting for prompts
+│       │       ├── UserList.tsx            # User management table
 │       │       ├── SessionList.tsx         # List all sessions
 │       │       ├── SessionViewer.tsx       # View session history (read-only)
 │       │       └── SystemStatus.tsx        # System status & auth management tab
@@ -208,7 +213,13 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 
 ## API Endpoints
 
-### Session & Chat
+### Authentication (Public)
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/login` | Login or register with email + PIN (auto-detects) |
+| `GET` | `/auth/me` | Validate token, return current user info |
+
+### Session & Chat (Authenticated)
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/chat` | Start or continue session (auto-titles on first msg) |
@@ -239,6 +250,12 @@ Claude also has built-in: **WebSearch** (competitor research), **WebFetch** (rea
 | `GET` | `/admin/sessions` | All sessions with status (admin) |
 | `GET` | `/admin/sessions/{id}/stream` | Read-only SSE stream (admin) |
 | `GET` | `/admin/sessions/{id}/history` | Full message history (admin) |
+
+### User Management (Admin)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/admin/users` | List all registered users |
+| `PATCH` | `/admin/users/{id}` | Toggle admin status |
 
 ### System Status & Auth (Admin)
 | Method | Path | Description |
@@ -280,7 +297,7 @@ options = ClaudeAgentOptions(
 - User selects app via `AppSelector` (shows active/inactive apps)
 - Frontend creates session via `POST /sessions/create` with `app_id` + `version_id` (uses current/default)
 - Session ID stored in `sessionStorage` (key: `session_id`) — persists within tab, resets on new tab
-- User ID generated once per browser, stored in `localStorage` — sent as `X-User-Id` header
+- User authenticated via email + PIN; Bearer token stored in `localStorage` — sent as `Authorization` header
 - First user message auto-titles the session (first 80 chars)
 - Session sidebar allows browsing and viewing past sessions in read-only mode
 - Switching apps mid-session creates a new session (old session preserved in history)
@@ -297,7 +314,7 @@ options = ClaudeAgentOptions(
 
 ## Key Constraints
 
-- Multi-user with session isolation (each session has a `user_id`, ownership checked on /chat and /answers)
+- Multi-user with session isolation (authenticated via Bearer token, ownership checked on /chat, /answers, /stream)
 - Single agent loop per session at a time
 - All state in-memory during session, persisted to SQLite
 - `ANTHROPIC_API_KEY` must NOT be set (overrides Max subscription)

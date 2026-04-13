@@ -1,5 +1,4 @@
-import { getUserId } from './userId'
-import { getUserDisplayName } from './userDisplayName'
+import { getAuthToken } from './contexts/AuthContext'
 
 const BASE_URL = ''
 
@@ -13,20 +12,45 @@ export class ApiError extends Error {
 }
 
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getAuthToken()
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': getUserId(),
-      'X-User-Display-Name': getUserDisplayName(),
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...options?.headers,
     },
   })
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      window.location.reload()
+    }
     throw new ApiError(
       `${options?.method ?? 'GET'} ${path} failed: ${res.status}`,
       res.status,
     )
+  }
+  return res.json()
+}
+
+export interface AuthResponse {
+  token: string
+  user_id: string
+  email: string
+  is_admin: boolean
+}
+
+export async function authLogin(email: string, pin: string): Promise<AuthResponse> {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, pin }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: 'Login failed' }))
+    throw new ApiError(body.detail || 'Login failed', res.status)
   }
   return res.json()
 }
@@ -133,5 +157,6 @@ export async function retrySession(
 }
 
 export function createSSEUrl(sessionId: string): string {
-  return `${BASE_URL}/stream?session_id=${sessionId}`
+  const token = getAuthToken() ?? ''
+  return `${BASE_URL}/stream?session_id=${sessionId}&token=${encodeURIComponent(token)}`
 }
