@@ -44,6 +44,9 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
   const renameInputRef = useRef<HTMLInputElement>(null)
+  const [isEditingSubtitle, setIsEditingSubtitle] = useState(false)
+  const [subtitleValue, setSubtitleValue] = useState('')
+  const subtitleInputRef = useRef<HTMLInputElement>(null)
   const skipBlurRef = useRef(false)
 
   const isDirty = editedBody !== originalBody
@@ -84,6 +87,12 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
       renameInputRef.current.select()
     }
   }, [isRenaming])
+
+  useEffect(() => {
+    if (isEditingSubtitle && subtitleInputRef.current) {
+      subtitleInputRef.current.focus()
+    }
+  }, [isEditingSubtitle])
 
   // Cmd+S / Ctrl+S to publish
   const saveStateRef = useRef({ isDirty, isSaving })
@@ -128,6 +137,18 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
       setSaveError('Failed to rename app')
     }
     setIsRenaming(false)
+  }
+
+  async function handleSubtitleSubmit() {
+    const trimmed = subtitleValue.trim()
+    setSaveError(null)
+    try {
+      await updateAdminApp(appId, { subtitle: trimmed })
+      onReloadApp()
+    } catch {
+      setSaveError('Failed to update subtitle')
+    }
+    setIsEditingSubtitle(false)
   }
 
   async function handleEditWithAI() {
@@ -281,6 +302,28 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
           <h2 className="app-editor-title" data-testid="admin-app-name">{detail.title}</h2>
         )}
         <span className="app-editor-slug">{detail.slug}</span>
+        {isEditingSubtitle ? (
+          <input
+            ref={subtitleInputRef}
+            className="admin-subtitle-input"
+            placeholder="Subtitle (optional)"
+            value={subtitleValue}
+            onChange={e => setSubtitleValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); void handleSubtitleSubmit() }
+              if (e.key === 'Escape') setIsEditingSubtitle(false)
+            }}
+            onBlur={() => void handleSubtitleSubmit()}
+          />
+        ) : (
+          <span
+            className="app-editor-subtitle"
+            onClick={() => { setSubtitleValue(detail.subtitle || ''); setIsEditingSubtitle(true) }}
+            title="Click to edit subtitle"
+          >
+            {detail.subtitle || 'Add subtitle...'}
+          </span>
+        )}
 
         {/* Status: unsaved indicator OR status badge */}
         {isDirty ? (
