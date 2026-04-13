@@ -16,7 +16,7 @@ const isMobile = () => window.matchMedia('(max-width: 1023px)').matches
 export default function ChatContainer() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { showToast } = useToast()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   const [sessionId, setSessionIdRaw] = useState<string | null>(
     () => searchParams.get('s') || sessionStorage.getItem(SESSION_KEY),
@@ -342,9 +342,10 @@ export default function ChatContainer() {
               <line x1="3" y1="13" x2="15" y2="13" />
             </svg>
           </button>
-          <h1 title={`v${__APP_VERSION__}`}>{appConfig.title}</h1>
+          <h1 title={`v${__APP_VERSION__}`}>{apps.length > 1 && selectedAppId === null ? '' : appConfig.title}</h1>
           <span className="user-identity">{user?.email}</span>
           {user?.is_admin && <a href="/admin" className="admin-link">Admin</a>}
+          <button className="logout-button" onClick={logout} title="Выйти">Выйти</button>
         </header>
 
         {sessionError && (
