@@ -52,14 +52,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(res => {
-        if (!res.ok) throw new Error('Invalid token')
+        if (res.status === 401) {
+          // Token genuinely invalid — clear it
+          logout()
+          return null
+        }
+        if (!res.ok) {
+          // Server error (502, 503, etc.) — keep token, use cached user
+          const cached = localStorage.getItem(AUTH_USER_KEY)
+          if (cached) {
+            try { setUser(JSON.parse(cached)) } catch { /* ignore */ }
+          }
+          return null
+        }
         return res.json()
       })
-      .then((data: { user_id: string; email: string; is_admin: boolean }) => {
-        setUser({ id: data.user_id, email: data.email, is_admin: data.is_admin })
+      .then((data: { user_id: string; email: string; is_admin: boolean } | null) => {
+        if (data) {
+          const u = { id: data.user_id, email: data.email, is_admin: data.is_admin }
+          setUser(u)
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(u))
+        }
       })
       .catch(() => {
-        logout()
+        // Network error — keep token, use cached user
+        const cached = localStorage.getItem(AUTH_USER_KEY)
+        if (cached) {
+          try { setUser(JSON.parse(cached)) } catch { /* ignore */ }
+        }
       })
       .finally(() => {
         setIsLoading(false)
