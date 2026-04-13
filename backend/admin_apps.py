@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from backend.auth import require_admin
 
 from backend.db import (
     create_app,
@@ -18,8 +20,11 @@ from backend.db import (
 
 logger = logging.getLogger(__name__)
 
-# SECURITY: no auth — localhost only
-router = APIRouter(prefix="/admin/apps", tags=["admin-apps"])
+router = APIRouter(
+    prefix="/admin/apps",
+    tags=["admin-apps"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @router.get("")

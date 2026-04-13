@@ -10,13 +10,21 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
 
 from backend.admin_apps import router as admin_apps_router
+from backend.auth import (
+    get_all_users,
+    get_current_user,
+    get_user_by_token,
+    login_or_register,
+    require_admin,
+    update_user_admin,
+)
 from backend.system_config import get_system_config, set_auth_mode, delete_api_key
 from backend.agent import run_agent
 from backend.validator import check_rate_limit, validate_prompt
@@ -89,6 +97,47 @@ app.add_middleware(
 
 sessions = SessionManager()
 
+
+# --- Auth endpoints (public, no token required) ---
+
+
+@app.post("/auth/login")
+async def auth_login(request: Request) -> dict:
+    """Login or register with email + PIN. Auto-detects new vs existing user."""
+    body = await request.json()
+    email = body.get("email", "")
+    pin = body.get("pin", "")
+
+    try:
+        user, is_new = await login_or_register(email, pin)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except PermissionError:
+        raise HTTPException(status_code=401, detail="Invalid PIN")
+
+    status_code = 201 if is_new else 200
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "token": user["token"],
+            "user_id": user["id"],
+            "email": user["email"],
+            "is_admin": user["is_admin"],
+        },
+    )
+
+
+@app.get("/auth/me")
+async def auth_me(request: Request) -> dict:
+    """Validate stored token. Returns current user info."""
+    user = await get_current_user(request)
+    return {
+        "user_id": user["id"],
+        "email": user["email"],
+        "is_admin": bool(user["is_admin"]),
+    }
+
+
 _SSE_HEADERS = {
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
@@ -130,12 +179,19 @@ def _sse_response(session: "SessionState") -> StreamingResponse:
     )
 
 
-def _get_user_id(request: Request) -> str:
-    return request.headers.get("x-user-id", "anonymous")
+async def _get_user_id(request: Request) -> str:
+    """Extract user_id from Bearer token. Raises 401 if missing/invalid."""
+    user = await get_current_user(request)
+    return user["id"]
 
 
-def _get_display_name(request: Request) -> str | None:
-    return request.headers.get("x-user-display-name") or None
+async def _get_user_email(request: Request) -> str | None:
+    """Extract email from Bearer token for display name."""
+    try:
+        user = await get_current_user(request)
+        return user.get("email")
+    except HTTPException:
+        return None
 
 
 async def _resolve_app(app_id: int | None) -> tuple[int | None, int | None]:
@@ -156,7 +212,7 @@ async def chat(request: Request) -> dict:
     body = await request.json()
     message = body.get("message", "")
     session_id = body.get("session_id")
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
 
     if session_id:
         session = sessions.get(session_id)
@@ -181,7 +237,7 @@ async def chat(request: Request) -> dict:
     else:
         app_id, pvid = await _resolve_app(None)
         session = sessions.create(user_id=user_id, app_id=app_id, prompt_version_id=pvid)
-        await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid, user_display_name=_get_display_name(request))
+        await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid, user_display_name=await _get_user_email(request))
 
     if session.agent_running:
         raise HTTPException(status_code=409, detail="Agent is already running")
@@ -218,7 +274,7 @@ def _attach_done_callback(session: SessionState) -> None:
 async def retry_chat(request: Request) -> dict:
     body = await request.json()
     session_id = body.get("session_id")
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
 
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
@@ -271,7 +327,14 @@ async def retry_chat(request: Request) -> dict:
 
 
 @app.get("/stream")
-async def stream(session_id: str) -> StreamingResponse:
+async def stream(session_id: str, token: str = "") -> StreamingResponse:
+    # Validate token (EventSource can't send headers, so token is a query param)
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    user = await get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
     session = sessions.get(session_id)
     if not session:
         # Hydrate from DB so SSE can reconnect after server restart
@@ -287,6 +350,9 @@ async def stream(session_id: str) -> StreamingResponse:
             mode=db_meta.get("mode", "normal"),
         )
         sessions._sessions[session_id] = session
+
+    if session.user_id != user["id"]:
+        raise HTTPException(status_code=403, detail="Not your session")
     return _sse_response(session)
 
 
@@ -296,7 +362,7 @@ async def submit_answers(request: Request) -> dict:
     session_id = body.get("session_id")
     ask_id = body.get("ask_id")
     answers = body.get("answers", {})
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
 
     if not session_id or not ask_id:
         raise HTTPException(status_code=400, detail="session_id and ask_id required")
@@ -348,7 +414,7 @@ async def list_apps_public() -> list:
 
 @app.post("/sessions/create")
 async def create_session(request: Request) -> dict:
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
     try:
         body = await request.json()
     except Exception:
@@ -398,7 +464,7 @@ async def create_session(request: Request) -> dict:
         user_id=user_id,
         app_id=app_id,
         prompt_version_id=prompt_version_id,
-        user_display_name=_get_display_name(request),
+        user_display_name=await _get_user_email(request),
         mode=mode,
     )
     return {"session_id": session.session_id}
@@ -406,7 +472,7 @@ async def create_session(request: Request) -> dict:
 
 @app.get("/sessions")
 async def list_sessions(request: Request) -> list:
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
     rows = await get_sessions_by_user(user_id)
     for row in rows:
         if row.get("mode") == "app-builder" and not row.get("app_name"):
@@ -416,7 +482,7 @@ async def list_sessions(request: Request) -> list:
 
 @app.delete("/sessions/{session_id}", status_code=204)
 async def delete_session_endpoint(session_id: str, request: Request) -> None:
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
     owner = await get_session_owner(session_id)
     if owner is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -432,7 +498,7 @@ async def delete_session_endpoint(session_id: str, request: Request) -> None:
 
 @app.get("/sessions/{session_id}")
 async def load_session_history(session_id: str, request: Request) -> list:
-    user_id = _get_user_id(request)
+    user_id = await _get_user_id(request)
     live = sessions.get(session_id)
     if live:
         if live.user_id != user_id:
@@ -455,8 +521,29 @@ async def session_status(session_id: str) -> dict:
 # --- Admin endpoints ---
 
 
+@app.get("/admin/users")
+async def admin_list_users(_: dict = Depends(require_admin)) -> list:
+    """List all registered users."""
+    return await get_all_users()
+
+
+@app.patch("/admin/users/{user_id}")
+async def admin_update_user(
+    user_id: str, request: Request, _: dict = Depends(require_admin)
+) -> dict:
+    """Toggle admin status for a user."""
+    body = await request.json()
+    is_admin = body.get("is_admin")
+    if is_admin is None or not isinstance(is_admin, bool):
+        raise HTTPException(status_code=422, detail="is_admin (bool) required")
+    updated = await update_user_admin(user_id, is_admin)
+    if not updated:
+        raise HTTPException(status_code=404, detail="User not found")
+    return updated
+
+
 @app.get("/admin/sessions")
-async def admin_list_sessions() -> list:
+async def admin_list_sessions(_: dict = Depends(require_admin)) -> list:
     """All sessions with status info for admin dashboard."""
     # Merge in-memory status for active sessions
     db_sessions = await get_all_sessions_admin()
@@ -471,8 +558,13 @@ async def admin_list_sessions() -> list:
 
 
 @app.get("/admin/sessions/{session_id}/stream")
-async def admin_session_stream(session_id: str) -> StreamingResponse:
-    """Read-only SSE stream for admin monitoring."""
+async def admin_session_stream(session_id: str, token: str = "") -> StreamingResponse:
+    """Read-only SSE stream for admin monitoring. Token via query param (EventSource)."""
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    user = await get_user_by_token(token)
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -494,13 +586,13 @@ async def admin_session_stream(session_id: str) -> StreamingResponse:
 
 
 @app.get("/admin/sessions/{session_id}/history")
-async def admin_session_history(session_id: str) -> list:
+async def admin_session_history(session_id: str, _: dict = Depends(require_admin)) -> list:
     """Full message history for admin view."""
     return await get_session(session_id)
 
 
 @app.post("/admin/validate-prompt")
-async def admin_validate_prompt(request: Request) -> JSONResponse:
+async def admin_validate_prompt(request: Request, _: dict = Depends(require_admin)) -> JSONResponse:
     """Validate prompt MCP tool coverage via Sonnet."""
     client_ip = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_ip):
@@ -649,7 +741,7 @@ async def config(app_id: int | None = None, session_id: str | None = None) -> di
 
 
 @app.get("/admin/system-status")
-async def system_status_admin() -> dict:
+async def system_status_admin(_: dict = Depends(require_admin)) -> dict:
     """Aggregated system status for admin dashboard."""
     config = await get_system_config()
 
@@ -700,7 +792,7 @@ async def system_status_admin() -> dict:
 
 
 @app.post("/admin/auth/mode")
-async def admin_set_auth_mode(request: Request) -> dict:
+async def admin_set_auth_mode(request: Request, _: dict = Depends(require_admin)) -> dict:
     """Switch auth mode. If api_key mode, api_key is required."""
     body = await request.json()
     mode = body.get("mode")
@@ -723,14 +815,14 @@ async def admin_set_auth_mode(request: Request) -> dict:
 
 
 @app.delete("/admin/auth/api-key")
-async def admin_delete_api_key() -> dict:
+async def admin_delete_api_key(_: dict = Depends(require_admin)) -> dict:
     """Remove API key and reset to max_oauth."""
     await delete_api_key()
     return {"ok": True, "mode": "max_oauth"}
 
 
 @app.post("/admin/auth/test")
-async def admin_test_auth() -> dict:
+async def admin_test_auth(_: dict = Depends(require_admin)) -> dict:
     """Test CLI availability. Does not spend quota."""
     global _last_auth_test
 

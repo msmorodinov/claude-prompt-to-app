@@ -23,7 +23,8 @@ export async function fetchAdminSessions(): Promise<AdminSession[]> {
 }
 
 export function createAdminSSEUrl(sessionId: string): string {
-  return `/admin/sessions/${sessionId}/stream`
+  const token = localStorage.getItem('auth_token') ?? ''
+  return `/admin/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
 }
 
 export async function fetchSessionHistory(
@@ -253,4 +254,27 @@ export async function testAuth(): Promise<{
 
 export async function deleteApiKey(): Promise<{ ok: boolean; mode: string }> {
   return request('/admin/auth/api-key', { method: 'DELETE' })
+}
+
+// --- User management ---
+
+export interface AdminUser {
+  id: string
+  email: string
+  is_admin: number
+  created_at: string
+}
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  return request('/admin/users')
+}
+
+export async function updateUserAdmin(
+  userId: string,
+  isAdmin: boolean,
+): Promise<AdminUser> {
+  return request(`/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_admin: isAdmin }),
+  })
 }

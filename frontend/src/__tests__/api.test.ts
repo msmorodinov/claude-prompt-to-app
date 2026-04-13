@@ -12,9 +12,9 @@ import {
   createSSEUrl,
 } from '../api'
 
-// Mock getUserId so fetch headers are predictable
-vi.mock('../userId', () => ({
-  getUserId: () => 'test-user-id',
+// Mock getAuthToken so fetch headers are predictable
+vi.mock('../contexts/AuthContext', () => ({
+  getAuthToken: () => 'test-token-abc',
 }))
 
 const mockFetch = vi.fn()
@@ -37,7 +37,7 @@ function makeResponse(body: unknown, ok = true, status = 200) {
 }
 
 describe('request()', () => {
-  it('sends correct headers including X-User-Id', async () => {
+  it('sends correct headers including Authorization', async () => {
     mockFetch.mockResolvedValue(makeResponse({ ok: true }))
     await request('/test')
     expect(mockFetch).toHaveBeenCalledWith(
@@ -45,7 +45,7 @@ describe('request()', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
-          'X-User-Id': 'test-user-id',
+          'Authorization': 'Bearer test-token-abc',
         }),
       }),
     )
@@ -218,11 +218,11 @@ describe('retrySession()', () => {
 })
 
 describe('createSSEUrl()', () => {
-  it('returns correct SSE URL with session_id', () => {
-    expect(createSSEUrl('abc-123')).toBe('/stream?session_id=abc-123')
+  it('returns correct SSE URL with session_id and token', () => {
+    expect(createSSEUrl('abc-123')).toBe('/stream?session_id=abc-123&token=test-token-abc')
   })
 
   it('handles session_id with special characters', () => {
-    expect(createSSEUrl('sess/01')).toBe('/stream?session_id=sess/01')
+    expect(createSSEUrl('sess/01')).toBe('/stream?session_id=sess/01&token=test-token-abc')
   })
 })
