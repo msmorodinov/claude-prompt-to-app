@@ -344,8 +344,8 @@ export default function ChatContainer() {
           </button>
           <h1 title={`v${__APP_VERSION__}`}>{apps.length > 1 && selectedAppId === null ? '' : appConfig.title}</h1>
           <span className="user-identity">{user?.email}</span>
-          {user?.is_admin && <a href="/admin" className="admin-link">Admin</a>}
-          <button className="logout-button" onClick={logout} title="Выйти">Выйти</button>
+          {user?.is_admin && <a href="/admin" className="header-pill">Admin</a>}
+          <button className="header-pill header-pill--danger" onClick={logout} title="Выйти">Выйти</button>
         </header>
 
         {sessionError && (

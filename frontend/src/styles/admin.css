@@ -16,12 +16,12 @@
 
 .admin-home-link {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   text-decoration: none;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.7rem;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 100px;
   transition: color 0.15s, border-color 0.15s;
 }
 

@@ -1,0 +1,106 @@
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  background: var(--bg);
+  padding: 1.5rem;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 380px;
+  padding: 2.5rem 2.25rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgba(232, 196, 108, 0.04),
+    0 8px 40px rgba(0, 0, 0, 0.35);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.login-title {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  color: var(--accent);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.login-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.login-input {
+  padding: 0.8rem 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(232, 196, 108, 0.12);
+}
+
+.login-error {
+  color: var(--error);
+  font-size: 0.82rem;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+.login-button {
+  padding: 0.8rem;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.login-button:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.login-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.login-hint {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+}

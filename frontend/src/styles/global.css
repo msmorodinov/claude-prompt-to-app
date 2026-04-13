@@ -67,38 +67,30 @@ body {
   margin-left: auto;
 }
 
-.admin-link {
+.header-pill {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 0.25rem 0.75rem;
-  text-decoration: none;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.admin-link:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.logout-button {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 100px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.7rem;
+  text-decoration: none;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
+  line-height: 1.4;
 }
 
-.logout-button:hover {
+.header-pill:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.header-pill--danger:hover {
   color: var(--error);
   border-color: var(--error);
 }
+
 
 /* App Layout — two-column desktop, single-column mobile */
 .app-layout {
