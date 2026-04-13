@@ -14,6 +14,22 @@
   gap: 1.5rem;
 }
 
+.admin-home-link {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-home-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .admin-header h1 {
   font-family: var(--font-heading);
   color: var(--accent);

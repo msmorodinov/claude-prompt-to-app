@@ -35,6 +35,7 @@ export default function AdminPage() {
   return (
     <div className="admin-page" data-testid="admin-page">
       <header className="admin-header" data-testid="admin-header">
+        <a href="/" className="admin-home-link">← App</a>
         <h1>Admin</h1>
         <span className="admin-version">
           v{__APP_VERSION__}
