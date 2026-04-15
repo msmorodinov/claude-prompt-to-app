@@ -44,6 +44,7 @@ export interface AdminApp {
   slug: string
   title: string
   subtitle: string
+  type: 'app' | 'persona'
   is_active: number
   current_version_id: number | null
   version_count: number
@@ -56,6 +57,7 @@ export interface AdminAppDetail {
   slug: string
   title: string
   subtitle: string
+  type: 'app' | 'persona'
   is_active: number
   current_version_id: number | null
   current_version: {
@@ -96,6 +98,7 @@ export async function createAdminApp(data: {
   title: string
   subtitle?: string
   body?: string
+  type?: 'app' | 'persona'
 }): Promise<{ id: number; slug: string; current_version_id: number }> {
   return request('/admin/apps', {
     method: 'POST',

@@ -55,6 +55,8 @@ forge-simple/
 │   ├── session.py         # Session state (pending events, answers, app_id, version_id)
 │   ├── system_config.py   # System config: auth mode, API key storage
 │   ├── db.py              # SQLite: sessions, apps, versions CRUD + versioning
+│   ├── personas/          # Preset persona prompts (seeded by migrations)
+│   │   └── steve-jobs.md  # Steve Jobs persona (product visionary)
 │   ├── prompt.md          # System prompt with YAML frontmatter (legacy, replaced by apps DB)
 │   ├── app-builder-prompt.md # App Builder system prompt (loaded from file at runtime, not in DB)
 │   ├── prompt_config.py   # Parse frontmatter from prompt.md for backward compat

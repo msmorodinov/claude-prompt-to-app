@@ -1369,6 +1369,22 @@ input[type='range']:disabled {
   line-height: 1.4;
 }
 
+.persona-section-title {
+  margin-top: 0.5rem;
+}
+
+.persona-card {
+  border-style: dashed;
+}
+
+.persona-card:hover {
+  border-style: solid;
+}
+
+.persona-tagline {
+  font-style: italic;
+}
+
 /* Toast notifications */
 .toast-container {
   position: fixed;

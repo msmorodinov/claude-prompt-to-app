@@ -125,6 +125,7 @@ export interface AppInfo {
   slug: string
   title: string
   subtitle?: string
+  type?: 'app' | 'persona'
 }
 
 export async function listApps(): Promise<AppInfo[]> {

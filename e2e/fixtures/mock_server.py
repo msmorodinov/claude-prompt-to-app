@@ -424,6 +424,7 @@ async def admin_create_app(request: Request) -> dict:
         "slug": slug,
         "title": title,
         "subtitle": body.get("subtitle", ""),
+        "type": body.get("type", "app"),
         "is_active": bool(app_body),
         "current_version_id": _app_id_counter * 100 if app_body else None,
         "created_at": now,

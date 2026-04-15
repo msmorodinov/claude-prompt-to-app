@@ -9,6 +9,7 @@ vi.mock('../api-admin', () => ({
     slug: 'test-app',
     title: 'Test App',
     subtitle: '',
+    type: 'app',
     is_active: 1,
     current_version_id: 1,
     current_version: { id: 1, body: 'prompt body', change_note: '', created_at: '2026-01-01' },

@@ -160,7 +160,7 @@ async def test_run_migrations_skips_already_applied(tmp_path):
         await db.commit()
 
         applied = await run_migrations(db)
-        assert applied == 2  # migration 6 + 7
+        assert applied == 3  # migration 6 + 7 + 8
 
         version = await get_current_version(db)
-        assert version == 7
+        assert version == 8
