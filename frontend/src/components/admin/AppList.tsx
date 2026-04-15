@@ -24,6 +24,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
   const [apps, setApps] = useState<AdminApp[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [title, setTitle] = useState('')
+  const [appType, setAppType] = useState<'app' | 'persona'>('app')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,7 +54,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
     setCreating(true)
     setError(null)
     try {
-      const result = await createAdminApp({ slug, title: trimmed })
+      const result = await createAdminApp({ slug, title: trimmed, type: appType })
       load()
       setShowCreate(false)
       setTitle('')
@@ -68,6 +69,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
   function handleToggleCreate() {
     setShowCreate(prev => !prev)
     setTitle('')
+    setAppType('app')
     setError(null)
   }
 
@@ -103,6 +105,15 @@ export default function AppList({ selectedId, onSelect }: Props) {
               {titleToSlug(title.trim())}
             </span>
           )}
+          <select
+            className="app-form-select"
+            data-testid="app-form-type"
+            value={appType}
+            onChange={(e) => setAppType(e.target.value as 'app' | 'persona')}
+          >
+            <option value="app">App</option>
+            <option value="persona">Persona</option>
+          </select>
           {error && <div className="app-form-error" data-testid="app-form-error">{error}</div>}
           <button
             className="btn-create-app-submit"
@@ -125,10 +136,15 @@ export default function AppList({ selectedId, onSelect }: Props) {
           >
             <div className="app-item-header">
               <span className="app-item-title">{app.title}</span>
-              <span
-                className={`status-badge ${app.is_active ? 'status-badge--active' : 'status-badge--archived'}`}
-              >
-                {app.is_active ? 'active' : 'archived'}
+              <span className="app-item-badges">
+                {app.type === 'persona' && (
+                  <span className="type-badge type-badge--persona">persona</span>
+                )}
+                <span
+                  className={`status-badge ${app.is_active ? 'status-badge--active' : 'status-badge--archived'}`}
+                >
+                  {app.is_active ? 'active' : 'archived'}
+                </span>
               </span>
             </div>
             <div className="app-item-meta">

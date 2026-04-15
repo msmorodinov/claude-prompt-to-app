@@ -302,6 +302,9 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
           <h2 className="app-editor-title" data-testid="admin-app-name">{detail.title}</h2>
         )}
         <span className="app-editor-slug">{detail.slug}</span>
+        {detail.type === 'persona' && (
+          <span className="type-badge type-badge--persona">persona</span>
+        )}
         {isEditingSubtitle ? (
           <input
             ref={subtitleInputRef}

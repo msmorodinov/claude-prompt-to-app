@@ -474,6 +474,16 @@
   resize: vertical;
 }
 
+.app-form-select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+
 .app-form-error {
   font-size: 0.8rem;
   color: var(--error);
@@ -523,6 +533,26 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.25rem;
+}
+
+.app-item-badges {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.type-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.type-badge--persona {
+  background: rgba(232, 196, 108, 0.15);
+  color: var(--accent);
 }
 
 .app-item-title {

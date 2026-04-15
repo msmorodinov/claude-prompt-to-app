@@ -39,15 +39,19 @@ async def create_app_endpoint(request: Request) -> dict:
     title = body.get("title", "")
     subtitle = body.get("subtitle", "")
     prompt_body = body.get("body", "")
+    app_type = body.get("type", "app")
 
-    errors = validate_app_fields(slug=slug, title=title)
+    errors = validate_app_fields(slug=slug, title=title, app_type=app_type)
     if prompt_body:
         errors.extend(validate_app_fields(body=prompt_body))
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors})
 
     try:
-        return await create_app(slug, title, subtitle, prompt_body, is_active=bool(prompt_body))
+        return await create_app(
+            slug, title, subtitle, prompt_body,
+            is_active=bool(prompt_body), app_type=app_type,
+        )
     except Exception as e:
         if "UNIQUE constraint" in str(e):
             raise HTTPException(status_code=409, detail="Slug already exists")
