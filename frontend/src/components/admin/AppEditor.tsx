@@ -182,6 +182,18 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
     }
   }
 
+  async function handleToggleModel() {
+    if (!detail) return
+    const nextModel = detail.model === 'opus' ? 'sonnet' : 'opus'
+    setSaveError(null)
+    try {
+      await updateAdminApp(appId, { model: nextModel })
+      setDetail({ ...detail, model: nextModel })
+    } catch (err) {
+      setSaveError(errorMessage(err, 'Failed to change model'))
+    }
+  }
+
   async function handlePublish() {
     if (!isDirty || isSaving) return
     setIsSaving(true)
@@ -305,6 +317,15 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
         {detail.type === 'persona' && (
           <span className="type-badge type-badge--persona">persona</span>
         )}
+        <button
+          type="button"
+          className={`model-badge model-badge--${detail.model}`}
+          onClick={handleToggleModel}
+          title={`Click to switch to ${detail.model === 'opus' ? 'Sonnet' : 'Opus'}`}
+          data-testid="model-badge"
+        >
+          {detail.model === 'opus' ? 'Opus' : 'Sonnet'}
+        </button>
         {isEditingSubtitle ? (
           <input
             ref={subtitleInputRef}

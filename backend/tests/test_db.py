@@ -278,3 +278,68 @@ class TestDeleteSession:
 
         deleted = await delete_session("nonexistent", "user1", db_path=db_path)
         assert deleted is False
+
+
+class TestAppModel:
+    @pytest.mark.asyncio
+    async def test_create_app_default_model_opus(self, db_path):
+        from backend.db import create_app, get_app_by_id, init_db as _init
+        await _init(db_path)
+        result = await create_app(
+            "m-default", "Default Model", "", "Prompt", db_path=db_path
+        )
+        app = await get_app_by_id(result["id"], db_path)
+        assert app["model"] == "opus"
+
+    @pytest.mark.asyncio
+    async def test_create_app_explicit_sonnet(self, db_path):
+        from backend.db import create_app, get_app_by_id, init_db as _init
+        await _init(db_path)
+        result = await create_app(
+            "m-sonnet", "Sonnet App", "", "Prompt", model="sonnet", db_path=db_path
+        )
+        app = await get_app_by_id(result["id"], db_path)
+        assert app["model"] == "sonnet"
+
+    @pytest.mark.asyncio
+    async def test_update_app_model(self, db_path):
+        from backend.db import create_app, get_app_by_id, init_db as _init, update_app
+        await _init(db_path)
+        result = await create_app(
+            "m-update", "Update Me", "", "Prompt", db_path=db_path
+        )
+        await update_app(result["id"], model="sonnet", db_path=db_path)
+        app = await get_app_by_id(result["id"], db_path)
+        assert app["model"] == "sonnet"
+
+    @pytest.mark.asyncio
+    async def test_validate_app_fields_rejects_invalid_model(self):
+        from backend.db import validate_app_fields
+        errors = validate_app_fields(model="gpt-5")
+        assert any("model must be one of" in e for e in errors)
+
+    @pytest.mark.asyncio
+    async def test_validate_app_fields_accepts_opus_and_sonnet(self):
+        from backend.db import validate_app_fields
+        assert validate_app_fields(model="opus") == []
+        assert validate_app_fields(model="sonnet") == []
+
+    @pytest.mark.asyncio
+    async def test_get_active_apps_includes_model(self, db_path):
+        from backend.db import create_app, get_active_apps, init_db as _init
+        await _init(db_path)
+        await create_app("m-active", "Active", "", "Prompt", model="sonnet", db_path=db_path)
+        apps = await get_active_apps(db_path)
+        slugs = {a["slug"]: a["model"] for a in apps}
+        assert slugs.get("m-active") == "sonnet"
+
+    @pytest.mark.asyncio
+    async def test_config_returns_model(self, db_path):
+        from backend.db import create_app, get_app_config_from_db, init_db as _init
+        await _init(db_path)
+        result = await create_app(
+            "m-cfg", "Cfg", "Sub", "Prompt", model="sonnet", db_path=db_path
+        )
+        cfg = await get_app_config_from_db(result["id"], db_path)
+        assert cfg["model"] == "sonnet"
+        assert cfg["title"] == "Cfg"

@@ -26,6 +26,7 @@ class SessionState:
     prompt_version_id: int | None = None
     edit_app_id: int | None = None
     mode: str = "normal"  # normal | app-builder
+    model: str = "opus"  # opus | sonnet
     status: str = "idle"  # idle | active | waiting_input | done | error
     sse_queue: asyncio.Queue[dict[str, Any]] = field(default_factory=asyncio.Queue)
     pending_ask_id: str | None = None
@@ -164,6 +165,7 @@ class SessionManager:
         prompt_version_id: int | None = None,
         edit_app_id: int | None = None,
         mode: str = "normal",
+        model: str = "opus",
     ) -> SessionState:
         session = SessionState(
             user_id=user_id,
@@ -171,6 +173,7 @@ class SessionManager:
             prompt_version_id=prompt_version_id,
             edit_app_id=edit_app_id,
             mode=mode,
+            model=model,
         )
         self._sessions[session.session_id] = session
         return session

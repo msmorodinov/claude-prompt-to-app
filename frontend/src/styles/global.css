@@ -1665,3 +1665,29 @@ input[type='range']:disabled {
   pointer-events: none;
   z-index: 1;
 }
+
+.model-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 0;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+.model-badge:hover {
+  opacity: 0.85;
+}
+
+.model-badge--opus {
+  background: rgba(180, 132, 220, 0.18);
+  color: #c9a6e8;
+}
+
+.model-badge--sonnet {
+  background: rgba(120, 180, 220, 0.15);
+  color: #8ec0e3;
+}

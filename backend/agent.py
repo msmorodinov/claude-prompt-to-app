@@ -118,6 +118,9 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         allowed.append("mcp__app__update_app")
     allowed.extend(_get_user_mcp_tool_patterns())
 
+    # App-builder sessions always use opus for quality
+    model = "opus" if is_builder else session.model
+
     options = ClaudeAgentOptions(
         mcp_servers={"app": server},
         allowed_tools=allowed,
@@ -127,13 +130,14 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         resume=session.sdk_session_id,  # None on first call, UUID on resume
         env=await get_auth_env(),
         setting_sources=["user"],  # Load user MCP servers from ~/.claude.json
+        model=model,
     )
 
     await session.set_status("active")
 
     try:
         async with ClaudeSDKClient(options=options) as client:
-            await client.query(user_message)
+            await client.query(f"<user_message>\n{user_message}\n</user_message>")
             async for message in client.receive_response():
                 if isinstance(message, AssistantMessage):
                     _process_assistant_message(session, message)

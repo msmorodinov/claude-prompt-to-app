@@ -4,6 +4,7 @@ import {
   createAdminApp,
   errorMessage,
   type AdminApp,
+  type ModelChoice,
 } from '../../api-admin'
 
 interface Props {
@@ -25,6 +26,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
   const [showCreate, setShowCreate] = useState(false)
   const [title, setTitle] = useState('')
   const [appType, setAppType] = useState<'app' | 'persona'>('app')
+  const [model, setModel] = useState<ModelChoice>('opus')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,7 +56,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
     setCreating(true)
     setError(null)
     try {
-      const result = await createAdminApp({ slug, title: trimmed, type: appType })
+      const result = await createAdminApp({ slug, title: trimmed, type: appType, model })
       load()
       setShowCreate(false)
       setTitle('')
@@ -70,6 +72,7 @@ export default function AppList({ selectedId, onSelect }: Props) {
     setShowCreate(prev => !prev)
     setTitle('')
     setAppType('app')
+    setModel('opus')
     setError(null)
   }
 
@@ -114,6 +117,15 @@ export default function AppList({ selectedId, onSelect }: Props) {
             <option value="app">App</option>
             <option value="persona">Persona</option>
           </select>
+          <select
+            className="app-form-select"
+            data-testid="app-form-model"
+            value={model}
+            onChange={(e) => setModel(e.target.value as ModelChoice)}
+          >
+            <option value="opus">Opus</option>
+            <option value="sonnet">Sonnet</option>
+          </select>
           {error && <div className="app-form-error" data-testid="app-form-error">{error}</div>}
           <button
             className="btn-create-app-submit"
@@ -140,6 +152,9 @@ export default function AppList({ selectedId, onSelect }: Props) {
                 {app.type === 'persona' && (
                   <span className="type-badge type-badge--persona">persona</span>
                 )}
+                <span className={`model-badge model-badge--${app.model}`} data-testid="app-item-model">
+                  {app.model === 'opus' ? 'Opus' : 'Sonnet'}
+                </span>
                 <span
                   className={`status-badge ${app.is_active ? 'status-badge--active' : 'status-badge--archived'}`}
                 >
