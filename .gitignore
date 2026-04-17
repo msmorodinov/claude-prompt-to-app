@@ -3,7 +3,8 @@ node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
-.claude/
+.claude/*
+!.claude/rules/
 dist/
 .DS_Store
 *.egg-info/

@@ -1312,6 +1312,68 @@ input[type='range']:disabled {
   font-size: 0.85rem;
 }
 
+/* Composer (free-form follow-up input after agent turn completes) */
+.composer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  background: rgba(18, 18, 21, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  align-items: flex-end;
+}
+
+.composer-input {
+  flex: 1;
+  resize: vertical;
+  min-height: 2.4rem;
+  max-height: 12rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(8, 8, 10, 0.7);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-body, inherit);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.composer-input:focus {
+  border-color: var(--accent);
+}
+
+.composer-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.composer-submit {
+  padding: 0.5rem 1.1rem;
+  background: var(--accent);
+  color: #08080a;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+.composer-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.composer-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* App Selector */
 .app-selector {
   flex: 1;

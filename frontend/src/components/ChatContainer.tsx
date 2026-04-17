@@ -35,6 +35,7 @@ export default function ChatContainer() {
 
   const [appConfig, setAppConfig] = useState<AppConfig>({ title: 'App' })
   const [sidebarOpen, setSidebarOpen] = useState(() => !isMobile())
+  const [composerValue, setComposerValue] = useState('')
 
   const [sessionError, setSessionError] = useState(false)
   const [sessionDone, setSessionDone] = useState(false)
@@ -313,9 +314,42 @@ export default function ChatContainer() {
           isReconnecting={isReconnecting}
         />
         {sessionDone && !sessionError && (
-          <div data-testid="session-done-banner" className="session-done-banner">
-            <span>You can continue this session by sending a message</span>
-          </div>
+          <form
+            data-testid="composer"
+            className="composer"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const text = composerValue.trim()
+              if (!text || isLoading) return
+              setComposerValue('')
+              setSessionDone(false)
+              void handleSend(text)
+            }}
+          >
+            <textarea
+              data-testid="composer-input"
+              className="composer-input"
+              value={composerValue}
+              onChange={(e) => setComposerValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  ;(e.currentTarget.form as HTMLFormElement | null)?.requestSubmit()
+                }
+              }}
+              placeholder="Продолжить разговор..."
+              rows={2}
+              disabled={isLoading}
+            />
+            <button
+              data-testid="composer-submit"
+              type="submit"
+              className="composer-submit"
+              disabled={isLoading || !composerValue.trim()}
+            >
+              Отправить
+            </button>
+          </form>
         )}
       </>
     )
