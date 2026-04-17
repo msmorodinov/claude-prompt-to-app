@@ -1,7 +1,8 @@
 # Plan: Model Selection (Opus default) + Lightweight Injection Defenses
 
-**Status:** PLAN (awaiting approval)
+**Status:** DONE
 **Created:** 2026-04-17
+**Completed:** 2026-04-17
 **Author:** architect (main session)
 **Supersedes:** `2026-04-17-prompt-injection-hardening.md` (heavier security plan — deferred)
 
