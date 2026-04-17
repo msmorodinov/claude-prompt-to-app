@@ -80,13 +80,21 @@ if ! systemctl restart forge-simple >> "$LOG_FILE" 2>&1; then
     exit 1
 fi
 
-# Health check
-sleep 3
-if curl -sf http://localhost:4910/health > /dev/null; then
+# Health check with retry (migrations can take several seconds)
+HEALTH_OK=0
+for _ in $(seq 1 15); do
+    sleep 2
+    if curl -sf http://localhost:4910/health > /dev/null; then
+        HEALTH_OK=1
+        break
+    fi
+done
+
+if [ "$HEALTH_OK" = "1" ]; then
     log "=== Deploy SUCCESS: $(git rev-parse --short HEAD) ==="
     rm -rf "$PROJECT_DIR/frontend/dist.bak"
 else
-    log "ERROR: health check failed after restart"
+    log "ERROR: health check failed after restart (30s timeout)"
     # Rollback frontend
     cd "$PROJECT_DIR/frontend"
     rm -rf dist
