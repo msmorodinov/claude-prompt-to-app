@@ -36,11 +36,12 @@ async def _insert_app_with_version(
     *,
     is_active: int = 1,
     app_type: str = "app",
+    model: str = "opus",
 ) -> tuple[int, int]:
     """Insert an app row + its first prompt version, link them. Returns (app_id, version_id)."""
     await db.execute(
-        "INSERT INTO apps (slug, title, subtitle, is_active, type) VALUES (?, ?, ?, ?, ?)",
-        (slug, title, subtitle, is_active, app_type),
+        "INSERT INTO apps (slug, title, subtitle, is_active, type, model) VALUES (?, ?, ?, ?, ?, ?)",
+        (slug, title, subtitle, is_active, app_type, model),
     )
     app_row = await (await db.execute("SELECT last_insert_rowid()")).fetchone()
     app_id = app_row[0]
@@ -96,6 +97,7 @@ async def init_db(db_path: str | Path = DB_PATH) -> None:
 
 
 VALID_APP_TYPES = ("app", "persona")
+VALID_MODELS = {"opus", "sonnet"}
 
 
 def validate_app_fields(
@@ -103,11 +105,14 @@ def validate_app_fields(
     title: str | None = None,
     body: str | None = None,
     app_type: str | None = None,
+    model: str | None = None,
 ) -> list[str]:
     """Return list of validation error messages. Empty list = valid."""
     errors: list[str] = []
     if app_type is not None and app_type not in VALID_APP_TYPES:
         errors.append(f"type must be one of: {', '.join(VALID_APP_TYPES)}")
+    if model is not None and model not in VALID_MODELS:
+        errors.append(f"model must be one of: {', '.join(sorted(VALID_MODELS))}")
     if slug is not None:
         if len(slug) < 2 or not _SLUG_RE.match(slug):
             errors.append(
@@ -130,7 +135,7 @@ async def get_active_apps(db_path: str | Path = DB_PATH) -> list[dict[str, Any]]
     db = await _get_db(db_path)
     try:
         cursor = await db.execute(
-            "SELECT id, slug, title, subtitle, type FROM apps "
+            "SELECT id, slug, title, subtitle, type, model FROM apps "
             "WHERE is_active = 1 ORDER BY created_at ASC"
         )
         rows = await cursor.fetchall()
@@ -145,7 +150,7 @@ async def get_app_by_id(app_id: int, db_path: str | Path = DB_PATH) -> dict[str,
     try:
         cursor = await db.execute(
             "SELECT id, slug, title, subtitle, is_active, current_version_id, "
-            "type, created_at, updated_at FROM apps WHERE id = ?",
+            "type, model, created_at, updated_at FROM apps WHERE id = ?",
             (app_id,),
         )
         row = await cursor.fetchone()
@@ -159,7 +164,7 @@ async def get_default_app(db_path: str | Path = DB_PATH) -> dict[str, Any] | Non
     db = await _get_db(db_path)
     try:
         cursor = await db.execute(
-            "SELECT id, slug, title, subtitle, is_active, current_version_id, type "
+            "SELECT id, slug, title, subtitle, is_active, current_version_id, type, model "
             "FROM apps WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
         )
         row = await cursor.fetchone()
@@ -174,7 +179,7 @@ async def get_all_apps_admin(db_path: str | Path = DB_PATH) -> list[dict[str, An
     try:
         cursor = await db.execute(
             "SELECT a.id, a.slug, a.title, a.subtitle, a.is_active, "
-            "a.current_version_id, a.type, a.created_at, a.updated_at, "
+            "a.current_version_id, a.type, a.model, a.created_at, a.updated_at, "
             "COUNT(pv.id) as version_count "
             "FROM apps a LEFT JOIN prompt_versions pv ON pv.app_id = a.id "
             "GROUP BY a.id ORDER BY a.created_at DESC"
@@ -190,6 +195,7 @@ async def create_app(
     *,
     is_active: bool = True,
     app_type: str = "app",
+    model: str = "opus",
     db_path: str | Path = DB_PATH,
 ) -> dict[str, Any]:
     """Create app + first version. Returns {id, slug, current_version_id}."""
@@ -204,6 +210,7 @@ async def create_app(
             change_note="Initial version",
             is_active=1 if is_active else 0,
             app_type=app_type,
+            model=model,
         )
         await db.commit()
         return {"id": app_id, "slug": slug, "current_version_id": version_id}
@@ -219,6 +226,7 @@ async def update_app(
     body: str | None = None,
     change_note: str = "",
     is_active: bool | None = None,
+    model: str | None = None,
     db_path: str | Path = DB_PATH,
 ) -> dict[str, Any]:
     """Update app metadata and/or create new version if body changed.
@@ -269,6 +277,9 @@ async def update_app(
         if is_active is not None:
             updates.append("is_active = ?")
             params.append(1 if is_active else 0)
+        if model is not None:
+            updates.append("model = ?")
+            params.append(model)
         if new_version_id != app_row["current_version_id"]:
             updates.append("current_version_id = ?")
             params.append(new_version_id)
@@ -288,20 +299,20 @@ async def get_app_config_from_db(
     app_id: int | None = None,
     db_path: str | Path = DB_PATH,
 ) -> dict[str, Any]:
-    """Return {title, subtitle} for /config endpoint."""
+    """Return {title, subtitle, model} for /config endpoint."""
     db = await _get_db(db_path)
     try:
         if app_id is not None:
-            query = "SELECT title, subtitle FROM apps WHERE id = ?"
+            query = "SELECT title, subtitle, model FROM apps WHERE id = ?"
             params: tuple = (app_id,)
         else:
-            query = "SELECT title, subtitle FROM apps WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
+            query = "SELECT title, subtitle, model FROM apps WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
             params = ()
         cursor = await db.execute(query, params)
         row = await cursor.fetchone()
         if not row:
-            return {"title": "App"}
-        result: dict[str, Any] = {"title": row["title"]}
+            return {"title": "App", "model": "opus"}
+        result: dict[str, Any] = {"title": row["title"], "model": row["model"]}
         if row["subtitle"]:
             result["subtitle"] = row["subtitle"]
         return result

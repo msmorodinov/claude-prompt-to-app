@@ -194,8 +194,8 @@ async def _get_user_email(request: Request) -> str | None:
         return None
 
 
-async def _resolve_app(app_id: int | None) -> tuple[int | None, int | None]:
-    """Resolve app_id to (app_id, prompt_version_id). Falls back to default app."""
+async def _resolve_app(app_id: int | None) -> tuple[int | None, int | None, str]:
+    """Resolve app_id to (app_id, prompt_version_id, model). Falls back to default app."""
     if app_id is not None:
         app_row = await get_app_by_id(app_id)
         if not app_row or not app_row["is_active"]:
@@ -203,8 +203,8 @@ async def _resolve_app(app_id: int | None) -> tuple[int | None, int | None]:
     else:
         app_row = await get_default_app()
     if not app_row:
-        return None, None
-    return app_row["id"], app_row["current_version_id"]
+        return None, None, "opus"
+    return app_row["id"], app_row["current_version_id"], app_row.get("model", "opus")
 
 
 @app.post("/chat")
@@ -223,6 +223,12 @@ async def chat(request: Request) -> dict:
                 raise HTTPException(status_code=404, detail="Session not found")
             if db_meta["user_id"] != user_id:
                 raise HTTPException(status_code=403, detail="Not your session")
+            # Resolve model from app row
+            app_model = "opus"
+            if db_meta.get("app_id"):
+                app_row = await get_app_by_id(db_meta["app_id"])
+                if app_row:
+                    app_model = app_row.get("model", "opus")
             session = SessionState(
                 session_id=session_id,
                 user_id=db_meta["user_id"],
@@ -230,13 +236,14 @@ async def chat(request: Request) -> dict:
                 prompt_version_id=db_meta["prompt_version_id"],
                 sdk_session_id=db_meta.get("sdk_session_id"),
                 mode=db_meta.get("mode", "normal"),
+                model=app_model,
             )
             sessions._sessions[session_id] = session
         if session.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
     else:
-        app_id, pvid = await _resolve_app(None)
-        session = sessions.create(user_id=user_id, app_id=app_id, prompt_version_id=pvid)
+        app_id, pvid, app_model = await _resolve_app(None)
+        session = sessions.create(user_id=user_id, app_id=app_id, prompt_version_id=pvid, model=app_model)
         await save_session(session.session_id, user_id=user_id, app_id=app_id, prompt_version_id=pvid, user_display_name=await _get_user_email(request))
 
     if session.agent_running:
@@ -287,6 +294,11 @@ async def retry_chat(request: Request) -> dict:
             raise HTTPException(status_code=404, detail="Session not found")
         if db_meta["user_id"] != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
+        app_model = "opus"
+        if db_meta.get("app_id"):
+            app_row = await get_app_by_id(db_meta["app_id"])
+            if app_row:
+                app_model = app_row.get("model", "opus")
         session = SessionState(
             session_id=session_id,
             user_id=db_meta["user_id"],
@@ -294,6 +306,7 @@ async def retry_chat(request: Request) -> dict:
             prompt_version_id=db_meta["prompt_version_id"],
             sdk_session_id=db_meta.get("sdk_session_id"),
             mode=db_meta.get("mode", "normal"),
+            model=app_model,
         )
         sessions._sessions[session_id] = session
     if session.user_id != user_id:
@@ -375,6 +388,11 @@ async def submit_answers(request: Request) -> dict:
             raise HTTPException(status_code=404, detail="Session not found")
         if db_meta["user_id"] != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
+        app_model = "opus"
+        if db_meta.get("app_id"):
+            app_row = await get_app_by_id(db_meta["app_id"])
+            if app_row:
+                app_model = app_row.get("model", "opus")
         session = SessionState(
             session_id=session_id,
             user_id=db_meta["user_id"],
@@ -382,6 +400,7 @@ async def submit_answers(request: Request) -> dict:
             prompt_version_id=db_meta["prompt_version_id"],
             sdk_session_id=db_meta.get("sdk_session_id"),
             mode=db_meta.get("mode", "normal"),
+            model=app_model,
         )
         sessions._sessions[session_id] = session
 
@@ -442,11 +461,12 @@ async def create_session(request: Request) -> dict:
     mode = req_mode or "normal"
 
     if mode == "app-builder":
-        # App Builder: no DB app lookup
+        # App Builder: no DB app lookup; always opus for quality
         app_id = None
         prompt_version_id = None
+        app_model = "opus"
     else:
-        app_id, prompt_version_id = await _resolve_app(req_app_id)
+        app_id, prompt_version_id, app_model = await _resolve_app(req_app_id)
 
     # edit_app_id only valid with app-builder mode
     if edit_app_id is not None and mode != "app-builder":
@@ -458,6 +478,7 @@ async def create_session(request: Request) -> dict:
         prompt_version_id=prompt_version_id,
         edit_app_id=edit_app_id,
         mode=mode,
+        model=app_model,
     )
     await save_session(
         session.session_id,

@@ -343,6 +343,15 @@ export default function ChatContainer() {
             </svg>
           </button>
           <h1 title={`v${__APP_VERSION__}`}>{apps.length > 1 && selectedAppId === null ? '' : appConfig.title}</h1>
+          {appConfig.model && (apps.length <= 1 || selectedAppId !== null) && (
+            <span
+              className={`model-badge model-badge--${appConfig.model}`}
+              data-testid="session-model-badge"
+              title={`Model: ${appConfig.model === 'opus' ? 'Claude Opus' : 'Claude Sonnet'}`}
+            >
+              {appConfig.model === 'opus' ? 'Opus' : 'Sonnet'}
+            </span>
+          )}
           <span className="user-identity">{user?.email}</span>
           {user?.is_admin && <a href="/admin" className="header-pill">Admin</a>}
           <button className="header-pill header-pill--danger" onClick={logout} title="Выйти">Выйти</button>

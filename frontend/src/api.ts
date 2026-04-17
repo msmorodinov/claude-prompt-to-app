@@ -118,7 +118,10 @@ export async function deleteSession(sessionId: string): Promise<void> {
 export interface AppConfig {
   title: string
   subtitle?: string
+  model?: ModelChoice
 }
+
+export type ModelChoice = 'opus' | 'sonnet'
 
 export interface AppInfo {
   id: number
@@ -126,6 +129,7 @@ export interface AppInfo {
   title: string
   subtitle?: string
   type?: 'app' | 'persona'
+  model?: ModelChoice
 }
 
 export async function listApps(): Promise<AppInfo[]> {

@@ -1,5 +1,5 @@
 import { request } from './api'
-import type { HistoryEntry } from './api'
+import type { HistoryEntry, ModelChoice } from './api'
 
 export function errorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
@@ -39,12 +39,15 @@ export async function fetchSessionHistory(
 
 // --- App management types ---
 
+export type { ModelChoice }
+
 export interface AdminApp {
   id: number
   slug: string
   title: string
   subtitle: string
   type: 'app' | 'persona'
+  model: ModelChoice
   is_active: number
   current_version_id: number | null
   version_count: number
@@ -58,6 +61,7 @@ export interface AdminAppDetail {
   title: string
   subtitle: string
   type: 'app' | 'persona'
+  model: ModelChoice
   is_active: number
   current_version_id: number | null
   current_version: {
@@ -99,6 +103,7 @@ export async function createAdminApp(data: {
   subtitle?: string
   body?: string
   type?: 'app' | 'persona'
+  model?: ModelChoice
 }): Promise<{ id: number; slug: string; current_version_id: number }> {
   return request('/admin/apps', {
     method: 'POST',
@@ -114,6 +119,7 @@ export async function updateAdminApp(
     body?: string
     change_note?: string
     is_active?: boolean
+    model?: ModelChoice
   },
 ): Promise<{ id: number; slug: string; current_version_id: number }> {
   return request(`/admin/apps/${appId}`, {

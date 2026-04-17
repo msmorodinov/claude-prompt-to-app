@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from backend.auth import require_admin
 
 from backend.db import (
+    VALID_MODELS,
     create_app,
     get_all_apps_admin,
     get_app_by_id,
@@ -40,8 +41,9 @@ async def create_app_endpoint(request: Request) -> dict:
     subtitle = body.get("subtitle", "")
     prompt_body = body.get("body", "")
     app_type = body.get("type", "app")
+    model = body.get("model", "opus")
 
-    errors = validate_app_fields(slug=slug, title=title, app_type=app_type)
+    errors = validate_app_fields(slug=slug, title=title, app_type=app_type, model=model)
     if prompt_body:
         errors.extend(validate_app_fields(body=prompt_body))
     if errors:
@@ -50,7 +52,7 @@ async def create_app_endpoint(request: Request) -> dict:
     try:
         return await create_app(
             slug, title, subtitle, prompt_body,
-            is_active=bool(prompt_body), app_type=app_type,
+            is_active=bool(prompt_body), app_type=app_type, model=model,
         )
     except Exception as e:
         if "UNIQUE constraint" in str(e):
@@ -81,8 +83,9 @@ async def update_app_endpoint(app_id: int, request: Request) -> dict:
     prompt_body = body.get("body")
     change_note = body.get("change_note", "")
     is_active = body.get("is_active")
+    model = body.get("model")
 
-    errors = validate_app_fields(title=title, body=prompt_body)
+    errors = validate_app_fields(title=title, body=prompt_body, model=model)
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors})
 
@@ -94,6 +97,7 @@ async def update_app_endpoint(app_id: int, request: Request) -> dict:
             body=prompt_body,
             change_note=change_note,
             is_active=is_active,
+            model=model,
         )
     except ValueError:
         raise HTTPException(status_code=404, detail="App not found")

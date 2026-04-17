@@ -34,6 +34,11 @@ export default function AppSelector({ apps, onSelect }: Props) {
               >
                 <h3>{app.title}</h3>
                 {app.subtitle && <p>{app.subtitle}</p>}
+                {app.model && (
+                  <span className={`model-badge model-badge--${app.model}`}>
+                    {app.model === 'opus' ? 'Opus' : 'Sonnet'}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -52,6 +57,11 @@ export default function AppSelector({ apps, onSelect }: Props) {
               >
                 <h3>{app.title}</h3>
                 {app.subtitle && <p className="persona-tagline">{app.subtitle}</p>}
+                {app.model && (
+                  <span className={`model-badge model-badge--${app.model}`}>
+                    {app.model === 'opus' ? 'Opus' : 'Sonnet'}
+                  </span>
+                )}
               </button>
             ))}
           </div>
