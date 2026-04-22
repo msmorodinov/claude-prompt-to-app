@@ -47,6 +47,7 @@ from backend.db import (
 )
 from backend.schemas import DISPLAY_WIDGETS, INPUT_WIDGETS
 from backend.session import SessionManager, SessionState
+import backend.storage_r2 as storage_r2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -71,6 +72,20 @@ async def lifespan(app: FastAPI):
                 _CLI_VERSION_CACHE = stdout.decode().strip()
         except (asyncio.TimeoutError, OSError):
             pass
+    # Optional: check renderer and R2 availability at startup (warnings only, never fatal)
+    try:
+        from backend.renderer import check_renderer_available
+        renderer_status = await check_renderer_available()
+        for component, status in renderer_status.items():
+            if "NOT FOUND" in status or "error" in status.lower():
+                logger.warning("Renderer component %s: %s", component, status)
+    except Exception as e:
+        logger.warning("check_renderer_available failed: %s", e)
+    if storage_r2.is_configured():
+        try:
+            await storage_r2.ping()
+        except Exception as e:
+            logger.warning("R2 storage ping failed: %s", e)
     yield
 
 
@@ -443,8 +458,8 @@ async def create_session(request: Request) -> dict:
     req_mode = body.get("mode") if body else None
 
     # Validate mode
-    if req_mode is not None and req_mode not in ("normal", "app-builder"):
-        raise HTTPException(status_code=422, detail="mode must be 'normal' or 'app-builder'")
+    if req_mode is not None and req_mode not in ("normal", "app-builder", "carousel"):
+        raise HTTPException(status_code=422, detail="mode must be 'normal', 'app-builder', or 'carousel'")
 
     if edit_app_id is not None and not isinstance(edit_app_id, int):
         raise HTTPException(status_code=422, detail="edit_app_id must be an integer")
@@ -488,6 +503,11 @@ async def create_session(request: Request) -> dict:
         user_display_name=await _get_user_email(request),
         mode=mode,
     )
+    if mode == "carousel" and storage_r2.is_configured():
+        try:
+            await storage_r2.ensure_scratchpad(session.session_id)
+        except Exception as e:
+            logger.warning("ensure_scratchpad failed for %s: %s", session.session_id, e)
     return {"session_id": session.session_id}
 
 
@@ -529,6 +549,80 @@ async def load_session_history(session_id: str, request: Request) -> list:
         if owner is not None and owner != user_id:
             raise HTTPException(status_code=403, detail="Not your session")
     return await get_session(session_id)
+
+
+@app.get("/sessions/{session_id}/files")
+async def list_session_files(session_id: str, request: Request) -> dict:
+    """List files stored in R2 for a carousel session."""
+    user = await get_current_user(request)
+    user_id = user["id"]
+    is_admin = user.get("is_admin", False)
+
+    owner = await get_session_owner(session_id)
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if not is_admin and owner != user_id:
+        raise HTTPException(status_code=403, detail="Not your session")
+
+    prefix = storage_r2.session_prefix(session_id)
+    try:
+        objects = await storage_r2.list_prefix(prefix)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Storage error: {e}") from e
+
+    files = []
+    total_size = 0
+    for obj in objects:
+        name = obj["key"].split("/")[-1]
+        modified = obj["last_modified"]
+        if hasattr(modified, "isoformat"):
+            modified = modified.isoformat()
+        files.append({"name": name, "size": obj["size"], "modified": modified})
+        total_size += obj["size"]
+
+    return {"files": files, "total_size": total_size, "count": len(files)}
+
+
+@app.get("/sessions/{session_id}/files.zip")
+async def download_session_files_zip(session_id: str, request: Request) -> StreamingResponse:
+    """Stream a ZIP of all PNG files for a carousel session."""
+    user = await get_current_user(request)
+    user_id = user["id"]
+    is_admin = user.get("is_admin", False)
+
+    owner = await get_session_owner(session_id)
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if not is_admin and owner != user_id:
+        raise HTTPException(status_code=403, detail="Not your session")
+
+    prefix = storage_r2.session_prefix(session_id)
+    try:
+        # Pre-check total size to return 413 before streaming
+        objects = await storage_r2.list_prefix(prefix)
+        png_objects = [o for o in objects if o["key"].endswith(".png")]
+        total = sum(o["size"] for o in png_objects)
+        if total > storage_r2.MAX_ZIP_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=(
+                    f"ZIP would be {total // 1_000_000} MB, "
+                    f"exceeds {storage_r2.MAX_ZIP_BYTES // 1_000_000} MB limit"
+                ),
+            )
+        gen = storage_r2.stream_zip_from_prefix(prefix)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Storage error: {e}") from e
+
+    return StreamingResponse(
+        gen,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="carousel-{session_id}.zip"'
+        },
+    )
 
 
 @app.get("/session-status")

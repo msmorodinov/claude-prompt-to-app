@@ -10,15 +10,16 @@ interface Props {
   isLoading: boolean
   isPaused?: boolean
   isReconnecting?: boolean
+  sessionId?: string
 }
 
-export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, isPaused, isReconnecting }: Props) {
+export default function MessageList({ messages, onAskSubmit, scrollRef, isLoading, isPaused, isReconnecting, sessionId }: Props) {
   return (
     <div className="message-list" data-testid="message-list">
       {messages.map((msg, i) => {
         switch (msg.role) {
           case 'assistant':
-            return <AssistantMessage key={i} message={msg} />
+            return <AssistantMessage key={i} message={msg} sessionId={sessionId} />
           case 'ask':
             return <AskMessage key={i} message={msg} onSubmit={onAskSubmit} />
           case 'user': {

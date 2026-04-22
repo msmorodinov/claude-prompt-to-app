@@ -312,6 +312,7 @@ export default function ChatContainer() {
           isLoading={isLoading}
           isPaused={isPaused}
           isReconnecting={isReconnecting}
+          sessionId={sessionId ?? undefined}
         />
         {sessionDone && !sessionError && (
           <form

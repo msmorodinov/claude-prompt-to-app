@@ -26,6 +26,9 @@ class TestDisplayWidgets:
             "progress",
             "final_result",
             "timer",
+            # carousel widgets (Phase 4)
+            "image_gallery",
+            "file_download",
         }
         assert DISPLAY_WIDGET_TYPES == expected
 
@@ -50,6 +53,7 @@ class TestInputWidgets:
             "slider_scale",
             "matrix_2x2",
             "tag_input",
+            "image_select",
         }
         assert INPUT_WIDGET_TYPES == expected
 

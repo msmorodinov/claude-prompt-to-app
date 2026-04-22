@@ -577,7 +577,7 @@ async def get_session(
             (session_id,),
         )
         rows = await cursor.fetchall()
-        return [
+        history = [
             {
                 "role": row["role"],
                 "content": json.loads(row["content"]),
@@ -587,6 +587,28 @@ async def get_session(
         ]
     finally:
         await db.close()
+
+    # Rewrite media URLs for carousel sessions (presigned URLs for image widgets)
+    _has_media = any(
+        any(
+            block.get("type") in ("image_gallery", "image_select", "file_download")
+            for block in (
+                msg["content"].get("payload", {}).get("blocks", [])
+                or msg["content"].get("payload", {}).get("questions", [])
+            )
+        )
+        for msg in history
+        if isinstance(msg.get("content"), dict)
+    )
+    if _has_media:
+        try:
+            from backend.storage_r2 import rewrite_media_urls, is_configured
+            if is_configured():
+                await rewrite_media_urls(history, session_id)
+        except Exception as exc:
+            logger.warning("rewrite_media_urls failed for %s: %s", session_id, exc)
+
+    return history
 
 
 async def get_session_stats(

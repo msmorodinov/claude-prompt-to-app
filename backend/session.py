@@ -25,7 +25,7 @@ class SessionState:
     app_id: int | None = None
     prompt_version_id: int | None = None
     edit_app_id: int | None = None
-    mode: str = "normal"  # normal | app-builder
+    mode: str = "normal"  # normal | app-builder | carousel
     model: str = "opus"  # opus | sonnet
     status: str = "idle"  # idle | active | waiting_input | done | error
     sse_queue: asyncio.Queue[dict[str, Any]] = field(default_factory=asyncio.Queue)

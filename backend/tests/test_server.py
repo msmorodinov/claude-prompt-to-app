@@ -28,8 +28,8 @@ class TestEnvironmentEndpoint:
         assert "display_widgets" in data
         assert "input_widgets" in data
         assert "tools" in data
-        assert len(data["display_widgets"]) == 11
-        assert len(data["input_widgets"]) == 7
+        assert len(data["display_widgets"]) == 13  # 11 base + image_gallery + file_download
+        assert len(data["input_widgets"]) == 8  # 7 base + image_select
         assert len(data["tools"]) == 6
 
     @pytest.mark.asyncio
