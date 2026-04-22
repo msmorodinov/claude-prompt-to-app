@@ -16,3 +16,14 @@ test-results/
 **/CLAUDE.md
 deploy/logs/
 deploy/.deploy.lock
+
+# Secrets — NEVER commit
+.s3creds
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+backend/.env
+backend/storage/

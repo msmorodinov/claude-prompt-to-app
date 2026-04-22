@@ -154,6 +154,39 @@ DISPLAY_WIDGETS = {
         },
         "required": ["type", "seconds"],
     },
+    "image_gallery": {
+        "type": "object",
+        "properties": {
+            "type": {"const": "image_gallery"},
+            "title": {"type": "string"},
+            "images": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 20,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "file": {"type": "string", "description": "Filename in session storage, e.g. slide_01.png"},
+                        "caption": {"type": "string"},
+                        "seq": {"type": "integer"},
+                    },
+                    "required": ["id", "file"],
+                },
+            },
+        },
+        "required": ["type", "images"],
+    },
+    "file_download": {
+        "type": "object",
+        "properties": {
+            "type": {"const": "file_download"},
+            "kind": {"const": "zip"},
+            "label": {"type": "string"},
+            "filename": {"type": "string", "description": "Suggested filename for download"},
+        },
+        "required": ["type", "filename"],
+    },
 }
 
 INPUT_WIDGETS = {
@@ -239,6 +272,33 @@ INPUT_WIDGETS = {
             "placeholder": {"type": "string"},
         },
         "required": ["type", "id", "label"],
+    },
+    "image_select": {
+        "type": "object",
+        "properties": {
+            "type": {"const": "image_select"},
+            "id": {"type": "string"},
+            "label": {"type": "string"},
+            "multi": {"type": "boolean", "description": "Allow multiple selections"},
+            "min_select": {"type": "integer", "minimum": 0},
+            "max_select": {"type": "integer", "minimum": 1},
+            "images": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 20,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "file": {"type": "string"},
+                        "caption": {"type": "string"},
+                        "seq": {"type": "integer"},
+                    },
+                    "required": ["id", "file"],
+                },
+            },
+        },
+        "required": ["type", "id", "label", "images"],
     },
 }
 

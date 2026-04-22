@@ -11,12 +11,15 @@ import CopyableBlock from './display/CopyableBlock'
 import ProgressBar from './display/ProgressBar'
 import FinalResult from './display/FinalResult'
 import TimerWidget from './display/TimerWidget'
+import ImageGallery from './display/ImageGallery'
+import FileDownload from './display/FileDownload'
 
 interface Props {
   widget: DisplayWidget
+  sessionId?: string
 }
 
-function WidgetInner({ widget }: Props) {
+function WidgetInner({ widget, sessionId }: Props) {
   switch (widget.type) {
     case 'text':
       return <TextWidget {...widget} />
@@ -44,15 +47,19 @@ function WidgetInner({ widget }: Props) {
       return <FinalResult {...widget} />
     case 'timer':
       return <TimerWidget {...widget} />
+    case 'image_gallery':
+      return <ImageGallery widget={widget} />
+    case 'file_download':
+      return <FileDownload widget={widget} sessionId={sessionId} />
     default:
       return <pre className="widget widget-fallback">{JSON.stringify(widget, null, 2)}</pre>
   }
 }
 
-export default function WidgetRenderer({ widget }: Props) {
+export default function WidgetRenderer({ widget, sessionId }: Props) {
   return (
     <ErrorBoundary>
-      <WidgetInner widget={widget} />
+      <WidgetInner widget={widget} sessionId={sessionId} />
     </ErrorBoundary>
   )
 }

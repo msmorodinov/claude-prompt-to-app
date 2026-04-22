@@ -76,6 +76,27 @@ export interface TimerWidget {
   label?: string
 }
 
+export interface GalleryImage {
+  id: string
+  file: string
+  url?: string
+  caption?: string
+  seq?: number
+}
+
+export interface ImageGalleryWidget {
+  type: 'image_gallery'
+  title?: string
+  images: GalleryImage[]
+}
+
+export interface FileDownloadWidget {
+  type: 'file_download'
+  kind?: 'zip'
+  label?: string
+  filename: string
+}
+
 export type DisplayWidget =
   | TextWidget
   | SectionHeaderWidget
@@ -88,6 +109,8 @@ export type DisplayWidget =
   | ProgressWidget
   | FinalResultWidget
   | TimerWidget
+  | ImageGalleryWidget
+  | FileDownloadWidget
 
 export type SelectOption = string | { value: string; label: string }
 
@@ -158,6 +181,16 @@ export interface TagInputQuestion {
   placeholder?: string
 }
 
+export interface ImageSelectQuestion {
+  type: 'image_select'
+  id: string
+  label: string
+  multi?: boolean
+  min_select?: number
+  max_select?: number
+  images: GalleryImage[]
+}
+
 export type InputQuestion =
   | SingleSelectQuestion
   | MultiSelectQuestion
@@ -166,6 +199,7 @@ export type InputQuestion =
   | SliderScaleQuestion
   | Matrix2x2Question
   | TagInputQuestion
+  | ImageSelectQuestion
 
 export interface AssistantMessageEvent {
   type: 'assistant_message'

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { ChatAskMessage, InputQuestion, MultiSelectQuestion, TagInputQuestion } from '../types'
+import type { ChatAskMessage, ImageSelectQuestion, InputQuestion, MultiSelectQuestion, TagInputQuestion } from '../types'
 import ErrorBoundary from './ErrorBoundary'
 import SingleSelect from './input/SingleSelect'
 import MultiSelect from './input/MultiSelect'
@@ -8,6 +8,7 @@ import RankPriorities from './input/RankPriorities'
 import SliderScale from './input/SliderScale'
 import Matrix2x2 from './input/Matrix2x2'
 import TagInput from './input/TagInput'
+import ImageSelect from './input/ImageSelect'
 
 interface Props {
   message: ChatAskMessage
@@ -40,6 +41,9 @@ export default function AskMessage({ message, onSubmit }: Props) {
           break
         case 'tag_input':
           initial[q.id] = []
+          break
+        case 'image_select':
+          initial[q.id] = q.multi ? [] : undefined
           break
         default:
           initial[(q as InputQuestion).id] = null
@@ -98,6 +102,25 @@ export default function AskMessage({ message, onSubmit }: Props) {
             errors[q.id] = 'Please add at least one tag'
           } else if (tq.min_tags !== undefined && val.length < tq.min_tags) {
             errors[q.id] = `Add at least ${tq.min_tags} tags`
+          }
+          break
+        }
+        case 'image_select': {
+          const val = answers[q.id]
+          const iq = q as ImageSelectQuestion
+          if (iq.multi) {
+            const arr = (val as string[]) || []
+            if (arr.length === 0) {
+              errors[q.id] = 'Please select at least one image'
+            } else if (iq.min_select !== undefined && arr.length < iq.min_select) {
+              errors[q.id] = `Select at least ${iq.min_select}`
+            } else if (iq.max_select !== undefined && arr.length > iq.max_select) {
+              errors[q.id] = `Select at most ${iq.max_select}`
+            }
+          } else {
+            if (val === undefined || val === null) {
+              errors[q.id] = 'Please select an image'
+            }
           }
           break
         }
@@ -192,6 +215,15 @@ export default function AskMessage({ message, onSubmit }: Props) {
             value={(answers[q.id] as string[]) || []}
             onChange={(v) => updateAnswer(q.id, v)}
             disabled={disabled}
+          />
+        )
+      case 'image_select':
+        return (
+          <ImageSelect
+            question={q}
+            value={answers[q.id] as string | string[] | undefined}
+            onChange={(id, v) => updateAnswer(id, v)}
+            readOnly={disabled}
           />
         )
       default:

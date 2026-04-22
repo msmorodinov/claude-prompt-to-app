@@ -81,6 +81,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
 
     is_builder = session.mode == "app-builder"
     is_edit_mode = is_builder and session.edit_app_id is not None
+    is_carousel = session.mode == "carousel"
 
     # Load prompt based on mode
     if is_builder:
@@ -98,6 +99,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         session.session_id,
         include_save_app=is_builder,
         include_update_app=is_edit_mode,
+        include_carousel_tools=is_carousel,
     )
 
     server = create_sdk_mcp_server(
@@ -116,6 +118,12 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         allowed.append("mcp__app__save_app")
     if is_edit_mode:
         allowed.append("mcp__app__update_app")
+    if is_carousel:
+        allowed.extend([
+            "mcp__app__write_file",
+            "mcp__app__render_html",
+            "mcp__app__list_files",
+        ])
     allowed.extend(_get_user_mcp_tool_patterns())
 
     # App-builder sessions always use opus for quality
