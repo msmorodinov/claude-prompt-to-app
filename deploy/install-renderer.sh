@@ -7,7 +7,7 @@ ENV_FILE="/etc/forge-simple.env"
 ENV_EXAMPLE="$PROJECT_DIR/deploy/forge-simple.env.example"
 UNIT_SRC="$PROJECT_DIR/deploy/forge-simple.service"
 UNIT_DST="/etc/systemd/system/forge-simple.service"
-RENDER_TMP="/var/tmp/forge-render"
+RENDER_TMP="/var/lib/forge-simple-render"
 
 echo "=== forge-simple: install renderer dependencies ==="
 

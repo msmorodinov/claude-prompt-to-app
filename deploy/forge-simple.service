@@ -5,7 +5,7 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/forge-simple.env
 WorkingDirectory=/opt/forge-simple
-ExecStart=/opt/forge-simple/.venv/bin/python /opt/forge-simple/backend/server.py
+ExecStart=/opt/forge-simple/.venv/bin/python -m backend.server
 Restart=always
 RestartSec=5
 
@@ -16,13 +16,10 @@ PrivateTmp=yes
 PrivateDevices=yes
 
 # Writable paths: SQLite WAL files, deploy logs, playwright cache, renderer workspace
-ReadWritePaths=/opt/forge-simple/backend/sessions.db
-ReadWritePaths=/opt/forge-simple/backend/sessions.db-journal
-ReadWritePaths=/opt/forge-simple/backend/sessions.db-wal
-ReadWritePaths=/opt/forge-simple/backend/sessions.db-shm
+ReadWritePaths=/opt/forge-simple/backend
 ReadWritePaths=/opt/forge-simple/deploy/logs
 ReadWritePaths=/root/.cache/ms-playwright
-ReadWritePaths=/var/tmp/forge-render
+ReadWritePaths=/var/lib/forge-simple-render
 
 # Privilege reduction
 NoNewPrivileges=yes
@@ -42,14 +39,14 @@ ProtectClock=yes
 
 # Namespaces: allow user/pid/mount/ipc/uts/cgroup/net (required by bwrap)
 # List-form — NOT RestrictNamespaces=yes (that would block bwrap clone())
-RestrictNamespaces=user pid mount ipc uts cgroup net
+RestrictNamespaces=cgroup ipc net mnt pid user uts
 
 RestrictRealtime=yes
 
 # Syscall filter: base service set + mount/clone for bwrap
 # NOT MemoryDenyWriteExecute — Chromium V8 JIT requires W+X pages
 # NOT PrivateNetwork — backend needs outbound HTTPS to R2
-SystemCallFilter=@system-service @mount @clone
+SystemCallFilter=@system-service @mount
 SystemCallErrorNumber=EPERM
 
 [Install]

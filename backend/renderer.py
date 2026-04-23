@@ -1,7 +1,7 @@
 """Playwright/bwrap HTML → PNG renderer.
 
 Architecture:
-1. Download HTML from R2 to ephemeral tmpdir under /var/tmp/forge-render/
+1. Download HTML from R2 to ephemeral tmpdir under /var/lib/forge-simple-render/
 2. Bind-mount vendored fonts
 3. Run bwrap + playwright screenshot (no network, per-render isolation)
 4. Upload PNG to R2
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 FONTS_DIR = ASSETS_DIR / "fonts"
-RENDER_BASE = Path("/var/tmp/forge-render")
+RENDER_BASE = Path("/var/lib/forge-simple-render")
 
 # Try to detect venv playwright path
 def _playwright_path() -> str:
