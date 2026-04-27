@@ -137,7 +137,7 @@ async def run_agent(session: SessionState, user_message: str) -> None:
         permission_mode="acceptEdits",
         resume=session.sdk_session_id,  # None on first call, UUID on resume
         env=await get_auth_env(),
-        setting_sources=["user"],  # Load user MCP servers from ~/.claude.json
+        extra_args={"strict-mcp-config": None},  # ignore claude.ai integrations that hang on auth
         model=model,
     )
 
