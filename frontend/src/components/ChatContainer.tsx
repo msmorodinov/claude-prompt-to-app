@@ -251,6 +251,18 @@ export default function ChatContainer() {
     handleSend('start')
   }, [handleSend])
 
+  const autostartFiredRef = useRef(false)
+  useEffect(() => {
+    if (autostartFiredRef.current) return
+    if (searchParams.get('autostart') !== '1') return
+    if (!sessionId || !showStartScreen) return
+    autostartFiredRef.current = true
+    handleStart()
+    const next = new URLSearchParams(searchParams)
+    next.delete('autostart')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, sessionId, showStartScreen, handleStart, setSearchParams])
+
   function renderMainContent() {
     // Show error when apps fetch failed
     if (appsError && apps.length === 0) {

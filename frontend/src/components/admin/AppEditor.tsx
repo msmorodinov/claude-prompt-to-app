@@ -161,7 +161,7 @@ export default function AppEditor({ appId, onReloadApp }: Props) {
         body: JSON.stringify({ mode: 'app-builder', edit_app_id: appId }),
       })
       sessionStorage.setItem('session_id', data.session_id)
-      window.location.href = '/'
+      window.location.href = '/?autostart=1'
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to start AI edit session')
     }
