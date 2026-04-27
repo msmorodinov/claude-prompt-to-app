@@ -15,10 +15,11 @@ ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
 
-# Writable paths: SQLite WAL files, deploy logs, playwright cache, renderer workspace
+# Writable paths: SQLite WAL files, deploy logs, playwright cache, claude CLI state, renderer workspace
 ReadWritePaths=/opt/forge-simple/backend
 ReadWritePaths=/opt/forge-simple/deploy/logs
 ReadWritePaths=/root/.cache/ms-playwright
+ReadWritePaths=/root/.claude
 ReadWritePaths=/var/lib/forge-simple-render
 
 # Privilege reduction
