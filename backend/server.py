@@ -464,13 +464,11 @@ async def create_session(request: Request) -> dict:
     if edit_app_id is not None and not isinstance(edit_app_id, int):
         raise HTTPException(status_code=422, detail="edit_app_id must be an integer")
 
-    # Validate edit target exists and is active
+    # Validate edit target exists (archived apps are still editable)
     if edit_app_id is not None:
         target = await get_app_by_id(edit_app_id)
         if not target:
             raise HTTPException(status_code=404, detail="Edit target app not found")
-        if not target["is_active"]:
-            raise HTTPException(status_code=403, detail="Cannot edit an archived app")
 
     # Determine mode
     mode = req_mode or "normal"
